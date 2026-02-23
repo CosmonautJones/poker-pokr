@@ -1,0 +1,175 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:poker_trainer/poker/models/game_state.dart';
+import 'package:poker_trainer/poker/models/street.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/player_seat.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/community_cards.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/pot_display.dart';
+
+/// The main poker table visualization.
+///
+/// Positions player seats around an oval table, shows community cards
+/// and pot in the center.
+class PokerTableWidget extends StatelessWidget {
+  final GameState gameState;
+
+  const PokerTableWidget({super.key, required this.gameState});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+
+        // Table dimensions: an oval that fills most of the space.
+        final tableWidth = width * 0.92;
+        final tableHeight = height * 0.85;
+        final centerX = width / 2;
+        final centerY = height / 2;
+
+        // Compute seat positions around an ellipse.
+        final seats = _computeSeatPositions(
+          gameState.playerCount,
+          tableWidth * 0.44,
+          tableHeight * 0.40,
+          centerX,
+          centerY,
+        );
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Table felt
+            Positioned(
+              left: (width - tableWidth) / 2,
+              top: (height - tableHeight) / 2,
+              child: Container(
+                width: tableWidth,
+                height: tableHeight,
+                decoration: BoxDecoration(
+                  gradient: const RadialGradient(
+                    colors: [
+                      Color(0xFF1B5E20),
+                      Color(0xFF0D3B12),
+                    ],
+                    radius: 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(tableHeight / 2),
+                  border: Border.all(
+                    color: const Color(0xFF5D4037),
+                    width: 6,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black38,
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Street indicator (top center of table)
+            Positioned(
+              left: centerX - 40,
+              top: (height - tableHeight) / 2 + 12,
+              child: Container(
+                width: 80,
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _streetLabel(gameState.street),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            // Community cards
+            Positioned(
+              left: centerX - 120,
+              top: centerY - 50,
+              child: SizedBox(
+                width: 240,
+                child: Center(
+                  child: CommunityCardsWidget(
+                    cards: gameState.communityCards,
+                  ),
+                ),
+              ),
+            ),
+            // Pot display
+            Positioned(
+              left: centerX - 80,
+              top: centerY + 20,
+              child: SizedBox(
+                width: 160,
+                child: Center(
+                  child: PotDisplay(
+                    pot: gameState.pot,
+                    sidePots: gameState.sidePots,
+                  ),
+                ),
+              ),
+            ),
+            // Player seats
+            for (int i = 0; i < gameState.playerCount; i++)
+              Positioned(
+                left: seats[i].dx - 50,
+                top: seats[i].dy - 40,
+                child: SizedBox(
+                  width: 100,
+                  child: Center(
+                    child: PlayerSeat(
+                      player: gameState.players[i],
+                      isCurrentPlayer: i == gameState.currentPlayerIndex &&
+                          !gameState.isHandComplete,
+                      isDealer: i == gameState.dealerIndex,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Compute positions around an ellipse for the given number of players.
+  List<Offset> _computeSeatPositions(
+    int count,
+    double radiusX,
+    double radiusY,
+    double centerX,
+    double centerY,
+  ) {
+    final positions = <Offset>[];
+    // Start from the bottom center and go clockwise.
+    // The "hero" (seat 0) is at the bottom.
+    final startAngle = math.pi / 2; // bottom
+    for (int i = 0; i < count; i++) {
+      final angle = startAngle + (2 * math.pi * i / count);
+      final x = centerX + radiusX * math.cos(angle);
+      final y = centerY + radiusY * math.sin(angle);
+      positions.add(Offset(x, y));
+    }
+    return positions;
+  }
+
+  String _streetLabel(Street street) {
+    return switch (street) {
+      Street.preflop => 'Preflop',
+      Street.flop => 'Flop',
+      Street.turn => 'Turn',
+      Street.river => 'River',
+      Street.showdown => 'Showdown',
+    };
+  }
+}
