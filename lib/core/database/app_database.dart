@@ -16,7 +16,14 @@ part 'app_database.g.dart';
   daos: [SessionsDao, HandsDao],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(driftDatabase(name: 'poker_trainer'));
+  AppDatabase()
+      : super(driftDatabase(
+          name: 'poker_trainer',
+          web: DriftWebOptions(
+            sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+            driftWorker: Uri.parse('drift_worker.js'),
+          ),
+        ));
 
   @override
   int get schemaVersion => 1;
