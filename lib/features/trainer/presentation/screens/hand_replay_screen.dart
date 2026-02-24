@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
+import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/action_bar.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/context_strip.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_banner.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 import 'package:poker_trainer/poker/models/action.dart';
@@ -310,6 +313,12 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               onPressed: _saveHand,
               tooltip: 'Save Hand',
             ),
+          // Glossary
+          IconButton(
+            icon: const Icon(Icons.menu_book_rounded),
+            onPressed: () => PokerGlossarySheet.show(context),
+            tooltip: 'Poker Glossary',
+          ),
           // History log
           IconButton(
             icon: const Icon(Icons.history),
@@ -392,6 +401,11 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           // Educational context strip
           if (!replayState.isComplete)
             ContextStrip(context_: replayState.educationalContext),
+          // Pro tip banner
+          if (!replayState.isComplete)
+            ProTipBanner(
+              tip: ProTipEngine.compute(replayState.educationalContext),
+            ),
           // Action bar (only when hand is not complete)
           if (!replayState.isComplete)
             ActionBar(
