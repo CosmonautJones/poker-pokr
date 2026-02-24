@@ -241,13 +241,16 @@ class _CardPreview extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            rank.symbol,
-            style: TextStyle(
-              color: _suitColor,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              height: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              rank.symbol,
+              style: TextStyle(
+                color: _suitColor,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
             ),
           ),
           Text(

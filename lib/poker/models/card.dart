@@ -30,7 +30,7 @@ enum Rank {
         Rank.seven => '7',
         Rank.eight => '8',
         Rank.nine => '9',
-        Rank.ten => 'T',
+        Rank.ten => '10',
         Rank.jack => 'J',
         Rank.queen => 'Q',
         Rank.king => 'K',

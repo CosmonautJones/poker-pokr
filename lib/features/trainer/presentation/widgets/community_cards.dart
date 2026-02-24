@@ -72,13 +72,16 @@ class _CardFace extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            card.rank.symbol,
-            style: TextStyle(
-              color: _suitColor,
-              fontSize: (18 * scale).clamp(12.0, 20.0),
-              fontWeight: FontWeight.bold,
-              height: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              card.rank.symbol,
+              style: TextStyle(
+                color: _suitColor,
+                fontSize: (18 * scale).clamp(12.0, 20.0),
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
             ),
           ),
           Text(
@@ -180,13 +183,16 @@ class MiniCardWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            card.rank.symbol,
-            style: TextStyle(
-              color: _suitColor,
-              fontSize: (12 * scale).clamp(9.0, 14.0),
-              fontWeight: FontWeight.bold,
-              height: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              card.rank.symbol,
+              style: TextStyle(
+                color: _suitColor,
+                fontSize: (12 * scale).clamp(9.0, 14.0),
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
             ),
           ),
           Text(

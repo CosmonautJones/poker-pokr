@@ -131,13 +131,16 @@ class _CardSlot extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            card.rank.symbol,
-            style: TextStyle(
-              color: _suitColor(card.suit),
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              height: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              card.rank.symbol,
+              style: TextStyle(
+                color: _suitColor(card.suit),
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
             ),
           ),
           Text(
