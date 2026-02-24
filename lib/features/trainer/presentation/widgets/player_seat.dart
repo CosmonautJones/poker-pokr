@@ -7,12 +7,14 @@ class PlayerSeat extends StatelessWidget {
   final PlayerState player;
   final bool isCurrentPlayer;
   final bool isDealer;
+  final double scale;
 
   const PlayerSeat({
     super.key,
     required this.player,
     this.isCurrentPlayer = false,
     this.isDealer = false,
+    this.scale = 1.0,
   });
 
   String _formatChips(double amount) {
@@ -27,6 +29,8 @@ class PlayerSeat extends StatelessWidget {
     final isFolded = player.isFolded;
     final isAllIn = player.isAllIn;
     final opacity = isFolded ? 0.4 : 1.0;
+    final minW = (72 * scale).clamp(60.0, 80.0);
+    final maxW = (100 * scale).clamp(76.0, 100.0);
 
     return Opacity(
       opacity: opacity,
@@ -42,20 +46,23 @@ class PlayerSeat extends StatelessWidget {
                 children: player.holeCards
                     .map((c) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 1),
-                          child: MiniCardWidget(card: c),
+                          child: MiniCardWidget(card: c, scale: scale),
                         ))
                     .toList(),
               ),
             ),
           // Main seat container
           Container(
-            constraints: const BoxConstraints(minWidth: 80, maxWidth: 100),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            constraints: BoxConstraints(minWidth: minW, maxWidth: maxW),
+            padding: EdgeInsets.symmetric(
+              horizontal: (8 * scale).clamp(4.0, 8.0),
+              vertical: (4 * scale).clamp(2.0, 4.0),
+            ),
             decoration: BoxDecoration(
               color: isCurrentPlayer
                   ? const Color(0xFF1B5E20)
                   : const Color(0xFF212121),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8 * scale),
               border: Border.all(
                 color: isCurrentPlayer
                     ? Colors.greenAccent
@@ -83,19 +90,19 @@ class PlayerSeat extends StatelessWidget {
                   children: [
                     if (isDealer)
                       Container(
-                        margin: const EdgeInsets.only(right: 4),
-                        width: 16,
-                        height: 16,
+                        margin: EdgeInsets.only(right: 3 * scale),
+                        width: (14 * scale).clamp(10.0, 16.0),
+                        height: (14 * scale).clamp(10.0, 16.0),
                         decoration: const BoxDecoration(
                           color: Colors.amber,
                           shape: BoxShape.circle,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'D',
                             style: TextStyle(
                               color: Colors.black,
-                              fontSize: 9,
+                              fontSize: (9 * scale).clamp(7.0, 10.0),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -104,9 +111,9 @@ class PlayerSeat extends StatelessWidget {
                     Flexible(
                       child: Text(
                         player.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: (11 * scale).clamp(9.0, 12.0),
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -115,49 +122,53 @@ class PlayerSeat extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2 * scale),
                 // Stack
                 Text(
                   _formatChips(player.stack),
                   style: TextStyle(
                     color: Colors.grey.shade300,
-                    fontSize: 12,
+                    fontSize: (12 * scale).clamp(9.0, 13.0),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 // Status badges
                 if (isAllIn)
                   Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    margin: EdgeInsets.only(top: 2 * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4 * scale,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade800,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'ALL IN',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 8,
+                        fontSize: (8 * scale).clamp(6.0, 9.0),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 if (isFolded)
                   Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    margin: EdgeInsets.only(top: 2 * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4 * scale,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade800,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'FOLD',
                       style: TextStyle(
                         color: Colors.grey,
-                        fontSize: 8,
+                        fontSize: (8 * scale).clamp(6.0, 9.0),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -170,17 +181,19 @@ class PlayerSeat extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 4 * scale,
+                  vertical: 2,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black45,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   _formatChips(player.currentBet),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.yellowAccent,
-                    fontSize: 10,
+                    fontSize: (10 * scale).clamp(8.0, 11.0),
                     fontWeight: FontWeight.bold,
                   ),
                 ),

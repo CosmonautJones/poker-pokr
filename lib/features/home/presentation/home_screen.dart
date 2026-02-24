@@ -12,37 +12,40 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               // Hero header
               Row(
                 children: [
                   Icon(
                     Icons.casino,
-                    size: 36,
+                    size: 32,
                     color: colorScheme.primary,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Poker Trainer',
-                    style: textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'Poker Trainer',
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 'Sharpen your game',
                 style: textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
               // Feature cards
               Expanded(
                 child: Column(
@@ -124,7 +127,7 @@ class _FeatureCard extends StatelessWidget {
               ],
             ),
           ),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Expanded(
@@ -167,16 +170,16 @@ class _FeatureCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,
-                  size: 36,
+                  size: 30,
                   color: accentColor,
                 ),
               ),

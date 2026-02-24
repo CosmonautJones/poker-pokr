@@ -21,7 +21,7 @@ class ReportsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -59,17 +59,18 @@ class _ReportsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     if (stats.sessionCount == 0) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.bar_chart_rounded,
-                size: 64,
+                size: 56,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
@@ -93,6 +94,9 @@ class _ReportsBody extends StatelessWidget {
         ? Colors.green.shade400
         : Colors.red.shade400;
 
+    // Responsive aspect ratio: taller cards on narrow screens.
+    final aspectRatio = screenWidth < 360 ? 1.4 : 1.6;
+
     return ListView(
       padding: const EdgeInsets.all(8),
       children: [
@@ -101,7 +105,9 @@ class _ReportsBody extends StatelessWidget {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.6,
+          childAspectRatio: aspectRatio,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
           children: [
             StatsSummaryCard(
               title: 'Total Profit',
@@ -118,7 +124,7 @@ class _ReportsBody extends StatelessWidget {
                   : Colors.red.shade400,
             ),
             StatsSummaryCard(
-              title: 'Sessions Played',
+              title: 'Sessions',
               value: stats.sessionCount.toString(),
               icon: Icons.casino_outlined,
             ),
@@ -132,14 +138,16 @@ class _ReportsBody extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
 
         // Additional stats row
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.6,
+          childAspectRatio: aspectRatio,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
           children: [
             StatsSummaryCard(
               title: 'Biggest Win',
@@ -155,23 +163,23 @@ class _ReportsBody extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
 
         // Total hours
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: StatsSummaryCard(
             title: 'Total Hours Played',
             value: '${stats.totalHoursPlayed.toStringAsFixed(1)}h',
             icon: Icons.timer_outlined,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Profit chart
         if (stats.profitByMonth.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               'Cumulative Profit Over Time',
               style: theme.textTheme.titleMedium,
@@ -179,9 +187,9 @@ class _ReportsBody extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
               child: ProfitChart(profitByMonth: stats.profitByMonth),
             ),
           ),

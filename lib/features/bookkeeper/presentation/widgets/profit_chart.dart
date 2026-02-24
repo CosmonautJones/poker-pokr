@@ -41,9 +41,9 @@ class ProfitChart extends StatelessWidget {
     final chartMaxY = maxY + yPadding;
 
     return SizedBox(
-      height: 240,
+      height: 200,
       child: Padding(
-        padding: const EdgeInsets.only(right: 16, top: 16),
+        padding: const EdgeInsets.only(right: 8, top: 12),
         child: LineChart(
           LineChartData(
             gridData: FlGridData(
@@ -95,7 +95,7 @@ class ProfitChart extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 60,
+                  reservedSize: 48,
                   interval: _calculateInterval(chartMinY, chartMaxY),
                   getTitlesWidget: (value, meta) {
                     return Text(

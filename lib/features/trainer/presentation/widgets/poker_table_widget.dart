@@ -22,11 +22,19 @@ class PokerTableWidget extends StatelessWidget {
         final width = constraints.maxWidth;
         final height = constraints.maxHeight;
 
+        // Scale factor for small screens (baseline: 360px wide).
+        final scale = (width / 360).clamp(0.7, 1.3);
+
         // Table dimensions: an oval that fills most of the space.
         final tableWidth = width * 0.92;
         final tableHeight = height * 0.85;
         final centerX = width / 2;
         final centerY = height / 2;
+
+        // Responsive sizes.
+        final seatWidth = (90 * scale).clamp(72.0, 100.0);
+        final communityWidth = (240 * scale).clamp(180.0, 260.0);
+        final potWidth = (160 * scale).clamp(120.0, 180.0);
 
         // Compute seat positions around an ellipse.
         final seats = _computeSeatPositions(
@@ -58,7 +66,7 @@ class PokerTableWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(tableHeight / 2),
                   border: Border.all(
                     color: const Color(0xFF5D4037),
-                    width: 6,
+                    width: (6 * scale).clamp(3.0, 6.0),
                   ),
                   boxShadow: const [
                     BoxShadow(
@@ -73,7 +81,7 @@ class PokerTableWidget extends StatelessWidget {
             // Street indicator (top center of table)
             Positioned(
               left: centerX - 40,
-              top: (height - tableHeight) / 2 + 12,
+              top: (height - tableHeight) / 2 + 10,
               child: Container(
                 width: 80,
                 padding: const EdgeInsets.symmetric(vertical: 3),
@@ -84,9 +92,9 @@ class PokerTableWidget extends StatelessWidget {
                 child: Text(
                   _streetLabel(gameState.street),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 11,
+                    fontSize: (11 * scale).clamp(9.0, 12.0),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -94,27 +102,29 @@ class PokerTableWidget extends StatelessWidget {
             ),
             // Community cards
             Positioned(
-              left: centerX - 120,
-              top: centerY - 50,
+              left: centerX - communityWidth / 2,
+              top: centerY - 40 * scale,
               child: SizedBox(
-                width: 240,
+                width: communityWidth,
                 child: Center(
                   child: CommunityCardsWidget(
                     cards: gameState.communityCards,
+                    scale: scale,
                   ),
                 ),
               ),
             ),
             // Pot display
             Positioned(
-              left: centerX - 80,
-              top: centerY + 20,
+              left: centerX - potWidth / 2,
+              top: centerY + 16 * scale,
               child: SizedBox(
-                width: 160,
+                width: potWidth,
                 child: Center(
                   child: PotDisplay(
                     pot: gameState.pot,
                     sidePots: gameState.sidePots,
+                    scale: scale,
                   ),
                 ),
               ),
@@ -122,16 +132,17 @@ class PokerTableWidget extends StatelessWidget {
             // Player seats
             for (int i = 0; i < gameState.playerCount; i++)
               Positioned(
-                left: seats[i].dx - 50,
-                top: seats[i].dy - 40,
+                left: seats[i].dx - seatWidth / 2,
+                top: seats[i].dy - 36 * scale,
                 child: SizedBox(
-                  width: 100,
+                  width: seatWidth,
                   child: Center(
                     child: PlayerSeat(
                       player: gameState.players[i],
                       isCurrentPlayer: i == gameState.currentPlayerIndex &&
                           !gameState.isHandComplete,
                       isDealer: i == gameState.dealerIndex,
+                      scale: scale,
                     ),
                   ),
                 ),
