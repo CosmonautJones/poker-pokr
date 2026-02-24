@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/educational_context.dart';
 import 'package:poker_trainer/features/trainer/domain/poker_glossary.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
@@ -15,6 +16,7 @@ class ContextStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final ctx = context_;
 
     // Extract the base position label (e.g. "BTN" from "BTN (SB)").
@@ -23,10 +25,10 @@ class ContextStrip extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
+        color: pt.surfaceOverlay,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade800, width: 0.5),
-          bottom: BorderSide(color: Colors.grey.shade800, width: 0.5),
+          top: BorderSide(color: pt.borderSubtle, width: 0.5),
+          bottom: BorderSide(color: pt.borderSubtle, width: 0.5),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -41,21 +43,21 @@ class ContextStrip extends StatelessWidget {
               children: [
                 _ContextChip(
                   label: ctx.positionLabel,
-                  color: _positionColor(ctx.positionCategory),
+                  color: _positionColor(context, ctx.positionCategory),
                   glossaryTerm: posAbbrev,
                 ),
                 if (ctx.potOddsDisplay != null)
                   _ContextChip(
                     label: 'Pot Odds',
                     value: ctx.potOddsDisplay!,
-                    color: Colors.amber.shade300,
+                    color: pt.accent,
                     glossaryTerm: 'Pot Odds',
                   ),
                 _ContextChip(
                   label: 'SPR',
                   value: ctx.stackToPotRatio.toStringAsFixed(1),
                   color: ctx.stackToPotRatio < 4
-                      ? Colors.orange.shade300
+                      ? pt.positionMiddle
                       : null,
                   glossaryTerm: 'SPR',
                 ),
@@ -83,13 +85,14 @@ class ContextStrip extends StatelessWidget {
     );
   }
 
-  static Color _positionColor(String category) {
+  static Color _positionColor(BuildContext context, String category) {
+    final pt = context.poker;
     return switch (category) {
-      'early' => Colors.red.shade300,
-      'middle' => Colors.orange.shade300,
-      'late' => Colors.green.shade300,
-      'blinds' => Colors.blue.shade300,
-      _ => Colors.grey.shade300,
+      'early' => pt.positionEarly,
+      'middle' => pt.positionMiddle,
+      'late' => pt.positionLate,
+      'blinds' => pt.positionBlinds,
+      _ => pt.textMuted,
     };
   }
 }
@@ -112,17 +115,20 @@ class _ContextChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final entry = glossaryTerm != null
         ? PokerGlossary.lookup(glossaryTerm!)
         : null;
     final isTappable = entry != null;
+
+    final chipColor = color ?? pt.textMuted;
 
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.black54,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade700, width: 0.5),
+        border: Border.all(color: pt.seatBorderDefault, width: 0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -142,11 +148,11 @@ class _ContextChip extends StatelessWidget {
             value != null ? '$label: $value' : label,
             style: TextStyle(
               fontSize: 11,
-              color: color ?? Colors.white70,
+              color: chipColor,
               fontWeight: FontWeight.w500,
               decoration:
                   isTappable ? TextDecoration.underline : null,
-              decorationColor: (color ?? Colors.white70).withValues(alpha: 0.4),
+              decorationColor: chipColor.withValues(alpha: 0.4),
               decorationStyle: TextDecorationStyle.dotted,
             ),
           ),
@@ -155,7 +161,7 @@ class _ContextChip extends StatelessWidget {
             Icon(
               Icons.info_outline_rounded,
               size: 10,
-              color: (color ?? Colors.white70).withValues(alpha: 0.5),
+              color: chipColor.withValues(alpha: 0.5),
             ),
           ],
         ],
@@ -253,6 +259,7 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final screenWidth = MediaQuery.of(context).size.width;
     const tooltipWidth = 260.0;
 
@@ -286,11 +293,9 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
                 width: tooltipWidth,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A2A),
+                  color: pt.tooltipBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.amber.shade700.withValues(alpha: 0.4),
-                  ),
+                  border: Border.all(color: pt.tooltipBorder),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.5),
@@ -310,7 +315,7 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade200,
+                            color: pt.accentMuted,
                           ),
                         ),
                         if (widget.entry.term != widget.entry.abbreviation) ...[
@@ -356,8 +361,9 @@ class _ActionExplanationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     // Infer action type color from description keywords
-    final color = _inferActionColor(explanation.description);
+    final color = _inferActionColor(pt, explanation.description);
     final parts = <String>[explanation.description];
     parts.add(explanation.mechanical);
     if (explanation.sizing != null) parts.add(explanation.sizing!);
@@ -386,16 +392,16 @@ class _ActionExplanationRow extends StatelessWidget {
     );
   }
 
-  static Color _inferActionColor(String description) {
+  static Color _inferActionColor(PokerTheme pt, String description) {
     final lower = description.toLowerCase();
-    if (lower.contains('folds')) return Colors.grey;
-    if (lower.contains('checks')) return Colors.blueGrey.shade300;
-    if (lower.contains('calls')) return Colors.green.shade300;
-    if (lower.contains('all-in')) return Colors.deepOrange.shade300;
+    if (lower.contains('folds')) return pt.badgeFold;
+    if (lower.contains('checks')) return pt.actionCheck;
+    if (lower.contains('calls')) return pt.profit;
+    if (lower.contains('all-in')) return pt.actionAllIn;
     if (lower.contains('raises') || lower.contains('bets')) {
-      return Colors.amber.shade300;
+      return pt.accent;
     }
-    return Colors.white70;
+    return pt.textMuted;
   }
 }
 

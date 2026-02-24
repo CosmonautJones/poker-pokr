@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
 
 /// Displays the community cards (0-5) in a horizontal row.
@@ -39,28 +40,22 @@ class _CardFace extends StatelessWidget {
 
   const _CardFace({required this.card, this.scale = 1.0});
 
-  Color get _suitColor {
-    switch (card.suit) {
-      case Suit.hearts:
-      case Suit.diamonds:
-        return Colors.red.shade400;
-      case Suit.clubs:
-      case Suit.spades:
-        return Colors.white;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+    final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
+        ? pt.suitRed
+        : pt.suitBlack;
+
     final w = (44 * scale).clamp(30.0, 48.0);
     final h = (62 * scale).clamp(42.0, 68.0);
     return Container(
       width: w,
       height: h,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: pt.cardFace,
         borderRadius: BorderRadius.circular(6 * scale),
-        border: Border.all(color: Colors.grey.shade600, width: 1),
+        border: Border.all(color: pt.cardBorder, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Colors.black26,
@@ -77,7 +72,7 @@ class _CardFace extends StatelessWidget {
             child: Text(
               card.rank.symbol,
               style: TextStyle(
-                color: _suitColor,
+                color: suitColor,
                 fontSize: (18 * scale).clamp(12.0, 20.0),
                 fontWeight: FontWeight.bold,
                 height: 1,
@@ -87,7 +82,7 @@ class _CardFace extends StatelessWidget {
           Text(
             card.suit.symbol,
             style: TextStyle(
-              color: _suitColor,
+              color: suitColor,
               fontSize: (16 * scale).clamp(10.0, 18.0),
               height: 1,
             ),
@@ -106,20 +101,21 @@ class _CardPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final w = (44 * scale).clamp(30.0, 48.0);
     final h = (62 * scale).clamp(42.0, 68.0);
     return Container(
       width: w,
       height: h,
       decoration: BoxDecoration(
-        color: const Color(0xFF0D0D1A),
+        color: pt.cardPlaceholder,
         borderRadius: BorderRadius.circular(6 * scale),
-        border: Border.all(color: Colors.grey.shade800, width: 1),
+        border: Border.all(color: pt.borderSubtle, width: 1),
       ),
       child: Center(
         child: Icon(
           Icons.help_outline,
-          color: Colors.grey.shade800,
+          color: pt.borderSubtle,
           size: (18 * scale).clamp(12.0, 20.0),
         ),
       ),
@@ -140,19 +136,13 @@ class MiniCardWidget extends StatelessWidget {
     this.scale = 1.0,
   });
 
-  Color get _suitColor {
-    switch (card.suit) {
-      case Suit.hearts:
-      case Suit.diamonds:
-        return Colors.red.shade400;
-      case Suit.clubs:
-      case Suit.spades:
-        return Colors.white;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+    final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
+        ? pt.suitRed
+        : pt.suitBlack;
+
     final w = (30 * scale).clamp(22.0, 34.0);
     final h = (42 * scale).clamp(30.0, 46.0);
 
@@ -167,7 +157,7 @@ class MiniCardWidget extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(4 * scale),
-          border: Border.all(color: Colors.grey.shade600, width: 0.5),
+          border: Border.all(color: pt.cardBorder, width: 0.5),
         ),
       );
     }
@@ -176,9 +166,9 @@ class MiniCardWidget extends StatelessWidget {
       width: w,
       height: h,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: pt.cardFace,
         borderRadius: BorderRadius.circular(4 * scale),
-        border: Border.all(color: Colors.grey.shade600, width: 0.5),
+        border: Border.all(color: pt.cardBorder, width: 0.5),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -188,7 +178,7 @@ class MiniCardWidget extends StatelessWidget {
             child: Text(
               card.rank.symbol,
               style: TextStyle(
-                color: _suitColor,
+                color: suitColor,
                 fontSize: (12 * scale).clamp(9.0, 14.0),
                 fontWeight: FontWeight.bold,
                 height: 1,
@@ -198,7 +188,7 @@ class MiniCardWidget extends StatelessWidget {
           Text(
             card.suit.symbol,
             style: TextStyle(
-              color: _suitColor,
+              color: suitColor,
               fontSize: (10 * scale).clamp(8.0, 12.0),
               height: 1,
             ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/currency_formatter.dart';
 
 class ProfitChart extends StatelessWidget {
@@ -22,6 +23,7 @@ class ProfitChart extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
+    final pt = context.poker;
     final entries = profitByMonth.entries.toList();
 
     // Build cumulative profit data
@@ -114,26 +116,37 @@ class ProfitChart extends StatelessWidget {
             maxX: (entries.length - 1).toDouble(),
             minY: chartMinY,
             maxY: chartMaxY,
+            // Zero/break-even line
+            extraLinesData: ExtraLinesData(
+              horizontalLines: [
+                HorizontalLine(
+                  y: 0,
+                  color: pt.textMuted.withValues(alpha: 0.3),
+                  strokeWidth: 1,
+                  dashArray: [4, 4],
+                ),
+              ],
+            ),
             lineBarsData: [
               LineChartBarData(
                 spots: spots,
                 isCurved: true,
                 preventCurveOverShooting: true,
-                color: Colors.green.shade400,
+                color: pt.profit,
                 barWidth: 3,
                 dotData: FlDotData(
                   show: true,
                   getDotPainter: (spot, percent, barData, index) =>
                       FlDotCirclePainter(
                     radius: 4,
-                    color: Colors.green.shade400,
+                    color: pt.profit,
                     strokeWidth: 2,
                     strokeColor: theme.colorScheme.surface,
                   ),
                 ),
                 belowBarData: BarAreaData(
                   show: true,
-                  color: Colors.green.shade400.withValues(alpha: 0.1),
+                  color: pt.profit.withValues(alpha: 0.1),
                 ),
               ),
             ],

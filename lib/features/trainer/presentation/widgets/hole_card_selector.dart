@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/card_picker.dart';
 
@@ -101,29 +102,28 @@ class _CardSlot extends StatelessWidget {
     this.onLongPress,
   });
 
-  Color _suitColor(Suit suit) {
-    return (suit == Suit.hearts || suit == Suit.diamonds)
-        ? Colors.red.shade400
-        : Colors.white;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: card != null ? _buildFace(card!) : _buildEmpty(),
+      child: card != null ? _buildFace(context, card!) : _buildEmpty(context),
     );
   }
 
-  Widget _buildFace(PokerCard card) {
+  Widget _buildFace(BuildContext context, PokerCard card) {
+    final pt = context.poker;
+    final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
+        ? pt.suitRed
+        : pt.suitBlack;
+
     return Container(
-      width: 32,
-      height: 44,
+      width: 40,
+      height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade500, width: 1),
+        color: pt.cardFace,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: pt.cardBorder, width: 1),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(1, 1)),
         ],
@@ -136,8 +136,8 @@ class _CardSlot extends StatelessWidget {
             child: Text(
               card.rank.symbol,
               style: TextStyle(
-                color: _suitColor(card.suit),
-                fontSize: 13,
+                color: suitColor,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 height: 1,
               ),
@@ -146,8 +146,8 @@ class _CardSlot extends StatelessWidget {
           Text(
             card.suit.symbol,
             style: TextStyle(
-              color: _suitColor(card.suit),
-              fontSize: 11,
+              color: suitColor,
+              fontSize: 13,
               height: 1,
             ),
           ),
@@ -156,20 +156,21 @@ class _CardSlot extends StatelessWidget {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(BuildContext context) {
+    final pt = context.poker;
     return Container(
-      width: 32,
-      height: 44,
+      width: 40,
+      height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFF0D0D1A),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade800, width: 1),
+        color: pt.cardPlaceholder,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: pt.borderSubtle, width: 1),
       ),
       child: Center(
         child: Icon(
           Icons.add,
-          color: Colors.grey.shade700,
-          size: 16,
+          color: pt.borderSubtle,
+          size: 18,
         ),
       ),
     );
@@ -184,22 +185,23 @@ class _RandomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(6),
       child: Tooltip(
         message: 'Random hand',
         child: Container(
-          width: 28,
-          height: 28,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: Colors.grey.shade800,
-            borderRadius: BorderRadius.circular(4),
+            color: pt.borderSubtle,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             Icons.casino,
-            color: Colors.amber.shade400,
-            size: 16,
+            color: pt.accent,
+            size: 18,
           ),
         ),
       ),

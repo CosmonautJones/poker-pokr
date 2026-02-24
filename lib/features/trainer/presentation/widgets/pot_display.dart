@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/pot.dart';
 
 /// Displays the current pot amount and any side pots, centered on the table.
@@ -23,6 +24,8 @@ class PotDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -34,12 +37,12 @@ class PotDisplay extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.black54,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+            border: Border.all(color: pt.potBorder),
           ),
           child: Text(
             'Pot: ${_formatChips(pot)}',
             style: TextStyle(
-              color: Colors.amber,
+              color: pt.potText,
               fontSize: (14 * scale).clamp(11.0, 16.0),
               fontWeight: FontWeight.bold,
             ),
@@ -64,7 +67,7 @@ class PotDisplay extends StatelessWidget {
                     child: Text(
                       'Side ${i + 1}: ${_formatChips(sidePots[i].amount)}',
                       style: TextStyle(
-                        color: Colors.amber,
+                        color: pt.potText,
                         fontSize: (10 * scale).clamp(8.0, 11.0),
                       ),
                     ),

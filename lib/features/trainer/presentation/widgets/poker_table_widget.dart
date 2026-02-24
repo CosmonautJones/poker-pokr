@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/player_seat.dart';
@@ -17,6 +18,8 @@ class PokerTableWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -56,16 +59,13 @@ class PokerTableWidget extends StatelessWidget {
                 width: tableWidth,
                 height: tableHeight,
                 decoration: BoxDecoration(
-                  gradient: const RadialGradient(
-                    colors: [
-                      Color(0xFF1B5E20),
-                      Color(0xFF0D3B12),
-                    ],
+                  gradient: RadialGradient(
+                    colors: [pt.feltCenter, pt.feltEdge],
                     radius: 1.0,
                   ),
                   borderRadius: BorderRadius.circular(tableHeight / 2),
                   border: Border.all(
-                    color: const Color(0xFF5D4037),
+                    color: pt.tableBorder,
                     width: (6 * scale).clamp(3.0, 6.0),
                   ),
                   boxShadow: const [
@@ -86,14 +86,14 @@ class PokerTableWidget extends StatelessWidget {
                 width: 80,
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.black38,
+                  color: pt.surfaceOverlay,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _streetLabel(gameState.street),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: pt.textMuted,
                     fontSize: (11 * scale).clamp(9.0, 12.0),
                     fontWeight: FontWeight.w600,
                   ),

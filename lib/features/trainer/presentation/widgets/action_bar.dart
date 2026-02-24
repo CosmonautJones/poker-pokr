@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 
@@ -70,6 +71,7 @@ class _ActionBarState extends State<ActionBar> {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final legal = widget.legalActions;
     final playerIdx = widget.currentPlayerIndex;
 
@@ -88,14 +90,14 @@ class _ActionBarState extends State<ActionBar> {
     final compact = buttonCount > 3;
     final hPad = compact ? 2.0 : 4.0;
     final fontSize = compact ? 12.0 : 14.0;
-    final btnHeight = compact ? 40.0 : 44.0;
+    const btnHeight = 48.0;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade800),
+          top: BorderSide(color: pt.borderSubtle),
         ),
       ),
       child: SafeArea(
@@ -115,7 +117,7 @@ class _ActionBarState extends State<ActionBar> {
                       ));
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red.shade800,
+                      backgroundColor: pt.actionFold,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -137,7 +139,7 @@ class _ActionBarState extends State<ActionBar> {
                       ));
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.blueGrey.shade700,
+                      backgroundColor: pt.actionCheck,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -160,7 +162,7 @@ class _ActionBarState extends State<ActionBar> {
                       ));
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green.shade800,
+                      backgroundColor: pt.actionCall,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -180,7 +182,7 @@ class _ActionBarState extends State<ActionBar> {
                   child: FilledButton(
                     onPressed: () => _openBetSlider(isRaise: false),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.amber.shade800,
+                      backgroundColor: pt.actionBet,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -197,7 +199,7 @@ class _ActionBarState extends State<ActionBar> {
                   child: FilledButton(
                     onPressed: () => _openBetSlider(isRaise: true),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.amber.shade800,
+                      backgroundColor: pt.actionBet,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -220,7 +222,7 @@ class _ActionBarState extends State<ActionBar> {
                       ));
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.deepOrange.shade800,
+                      backgroundColor: pt.actionAllIn,
                       minimumSize: Size(0, btnHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       textStyle: TextStyle(fontSize: fontSize),
@@ -241,6 +243,7 @@ class _ActionBarState extends State<ActionBar> {
   }
 
   Widget _buildBetSlider(BuildContext context) {
+    final pt = context.poker;
     final pot = widget.currentPot;
     // Preset amounts.
     final presets = <(String, double)>[
@@ -255,7 +258,7 @@ class _ActionBarState extends State<ActionBar> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade800),
+          top: BorderSide(color: pt.borderSubtle),
         ),
       ),
       child: SafeArea(
@@ -268,10 +271,10 @@ class _ActionBarState extends State<ActionBar> {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 '${_isRaise ? "Raise to" : "Bet"}: ${_formatChips(_betAmount)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.amber,
+                  color: pt.accent,
                 ),
               ),
             ),
@@ -281,7 +284,7 @@ class _ActionBarState extends State<ActionBar> {
                 Text(
                   _formatChips(_minBet),
                   style: TextStyle(
-                    color: Colors.grey.shade400,
+                    color: pt.textMuted,
                     fontSize: 10,
                   ),
                 ),
@@ -305,7 +308,7 @@ class _ActionBarState extends State<ActionBar> {
                 Text(
                   _formatChips(_maxBet),
                   style: TextStyle(
-                    color: Colors.grey.shade400,
+                    color: pt.textMuted,
                     fontSize: 10,
                   ),
                 ),
@@ -328,7 +331,7 @@ class _ActionBarState extends State<ActionBar> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 0),
-                            minimumSize: const Size(0, 32),
+                            minimumSize: const Size(0, 36),
                             textStyle: const TextStyle(fontSize: 11),
                           ),
                           child: Text(label),
@@ -348,9 +351,9 @@ class _ActionBarState extends State<ActionBar> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 0),
-                        minimumSize: const Size(0, 32),
+                        minimumSize: const Size(0, 36),
                         textStyle: const TextStyle(fontSize: 11),
-                        side: BorderSide(color: Colors.deepOrange.shade400),
+                        side: BorderSide(color: pt.actionAllIn),
                       ),
                       child: const Text('Max'),
                     ),
@@ -368,7 +371,7 @@ class _ActionBarState extends State<ActionBar> {
                     child: OutlinedButton(
                       onPressed: _closeBetSlider,
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 40),
+                        minimumSize: const Size(0, 44),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -381,8 +384,8 @@ class _ActionBarState extends State<ActionBar> {
                     child: FilledButton(
                       onPressed: _confirmBet,
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.amber.shade800,
-                        minimumSize: const Size(0, 40),
+                        backgroundColor: pt.actionBet,
+                        minimumSize: const Size(0, 44),
                       ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
