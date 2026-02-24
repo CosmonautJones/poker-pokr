@@ -77,8 +77,21 @@ class _ActionBarState extends State<ActionBar> {
       return _buildBetSlider(context);
     }
 
+    // Count visible buttons to adjust sizing.
+    int buttonCount = 0;
+    if (legal.canFold) buttonCount++;
+    if (legal.canCheck) buttonCount++;
+    if (legal.callAmount != null) buttonCount++;
+    if (legal.betRange != null) buttonCount++;
+    if (legal.raiseRange != null) buttonCount++;
+    if (legal.canAllIn) buttonCount++;
+    final compact = buttonCount > 3;
+    final hPad = compact ? 2.0 : 4.0;
+    final fontSize = compact ? 12.0 : 14.0;
+    final btnHeight = compact ? 40.0 : 44.0;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -93,7 +106,7 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.canFold)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () {
                       widget.onAction(PokerAction(
@@ -103,7 +116,9 @@ class _ActionBarState extends State<ActionBar> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.red.shade800,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
                     child: const Text('Fold'),
                   ),
@@ -113,7 +128,7 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.canCheck)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () {
                       widget.onAction(PokerAction(
@@ -123,7 +138,9 @@ class _ActionBarState extends State<ActionBar> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.blueGrey.shade700,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
                     child: const Text('Check'),
                   ),
@@ -133,7 +150,7 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.callAmount != null)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () {
                       widget.onAction(PokerAction(
@@ -144,9 +161,14 @@ class _ActionBarState extends State<ActionBar> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.green.shade800,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
-                    child: Text('Call ${_formatChips(legal.callAmount!)}'),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Call ${_formatChips(legal.callAmount!)}'),
+                    ),
                   ),
                 ),
               ),
@@ -154,12 +176,14 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.betRange != null)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () => _openBetSlider(isRaise: false),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.amber.shade800,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
                     child: const Text('Bet'),
                   ),
@@ -169,12 +193,14 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.raiseRange != null)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () => _openBetSlider(isRaise: true),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.amber.shade800,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
                     child: const Text('Raise'),
                   ),
@@ -184,7 +210,7 @@ class _ActionBarState extends State<ActionBar> {
             if (legal.canAllIn)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: FilledButton(
                     onPressed: () {
                       widget.onAction(PokerAction(
@@ -195,10 +221,16 @@ class _ActionBarState extends State<ActionBar> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.deepOrange.shade800,
-                      minimumSize: const Size(0, 44),
+                      minimumSize: Size(0, btnHeight),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      textStyle: TextStyle(fontSize: fontSize),
                     ),
-                    child: Text(
-                        'All-In ${_formatChips(legal.allInAmount ?? 0)}'),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(compact
+                          ? 'All-In'
+                          : 'All-In ${_formatChips(legal.allInAmount ?? 0)}'),
+                    ),
                   ),
                 ),
               ),
@@ -250,7 +282,7 @@ class _ActionBarState extends State<ActionBar> {
                   _formatChips(_minBet),
                   style: TextStyle(
                     color: Colors.grey.shade400,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                 ),
                 Expanded(
@@ -265,7 +297,6 @@ class _ActionBarState extends State<ActionBar> {
                         : 1,
                     onChanged: (v) {
                       setState(() {
-                        // Round to reasonable increments.
                         _betAmount = _roundBet(v);
                       });
                     },
@@ -275,7 +306,7 @@ class _ActionBarState extends State<ActionBar> {
                   _formatChips(_maxBet),
                   style: TextStyle(
                     color: Colors.grey.shade400,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -353,8 +384,11 @@ class _ActionBarState extends State<ActionBar> {
                         backgroundColor: Colors.amber.shade800,
                         minimumSize: const Size(0, 40),
                       ),
-                      child: Text(
-                        '${_isRaise ? "Raise to" : "Bet"} ${_formatChips(_betAmount)}',
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${_isRaise ? "Raise to" : "Bet"} ${_formatChips(_betAmount)}',
+                        ),
                       ),
                     ),
                   ),

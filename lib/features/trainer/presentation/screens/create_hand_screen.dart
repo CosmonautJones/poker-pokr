@@ -137,7 +137,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           children: [
             // -- Player Count --
             Text(
@@ -168,7 +168,12 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _sbController,
-                    decoration: const InputDecoration(labelText: 'Small Blind'),
+                    decoration: const InputDecoration(
+                      labelText: 'SB',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
@@ -183,11 +188,16 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: _bbController,
-                    decoration: const InputDecoration(labelText: 'Big Blind'),
+                    decoration: const InputDecoration(
+                      labelText: 'BB',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
@@ -202,11 +212,16 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: _anteController,
-                    decoration: const InputDecoration(labelText: 'Ante'),
+                    decoration: const InputDecoration(
+                      labelText: 'Ante',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
@@ -266,7 +281,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                         children: [
                           // Seat number
                           SizedBox(
-                            width: 28,
+                            width: 22,
                             child: Text(
                               '${i + 1}',
                               style: TextStyle(
@@ -352,7 +367,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                       ),
                       // Row 2: Hole cards
                       Padding(
-                        padding: const EdgeInsets.only(left: 28, top: 6),
+                        padding: const EdgeInsets.only(left: 22, top: 6),
                         child: HoleCardSelector(
                           playerIndex: i,
                           holeCards: setup.holeCards != null &&

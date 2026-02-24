@@ -5,11 +5,13 @@ import 'package:poker_trainer/poker/models/pot.dart';
 class PotDisplay extends StatelessWidget {
   final double pot;
   final List<SidePot> sidePots;
+  final double scale;
 
   const PotDisplay({
     super.key,
     required this.pot,
     this.sidePots = const [],
+    this.scale = 1.0,
   });
 
   String _formatChips(double amount) {
@@ -25,7 +27,10 @@ class PotDisplay extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: (12 * scale).clamp(8.0, 16.0),
+            vertical: (5 * scale).clamp(3.0, 6.0),
+          ),
           decoration: BoxDecoration(
             color: Colors.black54,
             borderRadius: BorderRadius.circular(16),
@@ -33,32 +38,34 @@ class PotDisplay extends StatelessWidget {
           ),
           child: Text(
             'Pot: ${_formatChips(pot)}',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.amber,
-              fontSize: 16,
+              fontSize: (14 * scale).clamp(11.0, 16.0),
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         if (sidePots.isNotEmpty && sidePots.length > 1)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: EdgeInsets.only(top: 3 * scale),
             child: Wrap(
-              spacing: 6,
+              spacing: 4 * scale,
               children: [
                 for (int i = 0; i < sidePots.length; i++)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6 * scale,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black38,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Side ${i + 1}: ${_formatChips(sidePots[i].amount)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.amber,
-                        fontSize: 11,
+                        fontSize: (10 * scale).clamp(8.0, 11.0),
                       ),
                     ),
                   ),

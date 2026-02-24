@@ -24,7 +24,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   HandSetup? _setup;
   bool _isLoading = true;
   String? _error;
-  bool _historyExpanded = false;
+  // _historyExpanded removed: history is now a bottom sheet.
 
   /// Whether this is a new hand (handId == 0) or a saved hand.
   bool get _isNewHand => widget.handId == 0;
@@ -109,6 +109,39 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     } catch (_) {
       // Branch loading is best-effort; don't block the UI.
     }
+  }
+
+  void _showHistorySheet(BuildContext context, HandSetup setup) {
+    final replayState = ref.read(handReplayProvider(setup));
+    final notifier = ref.read(handReplayProvider(setup).notifier);
+    final gs = replayState.gameState;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey.shade900,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
+      ),
+      builder: (_) => _ActionHistoryPanel(
+        actions: replayState.actionHistory,
+        playerNames: gs.players.map((p) => p.name).toList(),
+        branches: replayState.branches,
+        activeBranchIndex: replayState.activeBranchIndex,
+        onClose: () => Navigator.of(context).pop(),
+        onForkAtAction: (index) {
+          notifier.forkAtAction(index);
+          Navigator.of(context).pop();
+        },
+        onSwitchBranch: (index) {
+          notifier.switchToBranch(index);
+          Navigator.of(context).pop();
+        },
+      ),
+    );
   }
 
   Future<void> _saveHand() async {
@@ -280,11 +313,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           // History log
           IconButton(
             icon: const Icon(Icons.history),
-            onPressed: () {
-              setState(() {
-                _historyExpanded = !_historyExpanded;
-              });
-            },
+            onPressed: () => _showHistorySheet(context, setup),
             tooltip: 'Action History',
           ),
         ],
@@ -318,7 +347,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                               'Hand Complete',
                               style: TextStyle(
                                 color: Colors.amber,
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -356,26 +385,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                       ),
                     ),
                   ),
-                // Action history panel
-                if (_historyExpanded)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: _ActionHistoryPanel(
-                      actions: replayState.actionHistory,
-                      playerNames:
-                          gs.players.map((p) => p.name).toList(),
-                      branches: replayState.branches,
-                      activeBranchIndex: replayState.activeBranchIndex,
-                      onClose: () =>
-                          setState(() => _historyExpanded = false),
-                      onForkAtAction: (index) =>
-                          notifier.forkAtAction(index),
-                      onSwitchBranch: (index) =>
-                          notifier.switchToBranch(index),
-                    ),
-                  ),
+                // Action history is now shown via bottom sheet.
               ],
             ),
           ),
@@ -458,178 +468,176 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
   @override
   Widget build(BuildContext context) {
     final hasBranches = widget.branches.length > 1;
-    // Determine the fork point for the active branch (used for highlighting).
     final activeBranch = widget.branches[widget.activeBranchIndex];
     final forkAt = activeBranch.forkAtActionIndex as int;
 
-    return Container(
-      width: 240,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900.withValues(alpha: 0.95),
-        border: Border(
-          left: BorderSide(color: Colors.grey.shade700),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Action History',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: widget.onClose,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+    return Column(
+      children: [
+        // Drag handle
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade600,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Branch switcher (only when branches exist)
-          if (hasBranches)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(widget.branches.length, (i) {
-                    final branch = widget.branches[i];
-                    final isActive = i == widget.activeBranchIndex;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: ChoiceChip(
-                        label: Text(
-                          branch.label as String,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        selected: isActive,
-                        onSelected: (_) => widget.onSwitchBranch(i),
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      ),
-                    );
-                  }),
+        ),
+        // Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Action History',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
-            ),
-          if (hasBranches) const Divider(height: 1),
-          const Divider(height: 1),
-          // Action list
-          Expanded(
-            child: widget.actions.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No actions yet',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: widget.onClose,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+        // Branch switcher
+        if (hasBranches)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(widget.branches.length, (i) {
+                  final branch = widget.branches[i];
+                  final isActive = i == widget.activeBranchIndex;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: ChoiceChip(
+                      label: Text(
+                        branch.label as String,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      selected: isActive,
+                      onSelected: (_) => widget.onSwitchBranch(i),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: widget.actions.length,
-                    itemBuilder: (context, index) {
-                      final action = widget.actions[index];
-                      final isSelected = _selectedActionIndex == index;
-                      final isDivergencePoint =
-                          hasBranches && index == forkAt && forkAt > 0;
+                  );
+                }),
+              ),
+            ),
+          ),
+        const Divider(height: 1),
+        // Action list
+        Expanded(
+          child: widget.actions.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No actions yet',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: widget.actions.length,
+                  itemBuilder: (context, index) {
+                    final action = widget.actions[index];
+                    final isSelected = _selectedActionIndex == index;
+                    final isDivergencePoint =
+                        hasBranches && index == forkAt && forkAt > 0;
 
-                      return Column(
-                        children: [
-                          if (isDivergencePoint)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 2),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.call_split,
-                                      size: 12,
-                                      color: Colors.amber.shade400),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Branch point',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.amber.shade400,
-                                      fontStyle: FontStyle.italic,
-                                    ),
+                    return Column(
+                      children: [
+                        if (isDivergencePoint)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 2),
+                            child: Row(
+                              children: [
+                                Icon(Icons.call_split,
+                                    size: 12,
+                                    color: Colors.amber.shade400),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Branch point',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.amber.shade400,
+                                    fontStyle: FontStyle.italic,
                                   ),
-                                ],
-                              ),
-                            ),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedActionIndex =
-                                    isSelected ? null : index;
-                              });
-                            },
-                            child: Container(
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : null,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 3),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      _actionLabel(action),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _actionColor(action.type),
-                                      ),
-                                    ),
-                                  ),
-                                  // Fork button (visible when action is selected)
-                                  if (isSelected)
-                                    GestureDetector(
-                                      onTap: () {
-                                        // Fork after this action: keep actions
-                                        // 0..index (index+1 states).
-                                        widget.onForkAtAction(index + 1);
-                                        setState(
-                                            () => _selectedActionIndex = null);
-                                      },
-                                      child: Tooltip(
-                                        message:
-                                            'Fork here — try a different line',
-                                        child: Icon(
-                                          Icons.call_split,
-                                          size: 16,
-                                          color: Colors.amber.shade300,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedActionIndex =
+                                  isSelected ? null : index;
+                            });
+                          },
+                          child: Container(
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : null,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 6),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    _actionLabel(action),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: _actionColor(action.type),
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  GestureDetector(
+                                    onTap: () {
+                                      widget.onForkAtAction(index + 1);
+                                      setState(
+                                          () => _selectedActionIndex = null);
+                                    },
+                                    child: Tooltip(
+                                      message:
+                                          'Fork here \u2014 try a different line',
+                                      child: Icon(
+                                        Icons.call_split,
+                                        size: 18,
+                                        color: Colors.amber.shade300,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
