@@ -755,8 +755,12 @@ void main() {
 
       expect(state.isHandComplete, true);
       expect(state.communityCards.length, 5);
-      // Both players should be in the winner candidates (showdown)
-      expect(state.winnerIndices, containsAll([0, 1]));
+      // Hand evaluator determines the actual winner(s) at showdown.
+      expect(state.winnerIndices, isNotNull);
+      expect(state.winnerIndices!.length, greaterThanOrEqualTo(1));
+      // Both players should have hand descriptions since this went to showdown.
+      expect(state.handDescriptions, isNotEmpty);
+      expect(state.handDescriptions.length, 2); // both players evaluated
     });
 
     test('action history records all actions', () {

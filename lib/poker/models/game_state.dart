@@ -29,6 +29,14 @@ class GameState {
   final List<int>? winnerIndices;
   final int playersActedThisStreet;
 
+  /// Index into [actionHistory] where the current street's actions begin.
+  /// Preflop starts at 0. Updated when streets advance.
+  final int streetStartActionIndex;
+
+  /// Per-player hand description at showdown (e.g. {0: "Pair of Kings"}).
+  /// Only populated when the hand reaches showdown (not when won by fold).
+  final Map<int, String> handDescriptions;
+
   const GameState({
     required this.players,
     this.communityCards = const [],
@@ -48,6 +56,8 @@ class GameState {
     this.isHandComplete = false,
     this.winnerIndices,
     this.playersActedThisStreet = 0,
+    this.streetStartActionIndex = 0,
+    this.handDescriptions = const {},
   });
 
   /// All players who have not folded (still eligible for pots).
@@ -83,6 +93,8 @@ class GameState {
     bool? isHandComplete,
     List<int>? Function()? winnerIndices,
     int? playersActedThisStreet,
+    int? streetStartActionIndex,
+    Map<int, String>? handDescriptions,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -107,6 +119,9 @@ class GameState {
           winnerIndices != null ? winnerIndices() : this.winnerIndices,
       playersActedThisStreet:
           playersActedThisStreet ?? this.playersActedThisStreet,
+      streetStartActionIndex:
+          streetStartActionIndex ?? this.streetStartActionIndex,
+      handDescriptions: handDescriptions ?? this.handDescriptions,
     );
   }
 
