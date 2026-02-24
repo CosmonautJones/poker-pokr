@@ -8,6 +8,7 @@ import '../models/card.dart';
 import '../models/game_state.dart';
 import '../models/player.dart';
 import '../models/street.dart';
+import 'hand_evaluator.dart';
 import 'legal_actions.dart';
 import 'pot_calculator.dart';
 import 'street_progression.dart';
@@ -387,13 +388,65 @@ class GameEngine {
     return _completeHand(current, inHand.map((p) => p.index).toList());
   }
 
-  /// Mark the hand as complete and compute side pots.
-  static GameState _completeHand(GameState state, List<int> winnerIndices) {
+  /// Mark the hand as complete, compute side pots, and evaluate hands.
+  ///
+  /// [candidateWinners] are the non-folded player indices. If only one player
+  /// remains (everyone else folded), they win without hand evaluation.
+  /// If multiple players reach showdown, the hand evaluator determines winners.
+  static GameState _completeHand(
+      GameState state, List<int> candidateWinners) {
     final sidePots = PotCalculator.calculateSidePots(state.players);
+
+    // Single player remaining (won by fold) — no hand evaluation needed.
+    if (candidateWinners.length <= 1) {
+      return state.copyWith(
+        isHandComplete: true,
+        winnerIndices: () => candidateWinners,
+        sidePots: sidePots,
+      );
+    }
+
+    // Multiple players at showdown — evaluate hands.
+    final community = state.communityCards;
+    final handDescriptions = <int, String>{};
+
+    // Evaluate each non-folded player's hand.
+    for (final idx in candidateWinners) {
+      final player = state.players[idx];
+      if (player.holeCards.length >= 2 && community.length >= 3) {
+        final evaluated =
+            HandEvaluator.evaluateBestHand(player.holeCards, community);
+        handDescriptions[idx] = evaluated.description;
+      }
+    }
+
+    // Determine winners per side pot and collect overall winners.
+    final overallWinners = <int>{};
+    for (final pot in sidePots) {
+      final potWinners = HandEvaluator.determineWinners(
+        state.players,
+        community,
+        pot.eligiblePlayerIndices,
+      );
+      overallWinners.addAll(potWinners);
+    }
+
+    // Fallback: if no side pots (shouldn't happen, but safety), use all
+    // candidate winners evaluated directly.
+    if (overallWinners.isEmpty) {
+      final winners = HandEvaluator.determineWinners(
+        state.players,
+        community,
+        candidateWinners,
+      );
+      overallWinners.addAll(winners);
+    }
+
     return state.copyWith(
       isHandComplete: true,
-      winnerIndices: () => winnerIndices,
+      winnerIndices: () => overallWinners.toList(),
       sidePots: sidePots,
+      handDescriptions: handDescriptions,
     );
   }
 

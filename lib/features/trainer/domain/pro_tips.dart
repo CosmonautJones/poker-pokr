@@ -53,6 +53,8 @@ class ProTipEngine {
     _multiWayPotTip,
     _lastToActTip,
     _firstToActTip,
+    _mediumSprTip,
+    _checkedToYouTip,
   ];
 
   static ProTip? _facingBetWithPotOdds(EducationalContext ctx) {
@@ -187,6 +189,34 @@ class ProTipEngine {
       body:
           'Several players yet to act. '
           'Consider the likelihood of a raise behind you before opening light.',
+      category: 'Situation',
+    );
+  }
+
+  static ProTip? _mediumSprTip(EducationalContext ctx) {
+    if (ctx.stackToPotRatio < 4 || ctx.stackToPotRatio > 13) return null;
+    if (ctx.potOdds != null) return null; // Pot odds tip takes priority
+    if (ctx.stackToPotRatio >= 7 && ctx.stackToPotRatio <= 10) {
+      return const ProTip(
+        title: 'Medium SPR — balanced play',
+        body:
+            'With SPR 7-10, both made hands and draws have value. '
+            'Consider your hand strength and draws before committing.',
+        category: 'SPR',
+      );
+    }
+    return null;
+  }
+
+  static ProTip? _checkedToYouTip(EducationalContext ctx) {
+    if (ctx.potOdds != null) return null; // Facing a bet
+    if (ctx.playersYetToAct != 0) return null; // Not last to act
+    if (ctx.playersInHand < 3) return null; // Already covered by heads-up
+    return const ProTip(
+      title: 'Checked around to you',
+      body:
+          'Everyone has shown weakness by checking. '
+          'This is a prime spot for a bet — even with marginal hands, you may take it down.',
       category: 'Situation',
     );
   }

@@ -95,6 +95,7 @@ class StreetProgression {
       lastAggressorIndex: () => null,
       currentPlayerIndex: nextPlayer,
       playersActedThisStreet: 0,
+      streetStartActionIndex: state.actionHistory.length,
       isHandComplete: isComplete,
     );
   }

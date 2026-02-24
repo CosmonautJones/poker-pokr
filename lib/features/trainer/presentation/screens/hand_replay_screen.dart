@@ -361,7 +361,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                               ),
                             ),
                             if (gs.winnerIndices != null &&
-                                gs.winnerIndices!.isNotEmpty)
+                                gs.winnerIndices!.isNotEmpty) ...[
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
@@ -373,6 +373,27 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                                   ),
                                 ),
                               ),
+                              // Show winning hand description(s).
+                              if (gs.handDescriptions.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    gs.winnerIndices!
+                                        .where((i) =>
+                                            gs.handDescriptions
+                                                .containsKey(i))
+                                        .map((i) =>
+                                            gs.handDescriptions[i]!)
+                                        .toSet()
+                                        .join(' / '),
+                                    style: TextStyle(
+                                      color: Colors.amber.shade200,
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                            ],
                             const SizedBox(height: 8),
                             Row(
                               mainAxisSize: MainAxisSize.min,

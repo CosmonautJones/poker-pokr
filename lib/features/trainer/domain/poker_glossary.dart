@@ -106,7 +106,44 @@ class PokerGlossary {
       category: categoryPositions,
     ),
 
-    // Betting
+    // Betting — basic actions
+    GlossaryEntry(
+      term: 'Fold',
+      abbreviation: 'Fold',
+      definition:
+          'Surrender your hand and forfeit any chips already in the pot. You cannot win the hand after folding.',
+      category: categoryBetting,
+    ),
+    GlossaryEntry(
+      term: 'Check',
+      abbreviation: 'Check',
+      definition:
+          'Pass the action without betting when no bet is facing you. You stay in the hand at no additional cost.',
+      category: categoryBetting,
+    ),
+    GlossaryEntry(
+      term: 'Bet',
+      abbreviation: 'Bet',
+      definition:
+          'Place the first wager on a street when no one has bet yet. Minimum bet is one big blind.',
+      category: categoryBetting,
+    ),
+    GlossaryEntry(
+      term: 'Call',
+      abbreviation: 'Call',
+      definition:
+          'Match the current bet to stay in the hand. Does not increase the bet amount.',
+      category: categoryBetting,
+    ),
+    GlossaryEntry(
+      term: 'Raise',
+      abbreviation: 'Raise',
+      definition:
+          'Increase the current bet. The minimum raise size equals the previous raise amount. Other players must respond to the new bet.',
+      category: categoryBetting,
+    ),
+
+    // Betting — advanced
     GlossaryEntry(
       term: 'Pot Odds',
       abbreviation: 'Pot Odds',

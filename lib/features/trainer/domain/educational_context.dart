@@ -416,29 +416,17 @@ class EducationalContextCalculator {
   static StreetSummary _buildStreetSummary(GameState previousState) {
     final completedStreet = _streetDisplayName(previousState.street);
 
-    // Count action types from the completed street.
-    // The previous state's actions include all actions up to the street end.
-    // We need to filter to just the completed street's actions.
-    final actions = previousState.actionHistory;
+    // Use streetStartActionIndex to extract only this street's actions.
+    final allActions = previousState.actionHistory;
+    final startIdx = previousState.streetStartActionIndex;
+    final streetActions = startIdx < allActions.length
+        ? allActions.sublist(startIdx)
+        : allActions;
+
     int raises = 0;
     int calls = 0;
     int folds = 0;
     int checks = 0;
-
-    // Walk backwards from the end of actions to find actions on the
-    // completed street. Since we don't track street boundaries directly,
-    // we count all actions (this is a summary of the whole street).
-    // A more precise approach: count actions that occurred during the
-    // completed street. Since previousState.street IS the completed street,
-    // and all its actions are in actionHistory, we can scan from the end.
-    // For simplicity, count ALL actions in the previous state since the
-    // street summary shows at the transition point.
-    //
-    // Actually, we need to only count actions from the just-completed street.
-    // We can do this by finding where the previous street started.
-    // For preflop, that's index 0. For later streets, it's after the last
-    // street change.
-    final streetActions = _actionsForStreet(actions, previousState.street);
 
     for (final a in streetActions) {
       switch (a.type) {
@@ -470,41 +458,6 @@ class EducationalContextCalculator {
       completedStreet: completedStreet,
       summary: summary,
     );
-  }
-
-  /// Extract only the actions that belong to a given street.
-  ///
-  /// Since game state doesn't track street boundaries, we replay the action
-  /// sequence and infer boundaries from the street enum.  However, this
-  /// requires replaying the engine which we want to avoid.
-  ///
-  /// Simpler heuristic: the actions on `street` are the trailing actions in
-  /// [allActions] that were played during that street.  Since we're called
-  /// from _buildStreetSummary which receives the previousState (whose street
-  /// matches [street]), we can approximate by taking the actions that happened
-  /// after the previous street ended. For the very first street (preflop),
-  /// all actions belong.
-  ///
-  /// Best approach available without engine replay: since [previousState]
-  /// captures the state at end of the completed street, and the street's
-  /// actions = previousState.actionHistory minus actions from earlier streets,
-  /// we use `playersActedThisStreet` as a hint - but it resets on raises.
-  ///
-  /// Pragmatic: just count all actions in the list - on preflop this is exact,
-  /// and on later streets the caller should provide just the new actions.
-  /// For now, return all actions (the summary will be approximate but useful).
-  static List<PokerAction> _actionsForStreet(
-      List<PokerAction> allActions, Street street) {
-    // For preflop, all actions belong to this street.
-    if (street == Street.preflop) return allActions;
-
-    // For later streets, we can't precisely know where the street began
-    // without replaying the engine. However, we can use a heuristic:
-    // look for a "reset" point where the action pattern suggests a new
-    // street (first action after all bets reset to 0).
-    // Simpler: return all actions. The summary counts are still useful
-    // as an overall picture.
-    return allActions;
   }
 
   // -------------------------------------------------------------------------
