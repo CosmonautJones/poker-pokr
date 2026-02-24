@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/features/trainer/domain/branch_info.dart';
+import 'package:poker_trainer/features/trainer/domain/educational_context.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/poker/engine/game_engine.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
@@ -14,6 +16,9 @@ class HandReplayState {
   final bool canRedo;
   final bool isComplete;
   final List<PokerAction> actionHistory;
+  final int activeBranchIndex;
+  final List<BranchInfo> branches;
+  final EducationalContext educationalContext;
 
   const HandReplayState({
     required this.gameState,
@@ -22,14 +27,23 @@ class HandReplayState {
     required this.canRedo,
     required this.isComplete,
     required this.actionHistory,
+    this.activeBranchIndex = 0,
+    this.branches = const [],
+    required this.educationalContext,
   });
 }
 
-/// Manages an in-progress hand replay with undo/redo support.
+/// Manages an in-progress hand replay with undo/redo and branching support.
 ///
 /// Created via [handReplayProvider] with a [HandSetup] argument.
-class HandReplayNotifier extends AutoDisposeFamilyNotifier<HandReplayState, HandSetup> {
-  late StateHistory<GameState> _history;
+class HandReplayNotifier
+    extends AutoDisposeFamilyNotifier<HandReplayState, HandSetup> {
+  final List<StateHistory<GameState>> _branches = [];
+  final List<BranchInfo> _branchInfos = [];
+  int _activeBranchIndex = 0;
+
+  /// The active branch's history.
+  StateHistory<GameState> get _history => _branches[_activeBranchIndex];
 
   @override
   HandReplayState build(HandSetup arg) {
@@ -42,11 +56,18 @@ class HandReplayNotifier extends AutoDisposeFamilyNotifier<HandReplayState, Hand
       names: arg.playerNames,
       stacks: arg.stacks,
     );
-    _history = StateHistory<GameState>(initialState);
+    _branches.clear();
+    _branchInfos.clear();
+    _branches.add(StateHistory<GameState>(initialState));
+    _branchInfos.add(const BranchInfo(label: 'Line A', forkAtActionIndex: 0));
+    _activeBranchIndex = 0;
     return _buildState(initialState);
   }
 
   HandReplayState _buildState(GameState gs) {
+    final previousGs = _history.currentIndex > 0
+        ? _history.states[_history.currentIndex - 1]
+        : null;
     return HandReplayState(
       gameState: gs,
       legalActions: gs.isHandComplete
@@ -56,6 +77,13 @@ class HandReplayNotifier extends AutoDisposeFamilyNotifier<HandReplayState, Hand
       canRedo: _history.canRedo,
       isComplete: gs.isHandComplete,
       actionHistory: gs.actionHistory,
+      activeBranchIndex: _activeBranchIndex,
+      branches: List.unmodifiable(_branchInfos),
+      educationalContext: EducationalContextCalculator.compute(
+        state: gs,
+        previousState: previousGs,
+        bigBlind: gs.bigBlind,
+      ),
     );
   }
 
@@ -78,8 +106,74 @@ class HandReplayNotifier extends AutoDisposeFamilyNotifier<HandReplayState, Hand
     if (next != null) state = _buildState(next);
   }
 
-  /// Returns all game states in the history (for saving).
+  /// Fork the current branch at [actionIndex], creating a new branch.
+  ///
+  /// [actionIndex] is the number of actions to keep (0-based). For example,
+  /// forkAtAction(3) keeps the first 3 actions and lets the user choose a
+  /// different action as the 4th.
+  void forkAtAction(int actionIndex) {
+    // states[0] = initial, states[N] = after N actions.
+    // forkAt(actionIndex) gives states[0..actionIndex].
+    final forked = _branches[_activeBranchIndex].forkAt(actionIndex);
+    final label = _branchLabel(_branchInfos.length);
+    _branches.add(forked);
+    _branchInfos
+        .add(BranchInfo(label: label, forkAtActionIndex: actionIndex));
+    _activeBranchIndex = _branches.length - 1;
+    state = _buildState(forked.current);
+  }
+
+  /// Switch to a different branch by index.
+  void switchToBranch(int index) {
+    if (index < 0 || index >= _branches.length) return;
+    _activeBranchIndex = index;
+    state = _buildState(_history.current);
+  }
+
+  /// Load a saved branch by forking the original line at [forkAtActionIndex]
+  /// and replaying [actions] on top.
+  void loadBranch({
+    required int forkAtActionIndex,
+    required List<PokerAction> actions,
+    int? dbHandId,
+  }) {
+    final forked = _branches[0].forkAt(forkAtActionIndex);
+    for (final action in actions) {
+      final newState = GameEngine.applyAction(forked.current, action);
+      forked.push(newState);
+    }
+    final label = _branchLabel(_branchInfos.length);
+    _branches.add(forked);
+    _branchInfos.add(BranchInfo(
+      label: label,
+      dbHandId: dbHandId,
+      forkAtActionIndex: forkAtActionIndex,
+    ));
+  }
+
+  /// Returns all game states in the active branch's history (for saving).
   List<GameState> get allStates => _history.states;
+
+  /// Returns branch data for all branches — used when saving.
+  ///
+  /// Each entry is `(BranchInfo, List<GameState>)` where the states include
+  /// the initial state plus one state per action.
+  List<(BranchInfo, List<GameState>)> get allBranches {
+    return List.generate(_branches.length, (i) {
+      return (_branchInfos[i], _branches[i].states);
+    });
+  }
+
+  /// Number of branches.
+  int get branchCount => _branches.length;
+
+  static String _branchLabel(int index) {
+    // Line A, Line B, ..., Line Z, Line AA, ...
+    if (index < 26) {
+      return 'Line ${String.fromCharCode(65 + index)}';
+    }
+    return 'Line ${index + 1}';
+  }
 }
 
 final handReplayProvider = NotifierProvider.autoDispose

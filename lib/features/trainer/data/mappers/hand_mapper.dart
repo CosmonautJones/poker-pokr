@@ -65,11 +65,17 @@ class HandMapper {
   /// [states] should contain one more element than [actions] (the initial state
   /// plus one state after each action). The pot after each action comes from
   /// `states[i + 1].pot`.
+  /// Convert a list of [PokerAction] and corresponding [GameState] snapshots
+  /// to [HandActionsCompanion] records for database insertion.
+  ///
+  /// [startIndex] offsets the sequenceIndex values so branch actions continue
+  /// from the correct position (defaults to 0 for the original line).
   static List<HandActionsCompanion> actionsToCompanions(
     int handId,
     List<PokerAction> actions,
-    List<GameState> states,
-  ) {
+    List<GameState> states, {
+    int startIndex = 0,
+  }) {
     return List.generate(actions.length, (i) {
       final action = actions[i];
       // The state *after* this action is at index i + 1.
@@ -80,7 +86,7 @@ class HandMapper {
 
       return HandActionsCompanion.insert(
         handId: handId,
-        sequenceIndex: i,
+        sequenceIndex: startIndex + i,
         street: street.index,
         playerPosition: action.playerIndex,
         actionType: action.type.index,
@@ -91,10 +97,15 @@ class HandMapper {
   }
 
   /// Build a [HandsCompanion] that also captures the final community cards.
+  ///
+  /// If [parentHandId] and [branchAtActionIndex] are provided, the companion
+  /// represents a branch of an existing hand.
   static HandsCompanion gameStateToCompanion(
     HandSetup setup,
     GameState finalState, {
     String? title,
+    int? parentHandId,
+    int? branchAtActionIndex,
   }) {
     final configs = List.generate(setup.playerCount, (i) {
       return PlayerConfig(
@@ -115,6 +126,8 @@ class HandMapper {
       playerConfigs: configs,
       communityCards: communityCardValues,
       title: Value(title),
+      parentHandId: Value(parentHandId),
+      branchAtActionIndex: Value(branchAtActionIndex),
     );
   }
 }

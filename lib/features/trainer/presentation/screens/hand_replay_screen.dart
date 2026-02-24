@@ -5,6 +5,7 @@ import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/action_bar.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/context_strip.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
@@ -71,10 +72,11 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               try {
                 notifier.applyAction(action);
               } catch (e) {
-                // Stop replaying if an action is invalid.
                 break;
               }
             }
+            // Load saved branches.
+            _loadBranches();
           }
         });
       } catch (e) {
@@ -86,12 +88,34 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     }
   }
 
+  Future<void> _loadBranches() async {
+    if (_setup == null || _isNewHand) return;
+
+    try {
+      final dao = ref.read(handsDaoProvider);
+      final branches = await dao.getBranchesForHand(widget.handId);
+      if (branches.isEmpty) return;
+
+      final notifier = ref.read(handReplayProvider(_setup!).notifier);
+      for (final branch in branches) {
+        final branchActions = await dao.getActionsForHand(branch.id);
+        final actions = HandMapper.actionsFromDb(branchActions);
+        notifier.loadBranch(
+          forkAtActionIndex: branch.branchAtActionIndex ?? 0,
+          actions: actions,
+          dbHandId: branch.id,
+        );
+      }
+    } catch (_) {
+      // Branch loading is best-effort; don't block the UI.
+    }
+  }
+
   Future<void> _saveHand() async {
     if (_setup == null) return;
 
     final notifier = ref.read(handReplayProvider(_setup!).notifier);
-    final replayState = ref.read(handReplayProvider(_setup!));
-    final allStates = notifier.allStates;
+    final allBranches = notifier.allBranches;
 
     // Show a dialog to enter a title.
     final title = await showDialog<String>(
@@ -127,21 +151,49 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (title == null) return; // User cancelled.
 
     try {
+      final dao = ref.read(handsDaoProvider);
+
+      // Save the main line (branch 0).
+      final (mainInfo, mainStates) = allBranches[0];
+      final mainActions = mainStates.last.actionHistory;
       final companion = HandMapper.gameStateToCompanion(
         _setup!,
-        replayState.gameState,
+        mainStates.last,
         title: title.isEmpty ? null : title,
       );
       final actionCompanions = HandMapper.actionsToCompanions(
-        0, // Will be replaced by the DAO.
-        replayState.actionHistory,
-        allStates,
+        0,
+        mainActions,
+        mainStates,
       );
+      final parentId =
+          await dao.insertBranchWithActions(companion, actionCompanions);
 
-      await ref.read(handsDaoProvider).insertHandWithActions(
-            companion,
-            actionCompanions,
-          );
+      // Save additional branches.
+      for (var i = 1; i < allBranches.length; i++) {
+        final (branchInfo, branchStates) = allBranches[i];
+        final branchActions = branchStates.last.actionHistory;
+        // Branch actions only include those after the fork point.
+        final forkIdx = branchInfo.forkAtActionIndex;
+        final newActions = branchActions.sublist(forkIdx);
+        final newStates = branchStates.sublist(forkIdx);
+
+        final branchCompanion = HandMapper.gameStateToCompanion(
+          _setup!,
+          branchStates.last,
+          title: branchInfo.label,
+          parentHandId: parentId,
+          branchAtActionIndex: forkIdx,
+        );
+        final branchActionCompanions = HandMapper.actionsToCompanions(
+          0,
+          newActions,
+          newStates,
+          startIndex: forkIdx,
+        );
+        await dao.insertBranchWithActions(
+            branchCompanion, branchActionCompanions);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -192,11 +244,14 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     final replayState = ref.watch(handReplayProvider(setup));
     final notifier = ref.read(handReplayProvider(setup).notifier);
     final gs = replayState.gameState;
+    final hasBranches = replayState.branches.length > 1;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isNewHand ? 'New Hand' : 'Hand #${widget.handId}',
+          hasBranches
+              ? replayState.branches[replayState.activeBranchIndex].label
+              : (_isNewHand ? 'New Hand' : 'Hand #${widget.handId}'),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -215,8 +270,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
             onPressed: replayState.canRedo ? () => notifier.redo() : null,
             tooltip: 'Redo',
           ),
-          // Save (when hand is complete)
-          if (replayState.isComplete)
+          // Save (when hand is complete or has branches)
+          if (replayState.isComplete || hasBranches)
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: _saveHand,
@@ -311,13 +366,22 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                       actions: replayState.actionHistory,
                       playerNames:
                           gs.players.map((p) => p.name).toList(),
+                      branches: replayState.branches,
+                      activeBranchIndex: replayState.activeBranchIndex,
                       onClose: () =>
                           setState(() => _historyExpanded = false),
+                      onForkAtAction: (index) =>
+                          notifier.forkAtAction(index),
+                      onSwitchBranch: (index) =>
+                          notifier.switchToBranch(index),
                     ),
                   ),
               ],
             ),
           ),
+          // Educational context strip
+          if (!replayState.isComplete)
+            ContextStrip(context_: replayState.educationalContext),
           // Action bar (only when hand is not complete)
           if (!replayState.isComplete)
             ActionBar(
@@ -332,17 +396,32 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   }
 }
 
-/// Side panel showing action history log.
-class _ActionHistoryPanel extends StatelessWidget {
+/// Side panel showing action history log with branch support.
+class _ActionHistoryPanel extends StatefulWidget {
   final List<PokerAction> actions;
   final List<String> playerNames;
+  final List<dynamic> branches;
+  final int activeBranchIndex;
   final VoidCallback onClose;
+  final void Function(int actionIndex) onForkAtAction;
+  final void Function(int branchIndex) onSwitchBranch;
 
   const _ActionHistoryPanel({
     required this.actions,
     required this.playerNames,
+    required this.branches,
+    required this.activeBranchIndex,
     required this.onClose,
+    required this.onForkAtAction,
+    required this.onSwitchBranch,
   });
+
+  @override
+  State<_ActionHistoryPanel> createState() => _ActionHistoryPanelState();
+}
+
+class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
+  int? _selectedActionIndex;
 
   String _formatChips(double amount) {
     if (amount == amount.roundToDouble() && amount < 10000) {
@@ -352,8 +431,8 @@ class _ActionHistoryPanel extends StatelessWidget {
   }
 
   String _actionLabel(PokerAction action) {
-    final name = action.playerIndex < playerNames.length
-        ? playerNames[action.playerIndex]
+    final name = action.playerIndex < widget.playerNames.length
+        ? widget.playerNames[action.playerIndex]
         : 'P${action.playerIndex}';
     return switch (action.type) {
       ActionType.fold => '$name folds',
@@ -365,10 +444,26 @@ class _ActionHistoryPanel extends StatelessWidget {
     };
   }
 
+  Color _actionColor(ActionType type) {
+    return switch (type) {
+      ActionType.fold => Colors.grey,
+      ActionType.check => Colors.blueGrey.shade300,
+      ActionType.call => Colors.green.shade300,
+      ActionType.bet => Colors.amber.shade300,
+      ActionType.raise => Colors.amber.shade300,
+      ActionType.allIn => Colors.deepOrange.shade300,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasBranches = widget.branches.length > 1;
+    // Determine the fork point for the active branch (used for highlighting).
+    final activeBranch = widget.branches[widget.activeBranchIndex];
+    final forkAt = activeBranch.forkAtActionIndex as int;
+
     return Container(
-      width: 220,
+      width: 240,
       decoration: BoxDecoration(
         color: Colors.grey.shade900.withValues(alpha: 0.95),
         border: Border(
@@ -393,17 +488,45 @@ class _ActionHistoryPanel extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
-                  onPressed: onClose,
+                  onPressed: widget.onClose,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
               ],
             ),
           ),
+          // Branch switcher (only when branches exist)
+          if (hasBranches)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(widget.branches.length, (i) {
+                    final branch = widget.branches[i];
+                    final isActive = i == widget.activeBranchIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: ChoiceChip(
+                        label: Text(
+                          branch.label as String,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        selected: isActive,
+                        onSelected: (_) => widget.onSwitchBranch(i),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+          if (hasBranches) const Divider(height: 1),
           const Divider(height: 1),
           // Action list
           Expanded(
-            child: actions.isEmpty
+            child: widget.actions.isEmpty
                 ? const Center(
                     child: Text(
                       'No actions yet',
@@ -412,35 +535,95 @@ class _ActionHistoryPanel extends StatelessWidget {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: actions.length,
+                    itemCount: widget.actions.length,
                     itemBuilder: (context, index) {
-                      final action = actions[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 3),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 10,
-                                ),
+                      final action = widget.actions[index];
+                      final isSelected = _selectedActionIndex == index;
+                      final isDivergencePoint =
+                          hasBranches && index == forkAt && forkAt > 0;
+
+                      return Column(
+                        children: [
+                          if (isDivergencePoint)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 2),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.call_split,
+                                      size: 12,
+                                      color: Colors.amber.shade400),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Branch point',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.amber.shade400,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Expanded(
-                              child: Text(
-                                _actionLabel(action),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _actionColor(action.type),
-                                ),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedActionIndex =
+                                    isSelected ? null : index;
+                              });
+                            },
+                            child: Container(
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : null,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 3),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      _actionLabel(action),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _actionColor(action.type),
+                                      ),
+                                    ),
+                                  ),
+                                  // Fork button (visible when action is selected)
+                                  if (isSelected)
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Fork after this action: keep actions
+                                        // 0..index (index+1 states).
+                                        widget.onForkAtAction(index + 1);
+                                        setState(
+                                            () => _selectedActionIndex = null);
+                                      },
+                                      child: Tooltip(
+                                        message:
+                                            'Fork here — try a different line',
+                                        child: Icon(
+                                          Icons.call_split,
+                                          size: 16,
+                                          color: Colors.amber.shade300,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -448,16 +631,5 @@ class _ActionHistoryPanel extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _actionColor(ActionType type) {
-    return switch (type) {
-      ActionType.fold => Colors.grey,
-      ActionType.check => Colors.blueGrey.shade300,
-      ActionType.call => Colors.green.shade300,
-      ActionType.bet => Colors.amber.shade300,
-      ActionType.raise => Colors.amber.shade300,
-      ActionType.allIn => Colors.deepOrange.shade300,
-    };
   }
 }
