@@ -6,6 +6,7 @@ import 'package:poker_trainer/poker/engine/game_engine.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/history/state_history.dart';
 import 'package:poker_trainer/poker/models/action.dart';
+import 'package:poker_trainer/poker/models/card.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 
 /// Immutable snapshot of the hand replay state exposed to the UI.
@@ -47,6 +48,29 @@ class HandReplayNotifier
 
   @override
   HandReplayState build(HandSetup arg) {
+    // Convert hole cards: if all players have cards assigned, pass them in.
+    // Otherwise, let the engine deal randomly for unassigned players.
+    List<List<PokerCard>>? resolvedHoleCards;
+    if (arg.holeCards != null) {
+      final allAssigned =
+          arg.holeCards!.every((h) => h != null && h.length == 2);
+      if (allAssigned) {
+        resolvedHoleCards = arg.holeCards!.map((h) => h!).toList();
+      } else {
+        // Some players have cards, some don't. Pre-deal from a deck,
+        // avoiding the already-assigned cards.
+        final deck = Deck();
+        for (final h in arg.holeCards!) {
+          if (h != null) deck.remove(h);
+        }
+        resolvedHoleCards = List.generate(arg.playerCount, (i) {
+          final existing = arg.holeCards![i];
+          if (existing != null && existing.length == 2) return existing;
+          return deck.dealMany(2);
+        });
+      }
+    }
+
     final initialState = GameEngine.createInitialState(
       playerCount: arg.playerCount,
       smallBlind: arg.smallBlind,
@@ -55,6 +79,7 @@ class HandReplayNotifier
       dealerIndex: arg.dealerIndex,
       names: arg.playerNames,
       stacks: arg.stacks,
+      holeCards: resolvedHoleCards,
     );
     _branches.clear();
     _branchInfos.clear();

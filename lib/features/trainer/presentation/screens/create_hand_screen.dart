@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/hole_card_selector.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/stack_picker.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 
 class CreateHandScreen extends ConsumerStatefulWidget {
@@ -108,9 +110,25 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
     context.go('/trainer/replay/0');
   }
 
+  Future<void> _openStackPicker(int playerIndex) async {
+    final currentStack =
+        double.tryParse(_stackControllers[playerIndex].text) ?? 200;
+    final bb = double.tryParse(_bbController.text) ?? 2;
+    final result = await StackPickerBottomSheet.show(
+      context,
+      currentStack: currentStack,
+      bigBlind: bb,
+    );
+    if (result != null) {
+      _stackControllers[playerIndex].text = _formatNum(result);
+      ref.read(handSetupProvider.notifier).setPlayerStack(playerIndex, result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final setup = ref.watch(handSetupProvider);
+    final notifier = ref.read(handSetupProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -227,77 +245,132 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
               'Players',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap cards to pick, long-press to clear',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+              ),
+            ),
             const SizedBox(height: 8),
             for (int i = 0; i < setup.playerCount; i++)
               if (i < _nameControllers.length)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Seat number
-                      SizedBox(
-                        width: 28,
-                        child: Text(
-                          '${i + 1}',
-                          style: TextStyle(
-                            color: i == setup.dealerIndex
-                                ? Colors.amber
-                                : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      // Row 1: Seat number, Name, Stack
+                      Row(
+                        children: [
+                          // Seat number
+                          SizedBox(
+                            width: 28,
+                            child: Text(
+                              '${i + 1}',
+                              style: TextStyle(
+                                color: i == setup.dealerIndex
+                                    ? Colors.amber
+                                    : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Name
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: _nameControllers[i],
+                              decoration: InputDecoration(
+                                labelText: 'Name',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                suffixIcon: i == setup.dealerIndex
+                                    ? const Tooltip(
+                                        message: 'Dealer',
+                                        child: Icon(Icons.circle,
+                                            color: Colors.amber, size: 12),
+                                      )
+                                    : null,
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Stack with tap-to-scroll-pick
+                          Expanded(
+                            flex: 2,
+                            child: GestureDetector(
+                              onLongPress: () => _openStackPicker(i),
+                              child: TextFormField(
+                                controller: _stackControllers[i],
+                                decoration: InputDecoration(
+                                  labelText: 'Stack',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      Icons.tune,
+                                      size: 16,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 24,
+                                      minHeight: 24,
+                                    ),
+                                    onPressed: () => _openStackPicker(i),
+                                    tooltip: 'Pick stack amount',
+                                  ),
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d*\.?\d{0,2}')),
+                                ],
+                                validator: (v) {
+                                  if (v == null || v.isEmpty) return 'Required';
+                                  final val = double.tryParse(v);
+                                  if (val == null || val <= 0) return '> 0';
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      // Name
-                      Expanded(
-                        flex: 3,
-                        child: TextFormField(
-                          controller: _nameControllers[i],
-                          decoration: InputDecoration(
-                            labelText: 'Name',
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                            suffixIcon: i == setup.dealerIndex
-                                ? const Tooltip(
-                                    message: 'Dealer',
-                                    child: Icon(Icons.circle,
-                                        color: Colors.amber, size: 12),
-                                  )
-                                : null,
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Stack
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _stackControllers[i],
-                          decoration: const InputDecoration(
-                            labelText: 'Stack',
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d*\.?\d{0,2}')),
-                          ],
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Required';
-                            final val = double.tryParse(v);
-                            if (val == null || val <= 0) return '> 0';
-                            return null;
-                          },
+                      // Row 2: Hole cards
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 6),
+                        child: HoleCardSelector(
+                          playerIndex: i,
+                          holeCards: setup.holeCards != null &&
+                                  i < setup.holeCards!.length
+                              ? setup.holeCards![i]
+                              : null,
+                          unavailableCardValues:
+                              notifier.usedCardValues(i),
+                          onCard1Selected: (card) =>
+                              notifier.setPlayerHoleCard(i, 0, card),
+                          onCard2Selected: (card) =>
+                              notifier.setPlayerHoleCard(i, 1, card),
+                          onCard1Cleared: () =>
+                              notifier.clearPlayerHoleCard(i, 0),
+                          onCard2Cleared: () =>
+                              notifier.clearPlayerHoleCard(i, 1),
+                          onRandomDeal: () =>
+                              notifier.dealRandomHoleCards(i),
                         ),
                       ),
                     ],
