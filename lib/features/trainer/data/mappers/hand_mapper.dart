@@ -4,6 +4,7 @@ import 'package:poker_trainer/core/database/converters/player_config_list_conver
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Maps between database objects and domain/engine objects.
 class HandMapper {
@@ -24,6 +25,10 @@ class HandMapper {
       dealerIndex: 0, // Default: first player is dealer
       playerNames: sorted.map((c) => c.name).toList(),
       stacks: sorted.map((c) => c.stack).toList(),
+      gameType: GameType.values[hand.gameType],
+      straddleEnabled: hand.straddle > 0,
+      straddleMultiplier:
+          hand.straddle > 0 ? hand.straddle / hand.bigBlind : 2.0,
     );
   }
 
@@ -56,6 +61,8 @@ class HandMapper {
       playerConfigs: configs,
       communityCards: const <int>[],
       title: Value(title),
+      gameType: Value(setup.gameType.index),
+      straddle: Value(setup.straddleAmount),
     );
   }
 
@@ -128,6 +135,8 @@ class HandMapper {
       title: Value(title),
       parentHandId: Value(parentHandId),
       branchAtActionIndex: Value(branchAtActionIndex),
+      gameType: Value(setup.gameType.index),
+      straddle: Value(setup.straddleAmount),
     );
   }
 }

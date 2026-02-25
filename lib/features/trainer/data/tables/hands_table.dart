@@ -13,6 +13,8 @@ class Hands extends Table {
   TextColumn get playerConfigs =>
       text().map(const PlayerConfigListConverter())();
   TextColumn get communityCards => text().map(const CardListConverter())();
+  IntColumn get gameType => integer().withDefault(const Constant(0))();
+  RealColumn get straddle => real().withDefault(const Constant(0.0))();
   IntColumn get parentHandId => integer().nullable()();
   IntColumn get branchAtActionIndex => integer().nullable()();
   DateTimeColumn get createdAt =>

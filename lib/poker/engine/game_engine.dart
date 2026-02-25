@@ -6,6 +6,7 @@ library;
 import '../models/action.dart';
 import '../models/card.dart';
 import '../models/game_state.dart';
+import '../models/game_type.dart';
 import '../models/player.dart';
 import '../models/street.dart';
 import 'hand_evaluator.dart';
@@ -29,6 +30,8 @@ class GameEngine {
   /// [stacks]       Optional starting stacks (defaults to 100 * BB each).
   /// [names]        Optional player names.
   /// [deckSeed]     Optional seed for deterministic deck shuffling.
+  /// [gameType]     Game variant (default: Texas Hold'em).
+  /// [straddle]     Straddle amount (0 = no straddle). Ignored heads-up.
   static GameState createInitialState({
     required int playerCount,
     required double smallBlind,
@@ -39,6 +42,8 @@ class GameEngine {
     List<double>? stacks,
     List<String>? names,
     int? deckSeed,
+    GameType gameType = GameType.texasHoldem,
+    double straddle = 0,
   }) {
     assert(playerCount >= 2 && playerCount <= 10);
     assert(dealerIndex >= 0 && dealerIndex < playerCount);
@@ -58,6 +63,11 @@ class GameEngine {
       bbIndex = (dealerIndex + 2) % playerCount;
     }
 
+    // Straddle: UTG player (seat after BB). Only for 3+ players.
+    final bool hasStraddle = straddle > 0 && !isHeadsUp;
+    final int? straddleIndex =
+        hasStraddle ? (bbIndex + 1) % playerCount : null;
+
     // --- Create deck and deal hole cards ---
     final deck = Deck(seed: deckSeed);
 
@@ -67,6 +77,8 @@ class GameEngine {
         deck.remove(hand);
       }
     }
+
+    final cardsPerPlayer = gameType.holeCardCount;
 
     // --- Build player states ---
     double totalPot = 0;
@@ -106,8 +118,19 @@ class GameEngine {
         if (stack <= 0) isAllIn = true;
       }
 
+      // Post straddle.
+      if (hasStraddle && i == straddleIndex && !isAllIn) {
+        final double straddleAmount = straddle.clamp(0.0, stack).toDouble();
+        stack -= straddleAmount;
+        currentBet = straddleAmount;
+        totalInvested += straddleAmount;
+        totalPot += straddleAmount;
+        if (stack <= 0) isAllIn = true;
+      }
+
       // Deal hole cards.
-      final hand = holeCards != null ? holeCards[i] : deck.dealMany(2);
+      final hand =
+          holeCards != null ? holeCards[i] : deck.dealMany(cardsPerPlayer);
 
       players.add(PlayerState(
         index: i,
@@ -122,12 +145,26 @@ class GameEngine {
 
     // --- Determine first player to act preflop ---
     // Heads-up: dealer (SB) acts first preflop.
-    // Multi-way: UTG = player after BB.
+    // Multi-way without straddle: UTG = player after BB.
+    // Multi-way with straddle: first to act is player after straddler;
+    //   straddler acts last preflop (gets "option").
     final int firstToAct;
+    final double effectiveCurrentBet;
+    final double effectiveLastRaise;
+
     if (isHeadsUp) {
       firstToAct = dealerIndex; // dealer = SB acts first preflop
+      effectiveCurrentBet = bigBlind;
+      effectiveLastRaise = bigBlind;
+    } else if (hasStraddle) {
+      firstToAct = _nextActivePlayer(players, straddleIndex!);
+      effectiveCurrentBet = straddle;
+      // The raise increment from BB to straddle determines min-raise.
+      effectiveLastRaise = straddle - bigBlind;
     } else {
       firstToAct = _nextActivePlayer(players, bbIndex);
+      effectiveCurrentBet = bigBlind;
+      effectiveLastRaise = bigBlind;
     }
 
     return GameState(
@@ -136,12 +173,15 @@ class GameEngine {
       street: Street.preflop,
       pot: totalPot,
       currentPlayerIndex: firstToAct,
-      currentBet: bigBlind,
-      lastRaiseSize: bigBlind,
+      currentBet: effectiveCurrentBet,
+      lastRaiseSize: effectiveLastRaise,
       smallBlind: smallBlind,
       bigBlind: bigBlind,
       ante: ante,
       dealerIndex: dealerIndex,
+      gameType: gameType,
+      straddle: hasStraddle ? straddle : 0,
+      straddlePlayerIndex: straddleIndex,
     );
   }
 
@@ -411,11 +451,15 @@ class GameEngine {
     final handDescriptions = <int, String>{};
 
     // Evaluate each non-folded player's hand.
+    final minCards = state.gameType == GameType.omaha ? 4 : 2;
     for (final idx in candidateWinners) {
       final player = state.players[idx];
-      if (player.holeCards.length >= 2 && community.length >= 3) {
-        final evaluated =
-            HandEvaluator.evaluateBestHand(player.holeCards, community);
+      if (player.holeCards.length >= minCards && community.length >= 3) {
+        final evaluated = HandEvaluator.evaluateBest(
+          player.holeCards,
+          community,
+          state.gameType,
+        );
         handDescriptions[idx] = evaluated.description;
       }
     }
@@ -427,6 +471,7 @@ class GameEngine {
         state.players,
         community,
         pot.eligiblePlayerIndices,
+        gameType: state.gameType,
       );
       overallWinners.addAll(potWinners);
     }
@@ -438,6 +483,7 @@ class GameEngine {
         state.players,
         community,
         candidateWinners,
+        gameType: state.gameType,
       );
       overallWinners.addAll(winners);
     }

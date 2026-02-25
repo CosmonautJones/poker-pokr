@@ -4,6 +4,7 @@
 library;
 
 import 'card.dart';
+import 'game_type.dart';
 import 'street.dart';
 import 'action.dart';
 import 'player.dart';
@@ -37,6 +38,15 @@ class GameState {
   /// Only populated when the hand reaches showdown (not when won by fold).
   final Map<int, String> handDescriptions;
 
+  /// The game variant being played.
+  final GameType gameType;
+
+  /// Straddle amount (0 if no straddle).
+  final double straddle;
+
+  /// Index of the player who posted the straddle (null if no straddle).
+  final int? straddlePlayerIndex;
+
   const GameState({
     required this.players,
     this.communityCards = const [],
@@ -58,6 +68,9 @@ class GameState {
     this.playersActedThisStreet = 0,
     this.streetStartActionIndex = 0,
     this.handDescriptions = const {},
+    this.gameType = GameType.texasHoldem,
+    this.straddle = 0,
+    this.straddlePlayerIndex,
   });
 
   /// All players who have not folded (still eligible for pots).
@@ -95,6 +108,9 @@ class GameState {
     int? playersActedThisStreet,
     int? streetStartActionIndex,
     Map<int, String>? handDescriptions,
+    GameType? gameType,
+    double? straddle,
+    int? Function()? straddlePlayerIndex,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -122,6 +138,11 @@ class GameState {
       streetStartActionIndex:
           streetStartActionIndex ?? this.streetStartActionIndex,
       handDescriptions: handDescriptions ?? this.handDescriptions,
+      gameType: gameType ?? this.gameType,
+      straddle: straddle ?? this.straddle,
+      straddlePlayerIndex: straddlePlayerIndex != null
+          ? straddlePlayerIndex()
+          : this.straddlePlayerIndex,
     );
   }
 
@@ -129,5 +150,6 @@ class GameState {
   String toString() =>
       'GameState(street: ${street.name}, pot: $pot, '
       'currentBet: $currentBet, currentPlayer: $currentPlayerIndex, '
-      'community: $communityCards, complete: $isHandComplete)';
+      'community: $communityCards, complete: $isHandComplete, '
+      'gameType: ${gameType.name}, straddle: $straddle)';
 }

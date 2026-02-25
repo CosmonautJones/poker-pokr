@@ -1274,6 +1274,30 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _gameTypeMeta2 = const VerificationMeta(
+    'gameType',
+  );
+  @override
+  late final GeneratedColumn<int> gameType = GeneratedColumn<int>(
+    'game_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _straddleMeta = const VerificationMeta(
+    'straddle',
+  );
+  @override
+  late final GeneratedColumn<double> straddle = GeneratedColumn<double>(
+    'straddle',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<List<PlayerConfig>, String>
   playerConfigs = GeneratedColumn<String>(
@@ -1346,6 +1370,8 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     smallBlind,
     bigBlind,
     ante,
+    gameType,
+    straddle,
     playerConfigs,
     communityCards,
     parentHandId,
@@ -1416,6 +1442,18 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         ante.isAcceptableOrUnknown(data['ante']!, _anteMeta),
       );
     }
+    if (data.containsKey('game_type')) {
+      context.handle(
+        _gameTypeMeta2,
+        gameType.isAcceptableOrUnknown(data['game_type']!, _gameTypeMeta2),
+      );
+    }
+    if (data.containsKey('straddle')) {
+      context.handle(
+        _straddleMeta,
+        straddle.isAcceptableOrUnknown(data['straddle']!, _straddleMeta),
+      );
+    }
     if (data.containsKey('parent_hand_id')) {
       context.handle(
         _parentHandIdMeta,
@@ -1483,6 +1521,14 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         DriftSqlType.double,
         data['${effectivePrefix}ante'],
       )!,
+      gameType: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}game_type'],
+      )!,
+      straddle: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}straddle'],
+      )!,
       playerConfigs: $HandsTable.$converterplayerConfigs.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -1533,6 +1579,8 @@ class Hand extends DataClass implements Insertable<Hand> {
   final double smallBlind;
   final double bigBlind;
   final double ante;
+  final int gameType;
+  final double straddle;
   final List<PlayerConfig> playerConfigs;
   final List<int> communityCards;
   final int? parentHandId;
@@ -1547,6 +1595,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     required this.smallBlind,
     required this.bigBlind,
     required this.ante,
+    required this.gameType,
+    required this.straddle,
     required this.playerConfigs,
     required this.communityCards,
     this.parentHandId,
@@ -1568,6 +1618,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     map['small_blind'] = Variable<double>(smallBlind);
     map['big_blind'] = Variable<double>(bigBlind);
     map['ante'] = Variable<double>(ante);
+    map['game_type'] = Variable<int>(gameType);
+    map['straddle'] = Variable<double>(straddle);
     {
       map['player_configs'] = Variable<String>(
         $HandsTable.$converterplayerConfigs.toSql(playerConfigs),
@@ -1602,6 +1654,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       smallBlind: Value(smallBlind),
       bigBlind: Value(bigBlind),
       ante: Value(ante),
+      gameType: Value(gameType),
+      straddle: Value(straddle),
       playerConfigs: Value(playerConfigs),
       communityCards: Value(communityCards),
       parentHandId: parentHandId == null && nullToAbsent
@@ -1628,6 +1682,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       smallBlind: serializer.fromJson<double>(json['smallBlind']),
       bigBlind: serializer.fromJson<double>(json['bigBlind']),
       ante: serializer.fromJson<double>(json['ante']),
+      gameType: serializer.fromJson<int>(json['gameType']),
+      straddle: serializer.fromJson<double>(json['straddle']),
       playerConfigs: serializer.fromJson<List<PlayerConfig>>(
         json['playerConfigs'],
       ),
@@ -1651,6 +1707,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       'smallBlind': serializer.toJson<double>(smallBlind),
       'bigBlind': serializer.toJson<double>(bigBlind),
       'ante': serializer.toJson<double>(ante),
+      'gameType': serializer.toJson<int>(gameType),
+      'straddle': serializer.toJson<double>(straddle),
       'playerConfigs': serializer.toJson<List<PlayerConfig>>(playerConfigs),
       'communityCards': serializer.toJson<List<int>>(communityCards),
       'parentHandId': serializer.toJson<int?>(parentHandId),
@@ -1668,6 +1726,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     double? smallBlind,
     double? bigBlind,
     double? ante,
+    int? gameType,
+    double? straddle,
     List<PlayerConfig>? playerConfigs,
     List<int>? communityCards,
     Value<int?> parentHandId = const Value.absent(),
@@ -1682,6 +1742,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     smallBlind: smallBlind ?? this.smallBlind,
     bigBlind: bigBlind ?? this.bigBlind,
     ante: ante ?? this.ante,
+    gameType: gameType ?? this.gameType,
+    straddle: straddle ?? this.straddle,
     playerConfigs: playerConfigs ?? this.playerConfigs,
     communityCards: communityCards ?? this.communityCards,
     parentHandId: parentHandId.present ? parentHandId.value : this.parentHandId,
@@ -1706,6 +1768,8 @@ class Hand extends DataClass implements Insertable<Hand> {
           : this.smallBlind,
       bigBlind: data.bigBlind.present ? data.bigBlind.value : this.bigBlind,
       ante: data.ante.present ? data.ante.value : this.ante,
+      gameType: data.gameType.present ? data.gameType.value : this.gameType,
+      straddle: data.straddle.present ? data.straddle.value : this.straddle,
       playerConfigs: data.playerConfigs.present
           ? data.playerConfigs.value
           : this.playerConfigs,
@@ -1733,6 +1797,8 @@ class Hand extends DataClass implements Insertable<Hand> {
           ..write('smallBlind: $smallBlind, ')
           ..write('bigBlind: $bigBlind, ')
           ..write('ante: $ante, ')
+          ..write('gameType: $gameType, ')
+          ..write('straddle: $straddle, ')
           ..write('playerConfigs: $playerConfigs, ')
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')
@@ -1752,6 +1818,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     smallBlind,
     bigBlind,
     ante,
+    gameType,
+    straddle,
     playerConfigs,
     communityCards,
     parentHandId,
@@ -1770,6 +1838,8 @@ class Hand extends DataClass implements Insertable<Hand> {
           other.smallBlind == this.smallBlind &&
           other.bigBlind == this.bigBlind &&
           other.ante == this.ante &&
+          other.gameType == this.gameType &&
+          other.straddle == this.straddle &&
           other.playerConfigs == this.playerConfigs &&
           other.communityCards == this.communityCards &&
           other.parentHandId == this.parentHandId &&
@@ -1786,6 +1856,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
   final Value<double> smallBlind;
   final Value<double> bigBlind;
   final Value<double> ante;
+  final Value<int> gameType;
+  final Value<double> straddle;
   final Value<List<PlayerConfig>> playerConfigs;
   final Value<List<int>> communityCards;
   final Value<int?> parentHandId;
@@ -1800,6 +1872,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     this.smallBlind = const Value.absent(),
     this.bigBlind = const Value.absent(),
     this.ante = const Value.absent(),
+    this.gameType = const Value.absent(),
+    this.straddle = const Value.absent(),
     this.playerConfigs = const Value.absent(),
     this.communityCards = const Value.absent(),
     this.parentHandId = const Value.absent(),
@@ -1815,6 +1889,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     required double smallBlind,
     required double bigBlind,
     this.ante = const Value.absent(),
+    this.gameType = const Value.absent(),
+    this.straddle = const Value.absent(),
     required List<PlayerConfig> playerConfigs,
     required List<int> communityCards,
     this.parentHandId = const Value.absent(),
@@ -1834,6 +1910,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Expression<double>? smallBlind,
     Expression<double>? bigBlind,
     Expression<double>? ante,
+    Expression<int>? gameType,
+    Expression<double>? straddle,
     Expression<String>? playerConfigs,
     Expression<String>? communityCards,
     Expression<int>? parentHandId,
@@ -1849,6 +1927,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       if (smallBlind != null) 'small_blind': smallBlind,
       if (bigBlind != null) 'big_blind': bigBlind,
       if (ante != null) 'ante': ante,
+      if (gameType != null) 'game_type': gameType,
+      if (straddle != null) 'straddle': straddle,
       if (playerConfigs != null) 'player_configs': playerConfigs,
       if (communityCards != null) 'community_cards': communityCards,
       if (parentHandId != null) 'parent_hand_id': parentHandId,
@@ -1867,6 +1947,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Value<double>? smallBlind,
     Value<double>? bigBlind,
     Value<double>? ante,
+    Value<int>? gameType,
+    Value<double>? straddle,
     Value<List<PlayerConfig>>? playerConfigs,
     Value<List<int>>? communityCards,
     Value<int?>? parentHandId,
@@ -1882,6 +1964,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       smallBlind: smallBlind ?? this.smallBlind,
       bigBlind: bigBlind ?? this.bigBlind,
       ante: ante ?? this.ante,
+      gameType: gameType ?? this.gameType,
+      straddle: straddle ?? this.straddle,
       playerConfigs: playerConfigs ?? this.playerConfigs,
       communityCards: communityCards ?? this.communityCards,
       parentHandId: parentHandId ?? this.parentHandId,
@@ -1914,6 +1998,12 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     }
     if (ante.present) {
       map['ante'] = Variable<double>(ante.value);
+    }
+    if (gameType.present) {
+      map['game_type'] = Variable<int>(gameType.value);
+    }
+    if (straddle.present) {
+      map['straddle'] = Variable<double>(straddle.value);
     }
     if (playerConfigs.present) {
       map['player_configs'] = Variable<String>(
@@ -1950,6 +2040,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
           ..write('smallBlind: $smallBlind, ')
           ..write('bigBlind: $bigBlind, ')
           ..write('ante: $ante, ')
+          ..write('gameType: $gameType, ')
+          ..write('straddle: $straddle, ')
           ..write('playerConfigs: $playerConfigs, ')
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')
@@ -3542,6 +3634,8 @@ typedef $$HandsTableCreateCompanionBuilder =
       required double smallBlind,
       required double bigBlind,
       Value<double> ante,
+      Value<int> gameType,
+      Value<double> straddle,
       required List<PlayerConfig> playerConfigs,
       required List<int> communityCards,
       Value<int?> parentHandId,
@@ -3558,6 +3652,8 @@ typedef $$HandsTableUpdateCompanionBuilder =
       Value<double> smallBlind,
       Value<double> bigBlind,
       Value<double> ante,
+      Value<int> gameType,
+      Value<double> straddle,
       Value<List<PlayerConfig>> playerConfigs,
       Value<List<int>> communityCards,
       Value<int?> parentHandId,
@@ -3606,6 +3702,16 @@ class $$HandsTableFilterComposer extends Composer<_$AppDatabase, $HandsTable> {
 
   ColumnFilters<double> get ante => $composableBuilder(
     column: $table.ante,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gameType => $composableBuilder(
+    column: $table.gameType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get straddle => $composableBuilder(
+    column: $table.straddle,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3686,6 +3792,16 @@ class $$HandsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get gameType => $composableBuilder(
+    column: $table.gameType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get straddle => $composableBuilder(
+    column: $table.straddle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get playerConfigs => $composableBuilder(
     column: $table.playerConfigs,
     builder: (column) => ColumnOrderings(column),
@@ -3753,6 +3869,12 @@ class $$HandsTableAnnotationComposer
   GeneratedColumn<double> get ante =>
       $composableBuilder(column: $table.ante, builder: (column) => column);
 
+  GeneratedColumn<int> get gameType =>
+      $composableBuilder(column: $table.gameType, builder: (column) => column);
+
+  GeneratedColumn<double> get straddle =>
+      $composableBuilder(column: $table.straddle, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<List<PlayerConfig>, String>
   get playerConfigs => $composableBuilder(
     column: $table.playerConfigs,
@@ -3817,6 +3939,8 @@ class $$HandsTableTableManager
                 Value<double> smallBlind = const Value.absent(),
                 Value<double> bigBlind = const Value.absent(),
                 Value<double> ante = const Value.absent(),
+                Value<int> gameType = const Value.absent(),
+                Value<double> straddle = const Value.absent(),
                 Value<List<PlayerConfig>> playerConfigs = const Value.absent(),
                 Value<List<int>> communityCards = const Value.absent(),
                 Value<int?> parentHandId = const Value.absent(),
@@ -3831,6 +3955,8 @@ class $$HandsTableTableManager
                 smallBlind: smallBlind,
                 bigBlind: bigBlind,
                 ante: ante,
+                gameType: gameType,
+                straddle: straddle,
                 playerConfigs: playerConfigs,
                 communityCards: communityCards,
                 parentHandId: parentHandId,
@@ -3847,6 +3973,8 @@ class $$HandsTableTableManager
                 required double smallBlind,
                 required double bigBlind,
                 Value<double> ante = const Value.absent(),
+                Value<int> gameType = const Value.absent(),
+                Value<double> straddle = const Value.absent(),
                 required List<PlayerConfig> playerConfigs,
                 required List<int> communityCards,
                 Value<int?> parentHandId = const Value.absent(),
@@ -3861,6 +3989,8 @@ class $$HandsTableTableManager
                 smallBlind: smallBlind,
                 bigBlind: bigBlind,
                 ante: ante,
+                gameType: gameType,
+                straddle: straddle,
                 playerConfigs: playerConfigs,
                 communityCards: communityCards,
                 parentHandId: parentHandId,

@@ -112,6 +112,7 @@ class PokerTableWidget extends StatelessWidget {
                       isCurrentPlayer: i == gameState.currentPlayerIndex &&
                           !gameState.isHandComplete,
                       isDealer: i == gameState.dealerIndex,
+                      isStraddler: i == gameState.straddlePlayerIndex,
                       scale: scale,
                     ),
                   ),

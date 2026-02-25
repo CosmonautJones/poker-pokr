@@ -4,6 +4,7 @@
 library;
 
 import '../models/card.dart';
+import '../models/game_type.dart';
 import '../models/player.dart';
 
 // ---------------------------------------------------------------------------
@@ -113,6 +114,43 @@ class HandEvaluator {
       }
     }
     return best!;
+  }
+
+  /// Evaluate the best 5-card hand for Omaha: must use exactly 2 hole cards
+  /// and exactly 3 community cards.
+  ///
+  /// [holeCards] must have exactly 4 cards.
+  /// [communityCards] must have 3-5 cards.
+  static EvaluatedHand evaluateBestHandOmaha(
+    List<PokerCard> holeCards,
+    List<PokerCard> communityCards,
+  ) {
+    assert(holeCards.length == 4);
+    assert(communityCards.length >= 3 && communityCards.length <= 5);
+
+    EvaluatedHand? best;
+    // C(4,2) = 6 hole card pairs × C(community, 3) community triples.
+    for (final holePair in _combinations(holeCards, 2)) {
+      for (final communityTriple in _combinations(communityCards, 3)) {
+        final hand = evaluate5([...holePair, ...communityTriple]);
+        if (best == null || hand > best) {
+          best = hand;
+        }
+      }
+    }
+    return best!;
+  }
+
+  /// Game-type-aware dispatcher: evaluates the best hand using the correct
+  /// rules for the given [gameType].
+  static EvaluatedHand evaluateBest(
+    List<PokerCard> holeCards,
+    List<PokerCard> communityCards,
+    GameType gameType,
+  ) {
+    return gameType == GameType.omaha
+        ? evaluateBestHandOmaha(holeCards, communityCards)
+        : evaluateBestHand(holeCards, communityCards);
   }
 
   /// Evaluate exactly 5 cards as a poker hand.
@@ -273,20 +311,24 @@ class HandEvaluator {
   static List<int> determineWinners(
     List<PlayerState> players,
     List<PokerCard> communityCards,
-    List<int> eligibleIndices,
-  ) {
+    List<int> eligibleIndices, {
+    GameType gameType = GameType.texasHoldem,
+  }) {
     if (eligibleIndices.length <= 1) return eligibleIndices;
 
-    // If no community cards (preflop fold), the last player standing wins.
-    if (communityCards.isEmpty) return eligibleIndices;
+    // Need at least 3 community cards for hand evaluation.
+    // If fewer (e.g. preflop all-in before runout), return all eligible.
+    if (communityCards.length < 3) return eligibleIndices;
+
+    final minCards = gameType == GameType.omaha ? 4 : 2;
 
     // Evaluate each eligible player's hand.
     final evaluations = <int, EvaluatedHand>{};
     for (final idx in eligibleIndices) {
       final player = players[idx];
-      if (player.holeCards.length < 2) continue;
+      if (player.holeCards.length < minCards) continue;
       evaluations[idx] =
-          evaluateBestHand(player.holeCards, communityCards);
+          evaluateBest(player.holeCards, communityCards, gameType);
     }
 
     if (evaluations.isEmpty) return eligibleIndices;
@@ -315,23 +357,31 @@ class HandEvaluator {
     required List<PlayerState> players,
     required List<PokerCard> communityCards,
     required List<SidePotInfo> sidePots,
+    GameType gameType = GameType.texasHoldem,
   }) {
     final evaluations = <int, EvaluatedHand>{};
     final awards = <int, double>{};
 
+    final minCards = gameType == GameType.omaha ? 4 : 2;
+
     // Evaluate all non-folded players who have hole cards.
     for (final p in players) {
-      if (p.isFolded || p.holeCards.length < 2) continue;
+      if (p.isFolded || p.holeCards.length < minCards) continue;
       if (communityCards.length >= 3) {
         evaluations[p.index] =
-            evaluateBestHand(p.holeCards, communityCards);
+            evaluateBest(p.holeCards, communityCards, gameType);
       }
     }
 
     // Award each pot.
     for (final pot in sidePots) {
       final eligible = pot.eligiblePlayerIndices;
-      final winners = determineWinners(players, communityCards, eligible);
+      final winners = determineWinners(
+        players,
+        communityCards,
+        eligible,
+        gameType: gameType,
+      );
 
       if (winners.isEmpty) continue;
 

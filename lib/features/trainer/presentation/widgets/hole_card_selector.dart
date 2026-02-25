@@ -3,17 +3,28 @@ import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/card_picker.dart';
 
-/// Displays two tappable card slots for a player's hole cards,
-/// plus a random-deal button.
+/// Displays tappable card slots for a player's hole cards,
+/// plus a random-deal button. Supports 2 cards (Hold'em) or 4 cards (Omaha).
 class HoleCardSelector extends StatelessWidget {
   final int playerIndex;
   final List<PokerCard>? holeCards;
   final Set<int> unavailableCardValues;
+  final VoidCallback? onRandomDeal;
+
+  /// Number of card slots to display (2 for Hold'em, 4 for Omaha).
+  final int cardCount;
+
+  /// Called when a card is selected at the given index.
+  final void Function(int cardIndex, PokerCard card)? onCardSelected;
+
+  /// Called when a card is cleared at the given index.
+  final void Function(int cardIndex)? onCardCleared;
+
+  // Legacy callbacks for backwards compatibility.
   final ValueChanged<PokerCard>? onCard1Selected;
   final ValueChanged<PokerCard>? onCard2Selected;
   final VoidCallback? onCard1Cleared;
   final VoidCallback? onCard2Cleared;
-  final VoidCallback? onRandomDeal;
 
   const HoleCardSelector({
     super.key,
@@ -25,50 +36,53 @@ class HoleCardSelector extends StatelessWidget {
     this.onCard1Cleared,
     this.onCard2Cleared,
     this.onRandomDeal,
+    this.cardCount = 2,
+    this.onCardSelected,
+    this.onCardCleared,
   });
+
+  PokerCard? _cardAt(int index) {
+    if (holeCards == null || index >= holeCards!.length) return null;
+    return holeCards![index];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final card1 = (holeCards != null && holeCards!.isNotEmpty)
-        ? holeCards![0]
-        : null;
-    final card2 = (holeCards != null && holeCards!.length > 1)
-        ? holeCards![1]
-        : null;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Card 1 slot
-        _CardSlot(
-          card: card1,
-          unavailableCardValues: unavailableCardValues,
-          onTap: () => _pickCard(context, 0, card1),
-          onLongPress: card1 != null ? onCard1Cleared : null,
-        ),
-        const SizedBox(width: 4),
-        // Card 2 slot
-        _CardSlot(
-          card: card2,
-          unavailableCardValues: unavailableCardValues,
-          onTap: () => _pickCard(context, 1, card2),
-          onLongPress: card2 != null ? onCard2Cleared : null,
-        ),
+        for (int i = 0; i < cardCount; i++) ...[
+          if (i > 0) const SizedBox(width: 4),
+          _CardSlot(
+            card: _cardAt(i),
+            unavailableCardValues: unavailableCardValues,
+            onTap: () => _pickCard(context, i, _cardAt(i)),
+            onLongPress: _cardAt(i) != null ? () => _clearCard(i) : null,
+          ),
+        ],
         const SizedBox(width: 6),
-        // Random button
         _RandomButton(onTap: onRandomDeal),
       ],
     );
   }
 
-  void _pickCard(BuildContext context, int cardIndex, PokerCard? current) async {
-    // Exclude this player's own other card from unavailable set.
-    final excluded = Set<int>.of(unavailableCardValues);
-    if (cardIndex == 0 && holeCards != null && holeCards!.length > 1) {
-      excluded.add(holeCards![1].value);
+  void _clearCard(int cardIndex) {
+    if (onCardCleared != null) {
+      onCardCleared!(cardIndex);
+    } else if (cardIndex == 0) {
+      onCard1Cleared?.call();
+    } else if (cardIndex == 1) {
+      onCard2Cleared?.call();
     }
-    if (cardIndex == 1 && holeCards != null && holeCards!.isNotEmpty) {
-      excluded.add(holeCards![0].value);
+  }
+
+  void _pickCard(BuildContext context, int cardIndex, PokerCard? current) async {
+    // Exclude this player's own other cards from unavailable set.
+    final excluded = Set<int>.of(unavailableCardValues);
+    if (holeCards != null) {
+      for (int i = 0; i < holeCards!.length; i++) {
+        if (i != cardIndex) excluded.add(holeCards![i].value);
+      }
     }
     // Remove the current card from unavailable (so it stays selectable).
     if (current != null) excluded.remove(current.value);
@@ -79,9 +93,11 @@ class HoleCardSelector extends StatelessWidget {
       initialCard: current,
     );
     if (picked != null) {
-      if (cardIndex == 0) {
+      if (onCardSelected != null) {
+        onCardSelected!(cardIndex, picked);
+      } else if (cardIndex == 0) {
         onCard1Selected?.call(picked);
-      } else {
+      } else if (cardIndex == 1) {
         onCard2Selected?.call(picked);
       }
     }

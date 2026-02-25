@@ -8,6 +8,7 @@ class PlayerSeat extends StatefulWidget {
   final PlayerState player;
   final bool isCurrentPlayer;
   final bool isDealer;
+  final bool isStraddler;
   final double scale;
 
   const PlayerSeat({
@@ -15,6 +16,7 @@ class PlayerSeat extends StatefulWidget {
     required this.player,
     this.isCurrentPlayer = false,
     this.isDealer = false,
+    this.isStraddler = false,
     this.scale = 1.0,
   });
 
@@ -87,15 +89,26 @@ class _PlayerSeatState extends State<PlayerSeat>
           if (player.holeCards.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: player.holeCards
-                    .map((c) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1),
-                          child: MiniCardWidget(card: c, scale: scale),
-                        ))
-                    .toList(),
-              ),
+              child: player.holeCards.length <= 2
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: player.holeCards
+                          .map((c) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 1),
+                                child: MiniCardWidget(card: c, scale: scale),
+                              ))
+                          .toList(),
+                    )
+                  : Wrap(
+                      spacing: 1,
+                      runSpacing: 1,
+                      alignment: WrapAlignment.center,
+                      children: player.holeCards
+                          .map((c) => MiniCardWidget(
+                              card: c, scale: scale * 0.85))
+                          .toList(),
+                    ),
             ),
           // Main seat container with animated glow
           AnimatedBuilder(
@@ -181,6 +194,26 @@ class _PlayerSeatState extends State<PlayerSeat>
                               fontSize: (9 * scale).clamp(7.0, 10.0),
                               fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                      ),
+                    if (widget.isStraddler)
+                      Container(
+                        margin: EdgeInsets.only(right: 3 * scale),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3 * scale,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade700,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'STR',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: (7 * scale).clamp(6.0, 8.0),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),

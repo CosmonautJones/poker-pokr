@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/hole_card_selector.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/stack_picker.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 
 class CreateHandScreen extends ConsumerStatefulWidget {
   const CreateHandScreen({super.key});
@@ -139,6 +140,30 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           children: [
+            // -- Game Type --
+            Text(
+              'Game Type',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<GameType>(
+              segments: const [
+                ButtonSegment(
+                  value: GameType.texasHoldem,
+                  label: Text("Hold'em"),
+                ),
+                ButtonSegment(
+                  value: GameType.omaha,
+                  label: Text('Omaha'),
+                ),
+              ],
+              selected: {setup.gameType},
+              onSelectionChanged: (selected) {
+                notifier.setGameType(selected.first);
+              },
+            ),
+            const SizedBox(height: 16),
+
             // -- Player Count --
             Text(
               'Players: ${setup.playerCount}',
@@ -232,7 +257,39 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // -- Straddle --
+            if (setup.playerCount >= 3) ...[
+              SwitchListTile(
+                title: const Text('Straddle'),
+                subtitle: setup.straddleEnabled
+                    ? Text(
+                        '${_formatNum(setup.straddleAmount)} '
+                        '(${_formatNum(setup.straddleMultiplier)}x BB)',
+                      )
+                    : null,
+                value: setup.straddleEnabled,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => notifier.setStraddleEnabled(v),
+              ),
+              if (setup.straddleEnabled)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [2.0, 3.0, 5.0].map((mult) {
+                      return ChoiceChip(
+                        label: Text('${mult.toStringAsFixed(0)}x'),
+                        selected: setup.straddleMultiplier == mult,
+                        onSelected: (_) =>
+                            notifier.setStraddleMultiplier(mult),
+                      );
+                    }).toList(),
+                  ),
+                ),
+            ],
+            const SizedBox(height: 8),
 
             // -- Dealer Position --
             Text(
@@ -370,20 +427,17 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                         padding: const EdgeInsets.only(left: 22, top: 6),
                         child: HoleCardSelector(
                           playerIndex: i,
+                          cardCount: setup.gameType.holeCardCount,
                           holeCards: setup.holeCards != null &&
                                   i < setup.holeCards!.length
                               ? setup.holeCards![i]
                               : null,
                           unavailableCardValues:
                               notifier.usedCardValues(i),
-                          onCard1Selected: (card) =>
-                              notifier.setPlayerHoleCard(i, 0, card),
-                          onCard2Selected: (card) =>
-                              notifier.setPlayerHoleCard(i, 1, card),
-                          onCard1Cleared: () =>
-                              notifier.clearPlayerHoleCard(i, 0),
-                          onCard2Cleared: () =>
-                              notifier.clearPlayerHoleCard(i, 1),
+                          onCardSelected: (cardIndex, card) =>
+                              notifier.setPlayerHoleCard(i, cardIndex, card),
+                          onCardCleared: (cardIndex) =>
+                              notifier.clearPlayerHoleCard(i, cardIndex),
                           onRandomDeal: () =>
                               notifier.dealRandomHoleCards(i),
                         ),

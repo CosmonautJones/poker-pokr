@@ -1,4 +1,5 @@
 import 'package:poker_trainer/poker/models/card.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Configuration for starting a new poker hand.
 class HandSetup {
@@ -10,6 +11,9 @@ class HandSetup {
   final List<String> playerNames;
   final List<double> stacks;
   final List<List<PokerCard>?>? holeCards;
+  final GameType gameType;
+  final bool straddleEnabled;
+  final double straddleMultiplier;
 
   const HandSetup({
     required this.playerCount,
@@ -20,7 +24,14 @@ class HandSetup {
     required this.playerNames,
     required this.stacks,
     this.holeCards,
+    this.gameType = GameType.texasHoldem,
+    this.straddleEnabled = false,
+    this.straddleMultiplier = 2.0,
   });
+
+  /// The straddle amount based on BB and multiplier.
+  double get straddleAmount =>
+      straddleEnabled ? bigBlind * straddleMultiplier : 0;
 
   HandSetup copyWith({
     int? playerCount,
@@ -31,6 +42,9 @@ class HandSetup {
     List<String>? playerNames,
     List<double>? stacks,
     List<List<PokerCard>?>? holeCards,
+    GameType? gameType,
+    bool? straddleEnabled,
+    double? straddleMultiplier,
   }) {
     return HandSetup(
       playerCount: playerCount ?? this.playerCount,
@@ -41,6 +55,9 @@ class HandSetup {
       playerNames: playerNames ?? this.playerNames,
       stacks: stacks ?? this.stacks,
       holeCards: holeCards ?? this.holeCards,
+      gameType: gameType ?? this.gameType,
+      straddleEnabled: straddleEnabled ?? this.straddleEnabled,
+      straddleMultiplier: straddleMultiplier ?? this.straddleMultiplier,
     );
   }
 

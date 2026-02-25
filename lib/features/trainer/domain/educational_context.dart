@@ -108,7 +108,8 @@ class EducationalContextCalculator {
     final dealerIndex = state.dealerIndex;
 
     // Position
-    final posLabel = _positionLabel(playerIndex, dealerIndex, playerCount);
+    final posLabel = _positionLabel(playerIndex, dealerIndex, playerCount,
+        straddlePlayerIndex: state.straddlePlayerIndex);
     final posCat = _positionCategory(playerIndex, dealerIndex, playerCount);
 
     // Pot odds
@@ -183,8 +184,12 @@ class EducationalContextCalculator {
   // -------------------------------------------------------------------------
 
   /// Maps absolute seat index to a position label.
+  ///
+  /// When [straddlePlayerIndex] is non-null, that player's label includes
+  /// a "STR" suffix (e.g. "UTG (STR)").
   static String _positionLabel(
-      int seatIndex, int dealerIndex, int playerCount) {
+      int seatIndex, int dealerIndex, int playerCount,
+      {int? straddlePlayerIndex}) {
     if (playerCount == 2) {
       // Heads-up: dealer is BTN/SB, other is BB.
       return seatIndex == dealerIndex ? 'BTN (SB)' : 'BB';
@@ -200,7 +205,12 @@ class EducationalContextCalculator {
     // Remaining positions depend on player count.
     // Walk clockwise from BB+1 to dealer-1 and assign labels.
     final positions = _buildPositionMap(dealerIndex, playerCount);
-    return positions[seatIndex] ?? 'MP';
+    final label = positions[seatIndex] ?? 'MP';
+
+    if (straddlePlayerIndex != null && seatIndex == straddlePlayerIndex) {
+      return '$label (STR)';
+    }
+    return label;
   }
 
   static Map<int, String> _buildPositionMap(int dealerIndex, int playerCount) {
