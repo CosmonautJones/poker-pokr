@@ -27,16 +27,16 @@ class ContextStrip extends StatelessWidget {
       decoration: BoxDecoration(
         color: pt.surfaceOverlay,
         border: Border(
-          top: BorderSide(color: pt.borderSubtle, width: 0.5),
-          bottom: BorderSide(color: pt.borderSubtle, width: 0.5),
+          top: BorderSide(
+              color: pt.borderSubtle.withValues(alpha: 0.3), width: 0.5),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Situation chips
+          // Row 1: Situation chips - compact single row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -48,7 +48,7 @@ class ContextStrip extends StatelessWidget {
                 ),
                 if (ctx.potOddsDisplay != null)
                   _ContextChip(
-                    label: 'Pot Odds',
+                    label: 'Odds',
                     value: ctx.potOddsDisplay!,
                     color: pt.accent,
                     glossaryTerm: 'Pot Odds',
@@ -56,28 +56,25 @@ class ContextStrip extends StatelessWidget {
                 _ContextChip(
                   label: 'SPR',
                   value: ctx.stackToPotRatio.toStringAsFixed(1),
-                  color: ctx.stackToPotRatio < 4
-                      ? pt.positionMiddle
-                      : null,
+                  color: ctx.stackToPotRatio < 4 ? pt.positionMiddle : null,
                   glossaryTerm: 'SPR',
                 ),
                 _ContextChip(
-                  label: '${ctx.playersInHand} in hand',
+                  label: '${ctx.playersInHand} in',
                 ),
-                _ContextChip(
-                  label: ctx.playersYetToAct > 0
-                      ? '${ctx.playersYetToAct} behind'
-                      : 'Last to act',
-                ),
+                if (ctx.playersYetToAct > 0)
+                  _ContextChip(
+                    label: '${ctx.playersYetToAct} behind',
+                  ),
               ],
             ),
           ),
-          // Row 2: Last action or street summary
+          // Row 2: Last action or street summary - single line
           if (ctx.streetSummary != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             _StreetSummaryRow(summary: ctx.streetSummary!),
           ] else if (ctx.lastAction != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             _ActionExplanationRow(explanation: ctx.lastAction!),
           ],
         ],
@@ -116,27 +113,24 @@ class _ContextChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final entry = glossaryTerm != null
-        ? PokerGlossary.lookup(glossaryTerm!)
-        : null;
+    final entry =
+        glossaryTerm != null ? PokerGlossary.lookup(glossaryTerm!) : null;
     final isTappable = entry != null;
-
     final chipColor = color ?? pt.textMuted;
 
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: pt.seatBorderDefault, width: 0.5),
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (color != null) ...[
             Container(
-              width: 6,
-              height: 6,
+              width: 5,
+              height: 5,
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
@@ -145,38 +139,26 @@ class _ContextChip extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            value != null ? '$label: $value' : label,
+            value != null ? '$label $value' : label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10.5,
               color: chipColor,
               fontWeight: FontWeight.w500,
-              decoration:
-                  isTappable ? TextDecoration.underline : null,
-              decorationColor: chipColor.withValues(alpha: 0.4),
-              decorationStyle: TextDecorationStyle.dotted,
             ),
           ),
-          if (isTappable) ...[
-            const SizedBox(width: 3),
-            Icon(
-              Icons.info_outline_rounded,
-              size: 10,
-              color: chipColor.withValues(alpha: 0.5),
-            ),
-          ],
         ],
       ),
     );
 
     if (!isTappable) {
       return Padding(
-        padding: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.only(right: 5),
         child: chip,
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 5),
       child: GestureDetector(
         onTap: () => _showDefinitionTooltip(context, entry),
         onLongPress: () =>
@@ -264,8 +246,7 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
     const tooltipWidth = 260.0;
 
     // Position above the chip, centered horizontally.
-    final centerX =
-        widget.anchorOffset.dx + widget.anchorSize.width / 2;
+    final centerX = widget.anchorOffset.dx + widget.anchorSize.width / 2;
     var left = centerX - tooltipWidth / 2;
     // Keep within screen bounds.
     left = left.clamp(8.0, screenWidth - tooltipWidth - 8);
@@ -318,7 +299,8 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
                             color: pt.accentMuted,
                           ),
                         ),
-                        if (widget.entry.term != widget.entry.abbreviation) ...[
+                        if (widget.entry.term !=
+                            widget.entry.abbreviation) ...[
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -372,8 +354,8 @@ class _ActionExplanationRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 6,
-          height: 6,
+          width: 5,
+          height: 5,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
@@ -381,10 +363,10 @@ class _ActionExplanationRow extends StatelessWidget {
           child: Text(
             parts.join(' · '),
             style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 10.5,
+              color: Colors.white.withValues(alpha: 0.5),
             ),
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -417,10 +399,10 @@ class _StreetSummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '\u2500\u2500 ${summary.completedStreet} \u2500\u2500 ${summary.summary}',
+            '\u2500 ${summary.completedStreet} \u2500 ${summary.summary}',
             style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 10.5,
+              color: Colors.white.withValues(alpha: 0.4),
               fontStyle: FontStyle.italic,
             ),
             maxLines: 1,
