@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/models/action.dart';
@@ -6,7 +7,8 @@ import 'package:poker_trainer/poker/models/action.dart';
 /// Callback for when the user selects an action.
 typedef OnAction = void Function(PokerAction action);
 
-/// Bottom bar showing legal actions for the current player.
+/// Bottom bar showing legal actions with premium 3D-embossed buttons
+/// and a polished bet slider interface.
 class ActionBar extends StatefulWidget {
   final int currentPlayerIndex;
   final LegalActionSet legalActions;
@@ -121,7 +123,7 @@ class _ActionBarState extends State<ActionBar>
     final compact = buttonCount > 3;
     final gap = compact ? 6.0 : 8.0;
     final fontSize = compact ? 13.0 : 14.0;
-    const btnHeight = 46.0;
+    const btnHeight = 48.0;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -140,7 +142,6 @@ class _ActionBarState extends State<ActionBar>
         top: false,
         child: Row(
           children: [
-            // Fold button
             if (legal.canFold)
               Expanded(
                 child: Padding(
@@ -159,7 +160,6 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ),
               ),
-            // Check button
             if (legal.canCheck)
               Expanded(
                 child: Padding(
@@ -178,7 +178,6 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ),
               ),
-            // Call button
             if (legal.callAmount != null)
               Expanded(
                 child: Padding(
@@ -198,7 +197,6 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ),
               ),
-            // Bet button
             if (legal.betRange != null)
               Expanded(
                 child: Padding(
@@ -212,7 +210,6 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ),
               ),
-            // Raise button
             if (legal.raiseRange != null)
               Expanded(
                 child: Padding(
@@ -226,7 +223,6 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ),
               ),
-            // All-in button
             if (legal.canAllIn)
               Expanded(
                 child: Padding(
@@ -238,6 +234,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionAllIn,
                     height: btnHeight,
                     fontSize: fontSize,
+                    isAllIn: true,
                     onPressed: () {
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
@@ -257,7 +254,6 @@ class _ActionBarState extends State<ActionBar>
   Widget _buildBetSlider(BuildContext context) {
     final pt = context.poker;
     final pot = widget.currentPot;
-    // Preset amounts.
     final presets = <(String, double)>[
       ('1/3', pot / 3),
       ('1/2', pot / 2),
@@ -280,19 +276,27 @@ class _ActionBarState extends State<ActionBar>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Amount display
+              // Amount display with gold shimmer
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '${_isRaise ? "Raise to" : "Bet"}: ${_formatChips(_betAmount)}',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: pt.accent,
+                child: ShaderMask(
+                  shaderCallback: (bounds) {
+                    return LinearGradient(
+                      colors: [pt.goldPrimary, pt.goldLight, pt.goldPrimary],
+                    ).createShader(bounds);
+                  },
+                  child: Text(
+                    '${_isRaise ? "Raise to" : "Bet"}: ${_formatChips(_betAmount)}',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ),
-              // Slider
+              // Slider with enhanced theme
               Row(
                 children: [
                   Text(
@@ -302,12 +306,16 @@ class _ActionBarState extends State<ActionBar>
                   Expanded(
                     child: SliderTheme(
                       data: SliderThemeData(
-                        activeTrackColor: pt.accent,
+                        activeTrackColor: pt.goldPrimary,
                         inactiveTrackColor:
                             pt.borderSubtle.withValues(alpha: 0.3),
-                        thumbColor: pt.accent,
-                        overlayColor: pt.accent.withValues(alpha: 0.12),
-                        trackHeight: 3,
+                        thumbColor: pt.goldPrimary,
+                        overlayColor: pt.goldPrimary.withValues(alpha: 0.12),
+                        trackHeight: 4,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 8,
+                          elevation: 4,
+                        ),
                       ),
                       child: Slider(
                         value: _betAmount.clamp(_minBet, _maxBet),
@@ -342,11 +350,13 @@ class _ActionBarState extends State<ActionBar>
                       if (amount >= _minBet && amount <= _maxBet)
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 2),
                             child: _PresetButton(
                               label: label,
                               isActive:
-                                  (_betAmount - _roundBet(amount)).abs() < 0.01,
+                                  (_betAmount - _roundBet(amount)).abs() <
+                                      0.01,
                               onPressed: () {
                                 setState(() {
                                   _betAmount = _roundBet(amount);
@@ -355,7 +365,6 @@ class _ActionBarState extends State<ActionBar>
                             ),
                           ),
                         ),
-                    // All-in preset
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -416,7 +425,6 @@ class _ActionBarState extends State<ActionBar>
     );
   }
 
-  /// Round bet to nearest whole number or half (for cleaner amounts).
   double _roundBet(double value) {
     if (value <= 10) return (value * 2).roundToDouble() / 2;
     if (value <= 100) return value.roundToDouble();
@@ -424,12 +432,13 @@ class _ActionBarState extends State<ActionBar>
   }
 }
 
-/// A polished action button with rounded corners and subtle gradient.
-class _ActionButton extends StatelessWidget {
+/// Premium 3D-embossed action button with tactile press animation.
+class _ActionButton extends StatefulWidget {
   final String label;
   final Color color;
   final double height;
   final double fontSize;
+  final bool isAllIn;
   final VoidCallback onPressed;
 
   const _ActionButton({
@@ -437,48 +446,165 @@ class _ActionButton extends StatelessWidget {
     required this.color,
     required this.height,
     required this.fontSize,
+    this.isAllIn = false,
     required this.onPressed,
   });
 
   @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pressController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _yOffset;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      duration: PokerAnimations.kButtonPress,
+      reverseDuration: PokerAnimations.kButtonRelease,
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _pressController,
+        curve: PokerAnimations.buttonPressCurve,
+        reverseCurve: Curves.easeOutCubic,
+      ),
+    );
+    _yOffset = Tween<double>(begin: 0, end: 2).animate(
+      CurvedAnimation(
+        parent: _pressController,
+        curve: PokerAnimations.buttonPressCurve,
+        reverseCurve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails _) {
+    _isPressed = true;
+    _pressController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_isPressed) {
+      _isPressed = false;
+      _pressController.reverse();
+      widget.onPressed();
+    }
+  }
+
+  void _handleTapCancel() {
+    _isPressed = false;
+    _pressController.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          height: height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color,
-                Color.lerp(color, Colors.black, 0.15)!,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w600,
+    final color = widget.color;
+    final lightened = Color.lerp(color, Colors.white, 0.15)!;
+    final darkened = Color.lerp(color, Colors.black, 0.25)!;
+
+    return AnimatedBuilder(
+      animation: _pressController,
+      builder: (context, child) {
+        final isDown = _pressController.value > 0;
+        return Transform.translate(
+          offset: Offset(0, _yOffset.value),
+          child: Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              height: widget.height,
+              decoration: BoxDecoration(
+                // 3-stop gradient: light top → base → dark bottom
+                gradient: LinearGradient(
+                  colors: isDown
+                      ? [
+                          Color.lerp(color, Colors.black, 0.1)!,
+                          darkened,
+                        ]
+                      : [lightened, color, darkened],
+                  stops: isDown ? null : const [0.0, 0.4, 1.0],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border(
+                  top: BorderSide(
+                    color: isDown
+                        ? Colors.transparent
+                        : Colors.white.withValues(alpha: 0.12),
+                    width: 1,
                   ),
+                  left: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    width: 0.5,
+                  ),
+                  right: BorderSide(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    width: 0.5,
+                  ),
+                  bottom: BorderSide(
+                    color: isDown
+                        ? Colors.transparent
+                        : Colors.black.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                boxShadow: isDown
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.35),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+              ),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTapDown: _handleTapDown,
+        onTapUp: _handleTapUp,
+        onTapCancel: _handleTapCancel,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: widget.fontSize,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black38,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -506,23 +632,26 @@ class _PresetButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final borderColor = accentColor ?? pt.accent;
+    final borderColor = accentColor ?? pt.goldPrimary;
 
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
         minimumSize: const Size(0, 34),
-        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        textStyle:
+            const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         side: BorderSide(
-          color: isActive ? borderColor : borderColor.withValues(alpha: 0.4),
+          color:
+              isActive ? borderColor : borderColor.withValues(alpha: 0.4),
           width: isActive ? 1.5 : 1,
         ),
-        backgroundColor:
-            isActive ? borderColor.withValues(alpha: 0.15) : Colors.transparent,
+        backgroundColor: isActive
+            ? borderColor.withValues(alpha: 0.15)
+            : Colors.transparent,
       ),
       child: Text(label),
     );

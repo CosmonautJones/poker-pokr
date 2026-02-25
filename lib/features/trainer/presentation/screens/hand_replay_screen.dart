@@ -402,7 +402,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   }
 }
 
-/// Animated hand-complete overlay with fade + scale entrance.
+/// Premium hand-complete overlay with confetti, gold spotlight, and cinematic entrance.
 class _HandCompleteOverlay extends StatefulWidget {
   final GameState gameState;
   final VoidCallback onBack;
@@ -419,31 +419,48 @@ class _HandCompleteOverlay extends StatefulWidget {
 }
 
 class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _entranceController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+
+  late AnimationController _confettiController;
+  late AnimationController _spotlightController;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
-      parent: _controller,
+      parent: _entranceController,
       curve: Curves.easeOut,
     );
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _entranceController, curve: Curves.easeOutBack),
     );
-    _controller.forward();
+
+    _confettiController = AnimationController(
+      duration: const Duration(milliseconds: 2400),
+      vsync: this,
+    )..repeat();
+
+    _spotlightController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _entranceController.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _entranceController.dispose();
+    _confettiController.dispose();
+    _spotlightController.dispose();
     super.dispose();
   }
 
@@ -456,101 +473,223 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
       opacity: _fadeAnimation,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: pt.accent.withValues(alpha: 0.6),
-              width: 0.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: pt.accent.withValues(alpha: 0.15),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 12,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        child: SizedBox(
+          width: 280,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                'Hand Complete',
-                style: TextStyle(
-                  color: pt.accent,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.3,
+              // Gold spotlight glow behind card
+              AnimatedBuilder(
+                animation: _spotlightController,
+                builder: (context, _) {
+                  final pulse =
+                      0.06 + _spotlightController.value * 0.06;
+                  return Container(
+                    width: 280,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: RadialGradient(
+                        colors: [
+                          pt.winnerGlow.withValues(alpha: pulse),
+                          Colors.transparent,
+                        ],
+                        radius: 0.8,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Confetti particles
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _confettiController,
+                  builder: (context, _) {
+                    return CustomPaint(
+                      painter: _ConfettiPainter(
+                        progress: _confettiController.value,
+                        colors: [
+                          pt.goldPrimary,
+                          pt.goldLight,
+                          pt.goldDark,
+                          Colors.white70,
+                          pt.chipRed,
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
-              if (gs.winnerIndices != null &&
-                  gs.winnerIndices!.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    'Winner${gs.winnerIndices!.length > 1 ? "s" : ""}: '
-                    '${gs.winnerIndices!.map((i) => gs.players[i].name).join(", ")}',
-                    style: TextStyle(
-                      color: pt.textMuted,
-                      fontSize: 13,
-                    ),
+              // Overlay card
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: pt.goldPrimary.withValues(alpha: 0.5),
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: pt.goldPrimary.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 16,
+                    ),
+                  ],
                 ),
-                if (gs.handDescriptions.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Text(
-                      gs.winnerIndices!
-                          .where(
-                              (i) => gs.handDescriptions.containsKey(i))
-                          .map((i) => gs.handDescriptions[i]!)
-                          .toSet()
-                          .join(' / '),
-                      style: TextStyle(
-                        color: pt.accentMuted,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Gold gradient "Hand Complete" title
+                    ShaderMask(
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          colors: [
+                            pt.goldLight,
+                            pt.goldPrimary,
+                            pt.goldLight,
+                          ],
+                        ).createShader(bounds);
+                      },
+                      child: const Text(
+                        'HAND COMPLETE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.0,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OutlinedButton(
-                    onPressed: widget.onBack,
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    if (gs.winnerIndices != null &&
+                        gs.winnerIndices!.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Winner${gs.winnerIndices!.length > 1 ? "s" : ""}: '
+                          '${gs.winnerIndices!.map((i) => gs.players[i].name).join(", ")}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
+                      if (gs.handDescriptions.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            gs.winnerIndices!
+                                .where((i) =>
+                                    gs.handDescriptions.containsKey(i))
+                                .map((i) => gs.handDescriptions[i]!)
+                                .toSet()
+                                .join(' / '),
+                            style: TextStyle(
+                              color: pt.goldLight,
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        OutlinedButton(
+                          onPressed: widget.onBack,
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Back'),
+                        ),
+                        const SizedBox(width: 12),
+                        FilledButton.icon(
+                          onPressed: widget.onSave,
+                          icon:
+                              const Icon(Icons.save_rounded, size: 16),
+                          label: const Text('Save'),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Text('Back'),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: widget.onSave,
-                    icon: const Icon(Icons.save_rounded, size: 16),
-                    label: const Text('Save'),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+/// Draws falling confetti particles in gold/silver colors.
+class _ConfettiPainter extends CustomPainter {
+  final double progress;
+  final List<Color> colors;
+
+  _ConfettiPainter({required this.progress, required this.colors});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = _SeededRandom(42);
+    const count = 30;
+
+    for (int i = 0; i < count; i++) {
+      final baseX = random.nextDouble() * size.width;
+      final speed = 0.5 + random.nextDouble() * 0.5;
+      final drift = (random.nextDouble() - 0.5) * 30;
+      final rotation = random.nextDouble() * 3.14;
+      final colorIdx = i % colors.length;
+
+      final t = (progress * speed + i * 0.033) % 1.0;
+      final y = -10 + t * (size.height + 20);
+      final x = baseX + drift * _sineWave(t * 3 + i);
+      final opacity = t < 0.8 ? 0.7 : (1.0 - t) * 3.5;
+
+      final paint = Paint()
+        ..color = colors[colorIdx].withValues(alpha: opacity.clamp(0.0, 0.7));
+
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(rotation + t * 4);
+      canvas.drawRect(
+        const Rect.fromLTWH(-2, -4, 4, 8),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  double _sineWave(double x) => (x * 3.14159).remainder(6.28) < 3.14 ? 1.0 : -1.0;
+
+  @override
+  bool shouldRepaint(_ConfettiPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+/// Simple seeded random for deterministic confetti positions.
+class _SeededRandom {
+  int _state;
+  _SeededRandom(this._state);
+
+  double nextDouble() {
+    _state = (_state * 1103515245 + 12345) & 0x7FFFFFFF;
+    return _state / 0x7FFFFFFF;
   }
 }
 
