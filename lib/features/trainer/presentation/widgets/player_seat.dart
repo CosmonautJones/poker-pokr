@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/player.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/community_cards.dart';
 
@@ -26,6 +27,7 @@ class PlayerSeat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final isFolded = player.isFolded;
     final isAllIn = player.isAllIn;
     final opacity = isFolded ? 0.4 : 1.0;
@@ -59,22 +61,20 @@ class PlayerSeat extends StatelessWidget {
               vertical: (4 * scale).clamp(2.0, 4.0),
             ),
             decoration: BoxDecoration(
-              color: isCurrentPlayer
-                  ? const Color(0xFF1B5E20)
-                  : const Color(0xFF212121),
+              color: isCurrentPlayer ? pt.seatActive : pt.seatBackground,
               borderRadius: BorderRadius.circular(8 * scale),
               border: Border.all(
                 color: isCurrentPlayer
-                    ? Colors.greenAccent
+                    ? pt.seatActiveBorder
                     : isAllIn
-                        ? Colors.orange
-                        : Colors.grey.shade700,
+                        ? pt.seatBorderAllIn
+                        : pt.seatBorderDefault,
                 width: isCurrentPlayer ? 2 : 1,
               ),
               boxShadow: isCurrentPlayer
                   ? [
                       BoxShadow(
-                        color: Colors.greenAccent.withValues(alpha: 0.3),
+                        color: pt.seatActiveGlow,
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
@@ -93,8 +93,8 @@ class PlayerSeat extends StatelessWidget {
                         margin: EdgeInsets.only(right: 3 * scale),
                         width: (14 * scale).clamp(10.0, 16.0),
                         height: (14 * scale).clamp(10.0, 16.0),
-                        decoration: const BoxDecoration(
-                          color: Colors.amber,
+                        decoration: BoxDecoration(
+                          color: pt.dealerChip,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -127,7 +127,7 @@ class PlayerSeat extends StatelessWidget {
                 Text(
                   _formatChips(player.stack),
                   style: TextStyle(
-                    color: Colors.grey.shade300,
+                    color: pt.textMuted,
                     fontSize: (12 * scale).clamp(9.0, 13.0),
                     fontWeight: FontWeight.bold,
                   ),
@@ -141,7 +141,7 @@ class PlayerSeat extends StatelessWidget {
                       vertical: 1,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade800,
+                      color: pt.badgeAllIn,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -161,13 +161,13 @@ class PlayerSeat extends StatelessWidget {
                       vertical: 1,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade800,
+                      color: pt.badgeFold,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'FOLD',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: pt.textMuted,
                         fontSize: (8 * scale).clamp(6.0, 9.0),
                         fontWeight: FontWeight.bold,
                       ),
@@ -192,7 +192,7 @@ class PlayerSeat extends StatelessWidget {
                 child: Text(
                   _formatChips(player.currentBet),
                   style: TextStyle(
-                    color: Colors.yellowAccent,
+                    color: pt.chipBet,
                     fontSize: (10 * scale).clamp(8.0, 11.0),
                     fontWeight: FontWeight.bold,
                   ),

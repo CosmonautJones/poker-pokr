@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
 
 /// A bottom sheet that lets the user pick a card by scrolling through
@@ -22,9 +23,10 @@ class CardPickerBottomSheet extends StatefulWidget {
     Set<int> unavailableCardValues = const {},
     PokerCard? initialCard,
   }) {
+    final pt = context.poker;
     return showModalBottomSheet<PokerCard>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: pt.cardFace,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -69,14 +71,16 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
     return widget.unavailableCardValues.contains(value);
   }
 
-  Color _suitColor(Suit suit) {
+  Color _suitColor(BuildContext context, Suit suit) {
+    final pt = context.poker;
     return (suit == Suit.hearts || suit == Suit.diamonds)
-        ? Colors.red.shade400
-        : Colors.white;
+        ? pt.suitRed
+        : pt.suitBlack;
   }
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final isCurrentUnavailable = _isUnavailable(_selectedRank, _selectedSuit);
 
     return SafeArea(
@@ -90,7 +94,7 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade600,
+                color: pt.cardBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -125,7 +129,7 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
                         rank.symbol,
                         style: TextStyle(
                           color: _isUnavailable(rank, _selectedSuit)
-                              ? Colors.grey.shade700
+                              ? pt.borderSubtle
                               : Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -147,8 +151,8 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
                         suit.symbol,
                         style: TextStyle(
                           color: _isUnavailable(_selectedRank, suit)
-                              ? Colors.grey.shade700
-                              : _suitColor(suit),
+                              ? pt.borderSubtle
+                              : _suitColor(context, suit),
                           fontSize: 26,
                         ),
                       ),
@@ -168,8 +172,9 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade400,
-                      side: BorderSide(color: Colors.grey.shade700),
+                      foregroundColor: pt.textMuted,
+                      side: BorderSide(color: pt.seatBorderDefault),
+                      minimumSize: const Size(0, 48),
                     ),
                     child: const Text('Cancel'),
                   ),
@@ -184,6 +189,9 @@ class _CardPickerBottomSheetState extends State<CardPickerBottomSheet> {
                                 PokerCard.from(_selectedRank, _selectedSuit);
                             Navigator.pop(context, card);
                           },
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                    ),
                     child: Text(
                         isCurrentUnavailable ? 'Already Dealt' : 'Select'),
                   ),
@@ -209,23 +217,23 @@ class _CardPreview extends StatelessWidget {
     required this.isUnavailable,
   });
 
-  Color get _suitColor {
-    if (isUnavailable) return Colors.grey.shade700;
-    return (suit == Suit.hearts || suit == Suit.diamonds)
-        ? Colors.red.shade400
-        : Colors.white;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+    final suitColor = isUnavailable
+        ? pt.borderSubtle
+        : (suit == Suit.hearts || suit == Suit.diamonds)
+            ? pt.suitRed
+            : pt.suitBlack;
+
     return Container(
       width: 64,
       height: 90,
       decoration: BoxDecoration(
-        color: isUnavailable ? const Color(0xFF0D0D1A) : const Color(0xFF1A1A2E),
+        color: isUnavailable ? pt.cardPlaceholder : pt.cardFace,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isUnavailable ? Colors.grey.shade800 : Colors.grey.shade500,
+          color: isUnavailable ? pt.borderSubtle : pt.cardBorder,
           width: 1.5,
         ),
         boxShadow: isUnavailable
@@ -241,19 +249,22 @@ class _CardPreview extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            rank.symbol,
-            style: TextStyle(
-              color: _suitColor,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              height: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              rank.symbol,
+              style: TextStyle(
+                color: suitColor,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
             ),
           ),
           Text(
             suit.symbol,
             style: TextStyle(
-              color: _suitColor,
+              color: suitColor,
               fontSize: 24,
               height: 1,
             ),
@@ -282,12 +293,13 @@ class _WheelPicker<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     return Column(
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey.shade500,
+            color: pt.textMuted,
             fontSize: 12,
           ),
         ),
@@ -302,7 +314,7 @@ class _WheelPicker<T> extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border.symmetric(
                       horizontal:
-                          BorderSide(color: Colors.grey.shade700, width: 1),
+                          BorderSide(color: pt.seatBorderDefault, width: 1),
                     ),
                   ),
                 ),

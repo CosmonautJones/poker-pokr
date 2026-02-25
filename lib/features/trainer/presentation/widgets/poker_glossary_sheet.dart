@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/poker_glossary.dart';
 
 /// Bottom sheet displaying the poker glossary grouped by category.
@@ -17,7 +18,7 @@ class PokerGlossarySheet extends StatelessWidget {
   }) {
     return showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey.shade900,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -42,7 +43,7 @@ class PokerGlossarySheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade600,
+              color: PokerTheme.of(context).cardBorder,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -53,7 +54,7 @@ class PokerGlossarySheet extends StatelessWidget {
           child: Row(
             children: [
               Icon(Icons.menu_book_rounded,
-                  size: 20, color: Colors.amber.shade300),
+                  size: 20, color: PokerTheme.of(context).accent),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -68,7 +69,10 @@ class PokerGlossarySheet extends StatelessWidget {
                 icon: const Icon(Icons.close, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                constraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
+                ),
               ),
             ],
           ),
@@ -110,7 +114,7 @@ class PokerGlossarySheet extends StatelessWidget {
 
                     return Container(
                       color: isHighlighted
-                          ? Colors.amber.withValues(alpha: 0.1)
+                          ? PokerTheme.of(context).accent.withValues(alpha: 0.1)
                           : null,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
@@ -125,7 +129,7 @@ class PokerGlossarySheet extends StatelessWidget {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: isHighlighted
-                                    ? Colors.amber.shade200
+                                    ? PokerTheme.of(context).accentMuted
                                     : Colors.white,
                               ),
                             ),
@@ -173,12 +177,12 @@ class PokerGlossarySheet extends StatelessWidget {
 
   static Color _categoryColor(String category) {
     return switch (category) {
-      PokerGlossary.categoryPositions => Colors.blue.shade300,
-      PokerGlossary.categoryBetting => Colors.amber.shade300,
-      PokerGlossary.categoryConcepts => Colors.green.shade300,
-      PokerGlossary.categoryHands => Colors.purple.shade300,
-      PokerGlossary.categoryStreets => Colors.teal.shade300,
-      _ => Colors.grey.shade300,
+      PokerGlossary.categoryPositions => const Color(0xFF90CAF9),
+      PokerGlossary.categoryBetting => const Color(0xFFFFE082),
+      PokerGlossary.categoryConcepts => const Color(0xFFA5D6A7),
+      PokerGlossary.categoryHands => const Color(0xFFCE93D8),
+      PokerGlossary.categoryStreets => const Color(0xFF80CBC4),
+      _ => const Color(0xFFBDBDBD),
     };
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
@@ -27,7 +28,6 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   HandSetup? _setup;
   bool _isLoading = true;
   String? _error;
-  // _historyExpanded removed: history is now a bottom sheet.
 
   /// Whether this is a new hand (handId == 0) or a saved hand.
   bool get _isNewHand => widget.handId == 0;
@@ -121,7 +121,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey.shade900,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -248,6 +248,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Hand Replay')),
@@ -262,7 +264,9 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+              Icon(Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
               Text(_error ?? 'Unknown error'),
               const SizedBox(height: 16),
@@ -347,15 +351,15 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                         decoration: BoxDecoration(
                           color: Colors.black87,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.amber),
+                          border: Border.all(color: pt.accent),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'Hand Complete',
                               style: TextStyle(
-                                color: Colors.amber,
+                                color: pt.accent,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -367,8 +371,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                                 child: Text(
                                   'Winner${gs.winnerIndices!.length > 1 ? "s" : ""}: '
                                   '${gs.winnerIndices!.map((i) => gs.players[i].name).join(", ")}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
+                                  style: TextStyle(
+                                    color: pt.textMuted,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -387,7 +391,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                                         .toSet()
                                         .join(' / '),
                                     style: TextStyle(
-                                      color: Colors.amber.shade200,
+                                      color: pt.accentMuted,
                                       fontSize: 12,
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -415,7 +419,6 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                       ),
                     ),
                   ),
-                // Action history is now shown via bottom sheet.
               ],
             ),
           ),
@@ -489,19 +492,21 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
     };
   }
 
-  Color _actionColor(ActionType type) {
+  Color _actionColor(BuildContext context, ActionType type) {
+    final pt = context.poker;
     return switch (type) {
-      ActionType.fold => Colors.grey,
-      ActionType.check => Colors.blueGrey.shade300,
-      ActionType.call => Colors.green.shade300,
-      ActionType.bet => Colors.amber.shade300,
-      ActionType.raise => Colors.amber.shade300,
-      ActionType.allIn => Colors.deepOrange.shade300,
+      ActionType.fold => pt.textMuted,
+      ActionType.check => pt.actionCheck,
+      ActionType.call => pt.profit,
+      ActionType.bet => pt.accent,
+      ActionType.raise => pt.accent,
+      ActionType.allIn => pt.actionAllIn,
     };
   }
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final hasBranches = widget.branches.length > 1;
     final activeBranch = widget.branches[widget.activeBranchIndex];
     final forkAt = activeBranch.forkAtActionIndex as int;
@@ -515,7 +520,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade600,
+              color: pt.cardBorder,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -538,7 +543,10 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                 icon: const Icon(Icons.close, size: 20),
                 onPressed: widget.onClose,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                constraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
+                ),
               ),
             ],
           ),
@@ -574,10 +582,10 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
         // Action list
         Expanded(
           child: widget.actions.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'No actions yet',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    style: TextStyle(color: pt.textMuted, fontSize: 13),
                   ),
                 )
               : ListView.builder(
@@ -598,14 +606,13 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                             child: Row(
                               children: [
                                 Icon(Icons.call_split,
-                                    size: 12,
-                                    color: Colors.amber.shade400),
+                                    size: 12, color: pt.accent),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Branch point',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.amber.shade400,
+                                    color: pt.accent,
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),
@@ -632,7 +639,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                                   child: Text(
                                     '${index + 1}',
                                     style: TextStyle(
-                                      color: Colors.grey.shade600,
+                                      color: pt.borderSubtle,
                                       fontSize: 11,
                                     ),
                                   ),
@@ -642,7 +649,8 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                                     _actionLabel(action),
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: _actionColor(action.type),
+                                      color: _actionColor(
+                                          context, action.type),
                                     ),
                                   ),
                                 ),
@@ -659,7 +667,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                                       child: Icon(
                                         Icons.call_split,
                                         size: 18,
-                                        color: Colors.amber.shade300,
+                                        color: pt.accent,
                                       ),
                                     ),
                                   ),

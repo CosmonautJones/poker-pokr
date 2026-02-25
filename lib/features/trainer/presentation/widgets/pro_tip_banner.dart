@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
 
 /// A collapsible banner that shows a contextual pro tip.
@@ -58,6 +59,7 @@ class _ProTipBannerState extends State<ProTipBanner>
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     final tip = widget.tip;
     if (tip == null) return const SizedBox.shrink();
 
@@ -68,7 +70,7 @@ class _ProTipBannerState extends State<ProTipBanner>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.amber.shade900.withValues(alpha: 0.25),
+              pt.actionBet.withValues(alpha: 0.25),
               Colors.transparent,
             ],
             begin: Alignment.centerLeft,
@@ -76,7 +78,7 @@ class _ProTipBannerState extends State<ProTipBanner>
           ),
           border: Border(
             bottom: BorderSide(
-              color: Colors.amber.shade800.withValues(alpha: 0.3),
+              color: pt.actionBet.withValues(alpha: 0.3),
               width: 0.5,
             ),
           ),
@@ -92,21 +94,21 @@ class _ProTipBannerState extends State<ProTipBanner>
                 Icon(
                   Icons.lightbulb_rounded,
                   size: 14,
-                  color: Colors.amber.shade300,
+                  color: pt.accent,
                 ),
                 const SizedBox(width: 6),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade800.withValues(alpha: 0.3),
+                    color: pt.actionBet.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     tip.category,
                     style: TextStyle(
                       fontSize: 9,
-                      color: Colors.amber.shade200,
+                      color: pt.accentMuted,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
                     ),
@@ -118,7 +120,7 @@ class _ProTipBannerState extends State<ProTipBanner>
                     tip.title,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.amber.shade100,
+                      color: pt.accentMuted,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -130,7 +132,7 @@ class _ProTipBannerState extends State<ProTipBanner>
                       ? Icons.expand_less_rounded
                       : Icons.expand_more_rounded,
                   size: 18,
-                  color: Colors.amber.shade300.withValues(alpha: 0.6),
+                  color: pt.accent.withValues(alpha: 0.6),
                 ),
               ],
             ),

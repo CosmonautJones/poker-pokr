@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/currency_formatter.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 
@@ -19,10 +20,9 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pt = context.poker;
     final isProfit = session.profitLoss >= 0;
-    final profitColor = isProfit
-        ? Colors.green.shade400
-        : Colors.red.shade400;
+    final profitColor = isProfit ? pt.profit : pt.loss;
 
     return Card(
       clipBehavior: Clip.antiAlias,

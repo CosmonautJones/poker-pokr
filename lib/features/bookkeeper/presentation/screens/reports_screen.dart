@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/currency_formatter.dart';
 import 'package:poker_trainer/features/bookkeeper/domain/session_stats.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/widgets/profit_chart.dart';
@@ -90,9 +91,8 @@ class _ReportsBody extends StatelessWidget {
       );
     }
 
-    final totalProfitColor = stats.totalProfit >= 0
-        ? Colors.green.shade400
-        : Colors.red.shade400;
+    final pt = context.poker;
+    final totalProfitColor = stats.totalProfit >= 0 ? pt.profit : pt.loss;
 
     // Responsive aspect ratio: taller cards on narrow screens.
     final aspectRatio = screenWidth < 360 ? 1.4 : 1.6;
@@ -119,9 +119,7 @@ class _ReportsBody extends StatelessWidget {
               title: 'Hourly Rate',
               value: '${CurrencyFormatter.formatSigned(stats.hourlyRate)}/hr',
               icon: Icons.access_time,
-              valueColor: stats.hourlyRate >= 0
-                  ? Colors.green.shade400
-                  : Colors.red.shade400,
+              valueColor: stats.hourlyRate >= 0 ? pt.profit : pt.loss,
             ),
             StatsSummaryCard(
               title: 'Sessions',
@@ -132,9 +130,7 @@ class _ReportsBody extends StatelessWidget {
               title: 'Win Rate',
               value: '${stats.winRate.toStringAsFixed(1)}%',
               icon: Icons.percent,
-              valueColor: stats.winRate >= 50
-                  ? Colors.green.shade400
-                  : Colors.orange.shade400,
+              valueColor: stats.winRate >= 50 ? pt.profit : pt.accent,
             ),
           ],
         ),
@@ -153,13 +149,13 @@ class _ReportsBody extends StatelessWidget {
               title: 'Biggest Win',
               value: CurrencyFormatter.format(stats.biggestWin),
               icon: Icons.trending_up_rounded,
-              valueColor: Colors.green.shade400,
+              valueColor: pt.profit,
             ),
             StatsSummaryCard(
               title: 'Biggest Loss',
               value: CurrencyFormatter.format(stats.biggestLoss),
               icon: Icons.trending_down_rounded,
-              valueColor: Colors.red.shade400,
+              valueColor: pt.loss,
             ),
           ],
         ),
