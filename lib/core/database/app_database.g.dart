@@ -3634,6 +3634,8 @@ typedef $$HandsTableCreateCompanionBuilder =
       required double smallBlind,
       required double bigBlind,
       Value<double> ante,
+      Value<int> gameType,
+      Value<double> straddle,
       required List<PlayerConfig> playerConfigs,
       required List<int> communityCards,
       Value<int?> parentHandId,
@@ -3650,6 +3652,8 @@ typedef $$HandsTableUpdateCompanionBuilder =
       Value<double> smallBlind,
       Value<double> bigBlind,
       Value<double> ante,
+      Value<int> gameType,
+      Value<double> straddle,
       Value<List<PlayerConfig>> playerConfigs,
       Value<List<int>> communityCards,
       Value<int?> parentHandId,
@@ -3698,6 +3702,16 @@ class $$HandsTableFilterComposer extends Composer<_$AppDatabase, $HandsTable> {
 
   ColumnFilters<double> get ante => $composableBuilder(
     column: $table.ante,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gameType => $composableBuilder(
+    column: $table.gameType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get straddle => $composableBuilder(
+    column: $table.straddle,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3778,6 +3792,16 @@ class $$HandsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get gameType => $composableBuilder(
+    column: $table.gameType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get straddle => $composableBuilder(
+    column: $table.straddle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get playerConfigs => $composableBuilder(
     column: $table.playerConfigs,
     builder: (column) => ColumnOrderings(column),
@@ -3845,6 +3869,12 @@ class $$HandsTableAnnotationComposer
   GeneratedColumn<double> get ante =>
       $composableBuilder(column: $table.ante, builder: (column) => column);
 
+  GeneratedColumn<int> get gameType =>
+      $composableBuilder(column: $table.gameType, builder: (column) => column);
+
+  GeneratedColumn<double> get straddle =>
+      $composableBuilder(column: $table.straddle, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<List<PlayerConfig>, String>
   get playerConfigs => $composableBuilder(
     column: $table.playerConfigs,
@@ -3909,6 +3939,8 @@ class $$HandsTableTableManager
                 Value<double> smallBlind = const Value.absent(),
                 Value<double> bigBlind = const Value.absent(),
                 Value<double> ante = const Value.absent(),
+                Value<int> gameType = const Value.absent(),
+                Value<double> straddle = const Value.absent(),
                 Value<List<PlayerConfig>> playerConfigs = const Value.absent(),
                 Value<List<int>> communityCards = const Value.absent(),
                 Value<int?> parentHandId = const Value.absent(),
@@ -3923,6 +3955,8 @@ class $$HandsTableTableManager
                 smallBlind: smallBlind,
                 bigBlind: bigBlind,
                 ante: ante,
+                gameType: gameType,
+                straddle: straddle,
                 playerConfigs: playerConfigs,
                 communityCards: communityCards,
                 parentHandId: parentHandId,
@@ -3939,6 +3973,8 @@ class $$HandsTableTableManager
                 required double smallBlind,
                 required double bigBlind,
                 Value<double> ante = const Value.absent(),
+                Value<int> gameType = const Value.absent(),
+                Value<double> straddle = const Value.absent(),
                 required List<PlayerConfig> playerConfigs,
                 required List<int> communityCards,
                 Value<int?> parentHandId = const Value.absent(),
@@ -3953,6 +3989,8 @@ class $$HandsTableTableManager
                 smallBlind: smallBlind,
                 bigBlind: bigBlind,
                 ante: ante,
+                gameType: gameType,
+                straddle: straddle,
                 playerConfigs: playerConfigs,
                 communityCards: communityCards,
                 parentHandId: parentHandId,
