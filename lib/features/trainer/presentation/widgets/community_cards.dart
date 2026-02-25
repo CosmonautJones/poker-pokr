@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
 
-/// Displays the community cards (0-5) in a horizontal row.
+/// Displays the community cards (0-5) in a horizontal row with deal animations.
 class CommunityCardsWidget extends StatelessWidget {
   final List<PokerCard> cards;
   final double scale;
@@ -21,7 +21,10 @@ class CommunityCardsWidget extends StatelessWidget {
         if (i < cards.length) {
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 2 * scale),
-            child: _CardFace(card: cards[i], scale: scale),
+            child: _AnimatedCardDeal(
+              key: ValueKey('community_${cards[i].rank}_${cards[i].suit}'),
+              child: _CardFace(card: cards[i], scale: scale),
+            ),
           );
         }
         return Padding(
@@ -29,6 +32,64 @@ class CommunityCardsWidget extends StatelessWidget {
           child: _CardPlaceholder(scale: scale),
         );
       }),
+    );
+  }
+}
+
+/// Wraps a card widget with a slide-up + fade-in animation on first build.
+class _AnimatedCardDeal extends StatefulWidget {
+  final Widget child;
+
+  const _AnimatedCardDeal({super.key, required this.child});
+
+  @override
+  State<_AnimatedCardDeal> createState() => _AnimatedCardDealState();
+}
+
+class _AnimatedCardDealState extends State<_AnimatedCardDeal>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }
@@ -43,9 +104,8 @@ class _CardFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
-        ? pt.suitRed
-        : pt.suitBlack;
+    final isRed = card.suit == Suit.hearts || card.suit == Suit.diamonds;
+    final suitColor = isRed ? pt.suitRed : pt.suitBlack;
 
     final w = (44 * scale).clamp(30.0, 48.0);
     final h = (62 * scale).clamp(42.0, 68.0);
@@ -53,14 +113,26 @@ class _CardFace extends StatelessWidget {
       width: w,
       height: h,
       decoration: BoxDecoration(
-        color: pt.cardFace,
+        gradient: LinearGradient(
+          colors: [
+            pt.cardFace,
+            Color.lerp(pt.cardFace, Colors.white, 0.06)!,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(6 * scale),
-        border: Border.all(color: pt.cardBorder, width: 1),
-        boxShadow: const [
+        border: Border.all(color: pt.cardBorder.withValues(alpha: 0.5), width: 0.5),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 3,
-            offset: Offset(1, 1),
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 4,
+            offset: const Offset(1, 2),
+          ),
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.04),
+            blurRadius: 1,
+            offset: const Offset(-0.5, -0.5),
           ),
         ],
       ),
@@ -110,13 +182,9 @@ class _CardPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         color: pt.cardPlaceholder,
         borderRadius: BorderRadius.circular(6 * scale),
-        border: Border.all(color: pt.borderSubtle, width: 1),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.help_outline,
-          color: pt.borderSubtle,
-          size: (18 * scale).clamp(12.0, 20.0),
+        border: Border.all(
+          color: pt.borderSubtle.withValues(alpha: 0.3),
+          width: 0.5,
         ),
       ),
     );
@@ -139,9 +207,8 @@ class MiniCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
-        ? pt.suitRed
-        : pt.suitBlack;
+    final isRed = card.suit == Suit.hearts || card.suit == Suit.diamonds;
+    final suitColor = isRed ? pt.suitRed : pt.suitBlack;
 
     final w = (30 * scale).clamp(22.0, 34.0);
     final h = (42 * scale).clamp(30.0, 46.0);
@@ -166,9 +233,23 @@ class MiniCardWidget extends StatelessWidget {
       width: w,
       height: h,
       decoration: BoxDecoration(
-        color: pt.cardFace,
+        gradient: LinearGradient(
+          colors: [
+            pt.cardFace,
+            Color.lerp(pt.cardFace, Colors.white, 0.04)!,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(4 * scale),
-        border: Border.all(color: pt.cardBorder, width: 0.5),
+        border: Border.all(color: pt.cardBorder.withValues(alpha: 0.4), width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 2,
+            offset: const Offset(0.5, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

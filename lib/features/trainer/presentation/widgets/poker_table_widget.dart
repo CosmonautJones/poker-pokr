@@ -10,7 +10,7 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/pot_display.
 /// The main poker table visualization.
 ///
 /// Positions player seats around an oval table, shows community cards
-/// and pot in the center.
+/// and pot in the center. Includes animations for street transitions.
 class PokerTableWidget extends StatelessWidget {
   final GameState gameState;
 
@@ -51,53 +51,23 @@ class PokerTableWidget extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // Table felt
+            // Table felt with enhanced visuals
             Positioned(
               left: (width - tableWidth) / 2,
               top: (height - tableHeight) / 2,
-              child: Container(
+              child: _TableFelt(
                 width: tableWidth,
                 height: tableHeight,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [pt.feltCenter, pt.feltEdge],
-                    radius: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(tableHeight / 2),
-                  border: Border.all(
-                    color: pt.tableBorder,
-                    width: (6 * scale).clamp(3.0, 6.0),
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black38,
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
+                scale: scale,
               ),
             ),
-            // Street indicator (top center of table)
+            // Street indicator (top center of table) - animated
             Positioned(
-              left: centerX - 40,
-              top: (height - tableHeight) / 2 + 10,
-              child: Container(
-                width: 80,
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                decoration: BoxDecoration(
-                  color: pt.surfaceOverlay,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  _streetLabel(gameState.street),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: pt.textMuted,
-                    fontSize: (11 * scale).clamp(9.0, 12.0),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              left: centerX - 44,
+              top: (height - tableHeight) / 2 + 12,
+              child: _AnimatedStreetBadge(
+                street: gameState.street,
+                scale: scale,
               ),
             ),
             // Community cards
@@ -174,14 +144,160 @@ class PokerTableWidget extends StatelessWidget {
     }
     return positions;
   }
+}
 
-  String _streetLabel(Street street) {
-    return switch (street) {
+/// Enhanced table felt with layered gradients and inner glow.
+class _TableFelt extends StatelessWidget {
+  final double width;
+  final double height;
+  final double scale;
+
+  const _TableFelt({
+    required this.width,
+    required this.height,
+    required this.scale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+    final borderWidth = (5 * scale).clamp(3.0, 6.0);
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(height / 2),
+        // Outer rim shadow
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 16,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: pt.tableBorder.withValues(alpha: 0.3),
+            blurRadius: 4,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(height / 2),
+        child: Stack(
+          children: [
+            // Base felt gradient
+            Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [pt.feltCenter, pt.feltEdge],
+                  radius: 0.9,
+                  center: const Alignment(0, -0.1),
+                ),
+              ),
+            ),
+            // Subtle inner highlight (top-left light source)
+            Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
+                  radius: 0.6,
+                  center: const Alignment(-0.3, -0.4),
+                ),
+              ),
+            ),
+            // Border rail
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(height / 2),
+                border: Border.all(
+                  color: pt.tableBorder,
+                  width: borderWidth,
+                ),
+              ),
+            ),
+            // Inner edge shadow (gives depth to the rail)
+            Container(
+              margin: EdgeInsets.all(borderWidth),
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(height / 2 - borderWidth),
+                border: Border.all(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  width: 1,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated street badge that smoothly transitions between streets.
+class _AnimatedStreetBadge extends StatelessWidget {
+  final Street street;
+  final double scale;
+
+  const _AnimatedStreetBadge({
+    required this.street,
+    required this.scale,
+  });
+
+  String _streetLabel(Street s) {
+    return switch (s) {
       Street.preflop => 'Preflop',
       Street.flop => 'Flop',
       Street.turn => 'Turn',
       Street.river => 'River',
       Street.showdown => 'Showdown',
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey(street),
+        width: 88,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: pt.surfaceOverlay,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: pt.borderSubtle.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
+        ),
+        child: Text(
+          _streetLabel(street),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: pt.textMuted,
+            fontSize: (11 * scale).clamp(9.0, 12.0),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
   }
 }

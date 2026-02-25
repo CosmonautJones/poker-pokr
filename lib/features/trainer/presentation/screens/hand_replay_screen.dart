@@ -14,6 +14,7 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_bann
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 import 'package:poker_trainer/poker/models/action.dart';
+import 'package:poker_trainer/poker/models/game_state.dart';
 
 class HandReplayScreen extends ConsumerStatefulWidget {
   final int handId;
@@ -292,42 +293,66 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           hasBranches
               ? replayState.branches[replayState.activeBranchIndex].label
               : (_isNewHand ? 'New Hand' : 'Hand #${widget.handId}'),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/trainer'),
         ),
         actions: [
-          // Undo
+          // Undo / Redo compact group
           IconButton(
-            icon: const Icon(Icons.undo),
+            icon: const Icon(Icons.undo, size: 20),
             onPressed: replayState.canUndo ? () => notifier.undo() : null,
             tooltip: 'Undo',
+            visualDensity: VisualDensity.compact,
           ),
-          // Redo
           IconButton(
-            icon: const Icon(Icons.redo),
+            icon: const Icon(Icons.redo, size: 20),
             onPressed: replayState.canRedo ? () => notifier.redo() : null,
             tooltip: 'Redo',
+            visualDensity: VisualDensity.compact,
           ),
           // Save (when hand is complete or has branches)
           if (replayState.isComplete || hasBranches)
             IconButton(
-              icon: const Icon(Icons.save),
+              icon: const Icon(Icons.save_rounded, size: 20),
               onPressed: _saveHand,
               tooltip: 'Save Hand',
+              visualDensity: VisualDensity.compact,
             ),
-          // Glossary
-          IconButton(
-            icon: const Icon(Icons.menu_book_rounded),
-            onPressed: () => PokerGlossarySheet.show(context),
-            tooltip: 'Poker Glossary',
-          ),
-          // History log
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => _showHistorySheet(context, setup),
-            tooltip: 'Action History',
+          // Overflow menu for secondary actions
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 20),
+            tooltip: 'More',
+            onSelected: (value) {
+              switch (value) {
+                case 'glossary':
+                  PokerGlossarySheet.show(context);
+                case 'history':
+                  _showHistorySheet(context, setup);
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'history',
+                child: ListTile(
+                  leading: Icon(Icons.history, size: 20),
+                  title: Text('Action History'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'glossary',
+                child: ListTile(
+                  leading: Icon(Icons.menu_book_rounded, size: 20),
+                  title: Text('Poker Glossary'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -338,84 +363,17 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
             child: Stack(
               children: [
                 PokerTableWidget(gameState: gs),
-                // Hand complete overlay
+                // Hand complete overlay with animation
                 if (replayState.isComplete)
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 8,
+                    bottom: 12,
                     child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: pt.accent),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Hand Complete',
-                              style: TextStyle(
-                                color: pt.accent,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (gs.winnerIndices != null &&
-                                gs.winnerIndices!.isNotEmpty) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  'Winner${gs.winnerIndices!.length > 1 ? "s" : ""}: '
-                                  '${gs.winnerIndices!.map((i) => gs.players[i].name).join(", ")}',
-                                  style: TextStyle(
-                                    color: pt.textMuted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              // Show winning hand description(s).
-                              if (gs.handDescriptions.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    gs.winnerIndices!
-                                        .where((i) =>
-                                            gs.handDescriptions
-                                                .containsKey(i))
-                                        .map((i) =>
-                                            gs.handDescriptions[i]!)
-                                        .toSet()
-                                        .join(' / '),
-                                    style: TextStyle(
-                                      color: pt.accentMuted,
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () => context.go('/trainer'),
-                                  child: const Text('Back'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton.icon(
-                                  onPressed: _saveHand,
-                                  icon: const Icon(Icons.save, size: 18),
-                                  label: const Text('Save'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      child: _HandCompleteOverlay(
+                        gameState: gs,
+                        onBack: () => context.go('/trainer'),
+                        onSave: _saveHand,
                       ),
                     ),
                   ),
@@ -439,6 +397,158 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               onAction: (action) => notifier.applyAction(action),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Animated hand-complete overlay with fade + scale entrance.
+class _HandCompleteOverlay extends StatefulWidget {
+  final GameState gameState;
+  final VoidCallback onBack;
+  final VoidCallback onSave;
+
+  const _HandCompleteOverlay({
+    required this.gameState,
+    required this.onBack,
+    required this.onSave,
+  });
+
+  @override
+  State<_HandCompleteOverlay> createState() => _HandCompleteOverlayState();
+}
+
+class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+    final gs = widget.gameState;
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: pt.accent.withValues(alpha: 0.6),
+              width: 0.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: pt.accent.withValues(alpha: 0.15),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Hand Complete',
+                style: TextStyle(
+                  color: pt.accent,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              if (gs.winnerIndices != null &&
+                  gs.winnerIndices!.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Winner${gs.winnerIndices!.length > 1 ? "s" : ""}: '
+                    '${gs.winnerIndices!.map((i) => gs.players[i].name).join(", ")}',
+                    style: TextStyle(
+                      color: pt.textMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                if (gs.handDescriptions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      gs.winnerIndices!
+                          .where(
+                              (i) => gs.handDescriptions.containsKey(i))
+                          .map((i) => gs.handDescriptions[i]!)
+                          .toSet()
+                          .join(' / '),
+                      style: TextStyle(
+                        color: pt.accentMuted,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton(
+                    onPressed: widget.onBack,
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Back'),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: widget.onSave,
+                    icon: const Icon(Icons.save_rounded, size: 16),
+                    label: const Text('Save'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
