@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/poker/models/card.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Notifier that manages the create-hand form state.
 class HandSetupNotifier extends Notifier<HandSetup> {
@@ -56,6 +57,24 @@ class HandSetupNotifier extends Notifier<HandSetup> {
     state = state.copyWith(dealerIndex: index);
   }
 
+  void setGameType(GameType gameType) {
+    // Clear hole cards when switching game types (different card count).
+    if (gameType != state.gameType) {
+      state = state.copyWith(
+        gameType: gameType,
+        holeCards: List<List<PokerCard>?>.filled(state.playerCount, null),
+      );
+    }
+  }
+
+  void setStraddleEnabled(bool enabled) {
+    state = state.copyWith(straddleEnabled: enabled);
+  }
+
+  void setStraddleMultiplier(double multiplier) {
+    state = state.copyWith(straddleMultiplier: multiplier);
+  }
+
   void setPlayerName(int index, String name) {
     final names = List<String>.of(state.playerNames);
     names[index] = name;
@@ -69,17 +88,18 @@ class HandSetupNotifier extends Notifier<HandSetup> {
   }
 
   /// Set a specific hole card for a player.
-  /// [cardIndex] is 0 or 1 (first or second card).
+  /// [cardIndex] can be 0-3 depending on game type.
   void setPlayerHoleCard(int playerIndex, int cardIndex, PokerCard card) {
     final holeCards = _ensureHoleCards();
-    final playerCards = List<PokerCard>.of(holeCards[playerIndex] ?? []);
-    // Pad with placeholders if needed.
+    final playerCards = List<PokerCard?>.of(holeCards[playerIndex] ?? []);
+    // Pad with null placeholders if needed.
     while (playerCards.length <= cardIndex) {
-      // Temporary placeholder - will be replaced.
-      playerCards.add(card);
+      playerCards.add(null);
     }
     playerCards[cardIndex] = card;
-    holeCards[playerIndex] = playerCards;
+    // Filter out null placeholders for storage.
+    holeCards[playerIndex] =
+        playerCards.whereType<PokerCard>().toList();
     state = state.copyWith(holeCards: holeCards);
   }
 
@@ -117,7 +137,8 @@ class HandSetupNotifier extends Notifier<HandSetup> {
       if (!usedCards.contains(v)) available.add(PokerCard(v));
     }
     available.shuffle(Random());
-    holeCards[playerIndex] = [available[0], available[1]];
+    final cardCount = state.gameType.holeCardCount;
+    holeCards[playerIndex] = available.sublist(0, cardCount);
     state = state.copyWith(holeCards: holeCards);
   }
 

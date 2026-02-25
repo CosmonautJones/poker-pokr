@@ -52,8 +52,9 @@ class HandReplayNotifier
     // Otherwise, let the engine deal randomly for unassigned players.
     List<List<PokerCard>>? resolvedHoleCards;
     if (arg.holeCards != null) {
-      final allAssigned =
-          arg.holeCards!.every((h) => h != null && h.length == 2);
+      final expectedCards = arg.gameType.holeCardCount;
+      final allAssigned = arg.holeCards!
+          .every((h) => h != null && h.length == expectedCards);
       if (allAssigned) {
         resolvedHoleCards = arg.holeCards!.map((h) => h!).toList();
       } else {
@@ -65,8 +66,10 @@ class HandReplayNotifier
         }
         resolvedHoleCards = List.generate(arg.playerCount, (i) {
           final existing = arg.holeCards![i];
-          if (existing != null && existing.length == 2) return existing;
-          return deck.dealMany(2);
+          if (existing != null && existing.length == expectedCards) {
+            return existing;
+          }
+          return deck.dealMany(expectedCards);
         });
       }
     }
@@ -80,6 +83,8 @@ class HandReplayNotifier
       names: arg.playerNames,
       stacks: arg.stacks,
       holeCards: resolvedHoleCards,
+      gameType: arg.gameType,
+      straddle: arg.straddleAmount,
     );
     _branches.clear();
     _branchInfos.clear();
