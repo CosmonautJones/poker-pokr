@@ -18,8 +18,6 @@ class PokerTableWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pt = context.poker;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -48,10 +46,15 @@ class PokerTableWidget extends StatelessWidget {
           centerY,
         );
 
+        // Winner set for highlighting.
+        final winners = gameState.isHandComplete
+            ? (gameState.winnerIndices ?? <int>{})
+            : <int>{};
+
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // Table felt with enhanced visuals
+            // Table felt with premium visuals
             Positioned(
               left: (width - tableWidth) / 2,
               top: (height - tableHeight) / 2,
@@ -61,9 +64,9 @@ class PokerTableWidget extends StatelessWidget {
                 scale: scale,
               ),
             ),
-            // Street indicator (top center of table) - animated
+            // Street indicator (top center of table) — metallic badge
             Positioned(
-              left: centerX - 44,
+              left: centerX - 50,
               top: (height - tableHeight) / 2 + 12,
               child: _AnimatedStreetBadge(
                 street: gameState.street,
@@ -113,6 +116,7 @@ class PokerTableWidget extends StatelessWidget {
                           !gameState.isHandComplete,
                       isDealer: i == gameState.dealerIndex,
                       isStraddler: i == gameState.straddlePlayerIndex,
+                      isWinner: winners.contains(i),
                       scale: scale,
                     ),
                   ),
@@ -146,7 +150,7 @@ class PokerTableWidget extends StatelessWidget {
   }
 }
 
-/// Enhanced table felt with layered gradients and inner glow.
+/// Premium table felt with gold rail, directional lighting, and vignette.
 class _TableFelt extends StatelessWidget {
   final double width;
   final double height;
@@ -161,72 +165,115 @@ class _TableFelt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final borderWidth = (5 * scale).clamp(3.0, 6.0);
+    final railWidth = (5 * scale).clamp(3.0, 6.0);
+    final radius = BorderRadius.circular(height / 2);
 
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(height / 2),
-        // Outer rim shadow
+        borderRadius: radius,
         boxShadow: [
+          // Deep drop shadow for floating effect
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 16,
-            spreadRadius: 2,
+            color: Colors.black.withValues(alpha: 0.6),
+            blurRadius: 24,
+            spreadRadius: 4,
           ),
+          // Gold ambient glow from the rail
           BoxShadow(
-            color: pt.tableBorder.withValues(alpha: 0.3),
-            blurRadius: 4,
-            spreadRadius: 0,
+            color: pt.goldDark.withValues(alpha: 0.15),
+            blurRadius: 20,
+            spreadRadius: 2,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(height / 2),
+        borderRadius: radius,
         child: Stack(
           children: [
-            // Base felt gradient
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [pt.feltCenter, pt.feltEdge],
-                  radius: 0.9,
-                  center: const Alignment(0, -0.1),
-                ),
-              ),
-            ),
-            // Subtle inner highlight (top-left light source)
+            // Base felt — 3-stop radial with directional lamp
             Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.06),
+                    pt.feltCenter,
+                    pt.feltHighlight,
+                    pt.feltEdge,
+                  ],
+                  stops: const [0.0, 0.35, 1.0],
+                  radius: 0.9,
+                  center: const Alignment(-0.15, -0.25),
+                ),
+              ),
+            ),
+            // Directional highlight — simulates overhead lamp
+            Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.07),
+                    Colors.white.withValues(alpha: 0.02),
                     Colors.transparent,
                   ],
+                  stops: const [0.0, 0.3, 0.7],
                   radius: 0.6,
                   center: const Alignment(-0.3, -0.4),
                 ),
               ),
             ),
-            // Border rail
+            // Vignette — darkens edges, draws eye to center
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(height / 2),
-                border: Border.all(
-                  color: pt.tableBorder,
-                  width: borderWidth,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.25),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                  radius: 0.85,
+                  center: Alignment.center,
                 ),
               ),
             ),
-            // Inner edge shadow (gives depth to the rail)
+            // Gold rail — multi-stop gradient simulating cylindrical wood/gold
             Container(
-              margin: EdgeInsets.all(borderWidth),
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: pt.goldDark,
+                  width: railWidth,
+                ),
+              ),
+              foregroundDecoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: pt.goldPrimary.withValues(alpha: 0.4),
+                  width: railWidth * 0.5,
+                ),
+              ),
+            ),
+            // Inner rail highlight — specular reflection
+            Container(
+              margin: EdgeInsets.all(railWidth),
               decoration: BoxDecoration(
                 borderRadius:
-                    BorderRadius.circular(height / 2 - borderWidth),
+                    BorderRadius.circular(height / 2 - railWidth),
                 border: Border.all(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: pt.goldLight.withValues(alpha: 0.12),
+                  width: 1,
+                ),
+              ),
+            ),
+            // Inner edge shadow — depth between felt and rail
+            Container(
+              margin: EdgeInsets.all(railWidth + 1),
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(height / 2 - railWidth - 1),
+                border: Border.all(
+                  color: Colors.black.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -238,7 +285,7 @@ class _TableFelt extends StatelessWidget {
   }
 }
 
-/// Animated street badge that smoothly transitions between streets.
+/// Metallic gold street badge with cinematic transitions.
 class _AnimatedStreetBadge extends StatelessWidget {
   final Street street;
   final double scale;
@@ -250,11 +297,11 @@ class _AnimatedStreetBadge extends StatelessWidget {
 
   String _streetLabel(Street s) {
     return switch (s) {
-      Street.preflop => 'Preflop',
-      Street.flop => 'Flop',
-      Street.turn => 'Turn',
-      Street.river => 'River',
-      Street.showdown => 'Showdown',
+      Street.preflop => 'PREFLOP',
+      Street.flop => 'FLOP',
+      Street.turn => 'TURN',
+      Street.river => 'RIVER',
+      Street.showdown => 'SHOWDOWN',
     };
   }
 
@@ -263,38 +310,74 @@ class _AnimatedStreetBadge extends StatelessWidget {
     final pt = context.poker;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       transitionBuilder: (child, animation) {
         return FadeTransition(
           opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.85, end: 1.0).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.5),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutBack,
+            )),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.7, end: 1.0).animate(
+                CurvedAnimation(
+                    parent: animation, curve: Curves.elasticOut),
+              ),
+              child: child,
             ),
-            child: child,
           ),
         );
       },
       child: Container(
         key: ValueKey(street),
-        width: 88,
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        width: 100,
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
         decoration: BoxDecoration(
-          color: pt.surfaceOverlay,
-          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [
+              pt.goldDark,
+              pt.goldPrimary,
+              pt.goldDark,
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: pt.borderSubtle.withValues(alpha: 0.3),
+            color: pt.goldLight.withValues(alpha: 0.5),
             width: 0.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: pt.goldPrimary.withValues(alpha: 0.3),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           _streetLabel(street),
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: pt.textMuted,
+            color: Colors.white,
             fontSize: (11 * scale).clamp(9.0, 12.0),
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+            shadows: const [
+              Shadow(
+                color: Colors.black45,
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ),

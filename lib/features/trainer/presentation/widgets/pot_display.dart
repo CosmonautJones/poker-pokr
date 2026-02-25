@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/pot.dart';
 
-/// Displays the current pot amount with animated value changes and any side pots.
+/// Displays the current pot with gold shimmer text, chip icon, and
+/// animated value changes. Shows side pots when present.
 class PotDisplay extends StatelessWidget {
   final double pot;
   final List<SidePot> sidePots;
@@ -22,35 +24,7 @@ class PotDisplay extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: (14 * scale).clamp(10.0, 18.0),
-            vertical: (6 * scale).clamp(4.0, 8.0),
-          ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black.withValues(alpha: 0.6),
-                Colors.black.withValues(alpha: 0.4),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: pt.potBorder,
-              width: 0.5,
-            ),
-          ),
-          child: _AnimatedPotValue(
-            pot: pot,
-            style: TextStyle(
-              color: pt.potText,
-              fontSize: (14 * scale).clamp(11.0, 16.0),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+        _PotPill(pot: pot, scale: scale),
         if (sidePots.isNotEmpty && sidePots.length > 1)
           Padding(
             padding: EdgeInsets.only(top: 4 * scale),
@@ -64,8 +38,12 @@ class PotDisplay extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black38,
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: pt.goldDark.withValues(alpha: 0.2),
+                        width: 0.5,
+                      ),
                     ),
                     child: Text(
                       'Side ${i + 1}: ${_formatChips(sidePots[i].amount)}',
@@ -90,25 +68,204 @@ class PotDisplay extends StatelessWidget {
   }
 }
 
-/// Animated pot value that smoothly transitions between amounts.
-class _AnimatedPotValue extends StatelessWidget {
+/// The main pot pill with gold shimmer, chip icon, and scale-flash on change.
+class _PotPill extends StatefulWidget {
   final double pot;
-  final TextStyle style;
+  final double scale;
 
-  const _AnimatedPotValue({required this.pot, required this.style});
+  const _PotPill({required this.pot, required this.scale});
+
+  @override
+  State<_PotPill> createState() => _PotPillState();
+}
+
+class _PotPillState extends State<_PotPill>
+    with TickerProviderStateMixin {
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
+
+  late AnimationController _flashController;
+  late Animation<double> _flashScale;
+
+  double _previousPot = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousPot = widget.pot;
+
+    // Gold shimmer sweep
+    _shimmerController = AnimationController(
+      duration: PokerAnimations.kShimmer,
+      vsync: this,
+    )..repeat();
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
+    );
+
+    // Pot change flash
+    _flashController = AnimationController(
+      duration: PokerAnimations.kPotFlash,
+      vsync: this,
+    );
+    _flashScale = TweenSequence<double>([
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 1.08)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 40),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.08, end: 1.0)
+              .chain(CurveTween(curve: Curves.elasticOut)),
+          weight: 60),
+    ]).animate(_flashController);
+  }
+
+  @override
+  void didUpdateWidget(_PotPill oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((widget.pot - _previousPot).abs() > 0.01) {
+      _previousPot = widget.pot;
+      _flashController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    _flashController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: pot),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, _) {
-        return Text(
-          'Pot: ${PotDisplay._formatChips(value)}',
-          style: style,
+    final pt = context.poker;
+    final scale = widget.scale;
+
+    return AnimatedBuilder(
+      animation: _flashScale,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _flashController.isAnimating ? _flashScale.value : 1.0,
+          child: child,
         );
       },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: (14 * scale).clamp(10.0, 18.0),
+          vertical: (6 * scale).clamp(4.0, 8.0),
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.black.withValues(alpha: 0.75),
+              Colors.black.withValues(alpha: 0.55),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: pt.goldDark.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: pt.goldPrimary.withValues(alpha: 0.1),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Chip stack icon
+            SizedBox(
+              width: 10,
+              height: 14,
+              child: Stack(
+                children: [
+                  Positioned(
+                    bottom: 0,
+                    child: _chipSlice(pt.chipRed, 10),
+                  ),
+                  Positioned(
+                    bottom: 3,
+                    child: _chipSlice(pt.chipBlue, 10),
+                  ),
+                  Positioned(
+                    bottom: 6,
+                    child: _chipSlice(pt.chipGreen, 10),
+                  ),
+                  Positioned(
+                    bottom: 9,
+                    child: _chipSlice(pt.chipWhite, 10),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 5 * scale),
+            // Gold shimmer pot text
+            AnimatedBuilder(
+              animation: _shimmerAnimation,
+              builder: (context, _) {
+                return ShaderMask(
+                  shaderCallback: (bounds) {
+                    return LinearGradient(
+                      colors: [
+                        pt.potText,
+                        pt.goldLight,
+                        pt.potText,
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                      begin: Alignment(_shimmerAnimation.value - 1, 0),
+                      end: Alignment(_shimmerAnimation.value, 0),
+                    ).createShader(bounds);
+                  },
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: widget.pot),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) {
+                      return Text(
+                        'Pot: ${PotDisplay._formatChips(value)}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: (14 * scale).clamp(11.0, 16.0),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chipSlice(Color color, double width) {
+    return Container(
+      width: width,
+      height: 4,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.25),
+          width: 0.3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 0.5,
+            offset: const Offset(0, 0.5),
+          ),
+        ],
+      ),
     );
   }
 }
