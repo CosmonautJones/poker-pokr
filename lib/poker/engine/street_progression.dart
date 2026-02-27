@@ -23,8 +23,19 @@ class StreetProgression {
   static bool isBettingRoundComplete(GameState state) {
     final activeNonAllIn = state.activeNonAllInPlayers;
 
-    // No one (or one person) left to act -> done.
-    if (activeNonAllIn.length <= 1) {
+    // No one left to act -> done.
+    if (activeNonAllIn.isEmpty) {
+      return true;
+    }
+
+    // Only one player can act. The round is complete unless that player
+    // still faces an unmatched bet (e.g. another player bet/raised all-in
+    // and this player hasn't responded yet).
+    if (activeNonAllIn.length == 1) {
+      final sole = activeNonAllIn.first;
+      if (sole.currentBet < state.currentBet) {
+        return false; // must call, fold, or raise first
+      }
       return true;
     }
 

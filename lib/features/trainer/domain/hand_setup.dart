@@ -15,6 +15,10 @@ class HandSetup {
   final bool straddleEnabled;
   final double straddleMultiplier;
 
+  /// Optional pre-stacked deck for lesson scenarios.
+  /// When set, replaces the shuffled deck so community cards are deterministic.
+  final Deck? stackedDeck;
+
   const HandSetup({
     required this.playerCount,
     required this.smallBlind,
@@ -27,6 +31,7 @@ class HandSetup {
     this.gameType = GameType.texasHoldem,
     this.straddleEnabled = false,
     this.straddleMultiplier = 2.0,
+    this.stackedDeck,
   });
 
   /// The straddle amount based on BB and multiplier.
@@ -45,6 +50,7 @@ class HandSetup {
     GameType? gameType,
     bool? straddleEnabled,
     double? straddleMultiplier,
+    Deck? stackedDeck,
   }) {
     return HandSetup(
       playerCount: playerCount ?? this.playerCount,
@@ -58,6 +64,7 @@ class HandSetup {
       gameType: gameType ?? this.gameType,
       straddleEnabled: straddleEnabled ?? this.straddleEnabled,
       straddleMultiplier: straddleMultiplier ?? this.straddleMultiplier,
+      stackedDeck: stackedDeck ?? this.stackedDeck,
     );
   }
 

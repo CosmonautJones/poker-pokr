@@ -74,7 +74,7 @@ class HandReplayNotifier
       }
     }
 
-    final initialState = GameEngine.createInitialState(
+    var initialState = GameEngine.createInitialState(
       playerCount: arg.playerCount,
       smallBlind: arg.smallBlind,
       bigBlind: arg.bigBlind,
@@ -86,6 +86,13 @@ class HandReplayNotifier
       gameType: arg.gameType,
       straddle: arg.straddleAmount,
     );
+
+    // For lesson scenarios with pre-determined community cards, replace
+    // the shuffled deck with the stacked one.
+    if (arg.stackedDeck != null) {
+      initialState = initialState.copyWith(deck: arg.stackedDeck);
+    }
+
     _branches.clear();
     _branchInfos.clear();
     _branches.add(StateHistory<GameState>(initialState));
