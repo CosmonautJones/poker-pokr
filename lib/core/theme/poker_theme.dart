@@ -26,6 +26,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
   final Color cardBackSecondary;
   final Color suitRed;
   final Color suitBlack;
+  final Color suitClub;
+  final Color suitDiamond;
 
   // ── Player seats ──
   final Color seatBackground;
@@ -57,6 +59,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
   // ── Status badges ──
   final Color badgeAllIn;
   final Color badgeFold;
+
+  // ── Straddle ──
+  final Color straddlePrimary;
+  final Color straddleSecondary;
 
   // ── Glow / effects ──
   final Color winnerGlow;
@@ -101,6 +107,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     required this.cardBackSecondary,
     required this.suitRed,
     required this.suitBlack,
+    required this.suitClub,
+    required this.suitDiamond,
     required this.seatBackground,
     required this.seatActive,
     required this.seatActiveBorder,
@@ -124,6 +132,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     required this.chipGreen,
     required this.badgeAllIn,
     required this.badgeFold,
+    required this.straddlePrimary,
+    required this.straddleSecondary,
     required this.winnerGlow,
     required this.allInGlow,
     required this.accent,
@@ -163,6 +173,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     cardBackSecondary: Color(0xFF283593),
     suitRed: Color(0xFFD50000),
     suitBlack: Color(0xFF212121),
+    suitClub: Color(0xFF388E3C),
+    suitDiamond: Color(0xFF1565C0),
     // Player seats
     seatBackground: Color(0xFF212121),
     seatActive: Color(0xFF1B5E20),
@@ -190,6 +202,9 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     // Status badges
     badgeAllIn: Color(0xFFEF6C00),
     badgeFold: Color(0xFF424242),
+    // Straddle
+    straddlePrimary: Color(0xFF7B1FA2),
+    straddleSecondary: Color(0xFF4A148C),
     // Glow / effects
     winnerGlow: Color(0xFFD4AF37),
     allInGlow: Color(0xFFFF6D00),
@@ -236,6 +251,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     Color? cardBackSecondary,
     Color? suitRed,
     Color? suitBlack,
+    Color? suitClub,
+    Color? suitDiamond,
     Color? seatBackground,
     Color? seatActive,
     Color? seatActiveBorder,
@@ -259,6 +276,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     Color? chipGreen,
     Color? badgeAllIn,
     Color? badgeFold,
+    Color? straddlePrimary,
+    Color? straddleSecondary,
     Color? winnerGlow,
     Color? allInGlow,
     Color? accent,
@@ -293,6 +312,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       cardBackSecondary: cardBackSecondary ?? this.cardBackSecondary,
       suitRed: suitRed ?? this.suitRed,
       suitBlack: suitBlack ?? this.suitBlack,
+      suitClub: suitClub ?? this.suitClub,
+      suitDiamond: suitDiamond ?? this.suitDiamond,
       seatBackground: seatBackground ?? this.seatBackground,
       seatActive: seatActive ?? this.seatActive,
       seatActiveBorder: seatActiveBorder ?? this.seatActiveBorder,
@@ -316,6 +337,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       chipGreen: chipGreen ?? this.chipGreen,
       badgeAllIn: badgeAllIn ?? this.badgeAllIn,
       badgeFold: badgeFold ?? this.badgeFold,
+      straddlePrimary: straddlePrimary ?? this.straddlePrimary,
+      straddleSecondary: straddleSecondary ?? this.straddleSecondary,
       winnerGlow: winnerGlow ?? this.winnerGlow,
       allInGlow: allInGlow ?? this.allInGlow,
       accent: accent ?? this.accent,
@@ -355,6 +378,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       cardBackSecondary: Color.lerp(cardBackSecondary, other.cardBackSecondary, t)!,
       suitRed: Color.lerp(suitRed, other.suitRed, t)!,
       suitBlack: Color.lerp(suitBlack, other.suitBlack, t)!,
+      suitClub: Color.lerp(suitClub, other.suitClub, t)!,
+      suitDiamond: Color.lerp(suitDiamond, other.suitDiamond, t)!,
       seatBackground: Color.lerp(seatBackground, other.seatBackground, t)!,
       seatActive: Color.lerp(seatActive, other.seatActive, t)!,
       seatActiveBorder: Color.lerp(seatActiveBorder, other.seatActiveBorder, t)!,
@@ -378,6 +403,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       chipGreen: Color.lerp(chipGreen, other.chipGreen, t)!,
       badgeAllIn: Color.lerp(badgeAllIn, other.badgeAllIn, t)!,
       badgeFold: Color.lerp(badgeFold, other.badgeFold, t)!,
+      straddlePrimary: Color.lerp(straddlePrimary, other.straddlePrimary, t)!,
+      straddleSecondary: Color.lerp(straddleSecondary, other.straddleSecondary, t)!,
       winnerGlow: Color.lerp(winnerGlow, other.winnerGlow, t)!,
       allInGlow: Color.lerp(allInGlow, other.allInGlow, t)!,
       accent: Color.lerp(accent, other.accent, t)!,

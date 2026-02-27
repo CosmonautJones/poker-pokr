@@ -395,6 +395,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               legalActions: replayState.legalActions,
               currentPot: gs.pot,
               onAction: (action) => notifier.applyAction(action),
+              gameType: gs.gameType,
             ),
         ],
       ),

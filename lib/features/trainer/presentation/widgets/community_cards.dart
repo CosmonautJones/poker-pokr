@@ -259,8 +259,12 @@ class _CardFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final isRed = card.suit == Suit.hearts || card.suit == Suit.diamonds;
-    final suitColor = isRed ? pt.suitRed : pt.suitBlack;
+    final suitColor = switch (card.suit) {
+      Suit.hearts => pt.suitRed,
+      Suit.diamonds => pt.suitDiamond,
+      Suit.clubs => pt.suitClub,
+      Suit.spades => pt.suitBlack,
+    };
 
     final w = (48 * scale).clamp(34.0, 52.0);
     final h = (68 * scale).clamp(48.0, 74.0);
@@ -420,8 +424,12 @@ class MiniCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final isRed = card.suit == Suit.hearts || card.suit == Suit.diamonds;
-    final suitColor = isRed ? pt.suitRed : pt.suitBlack;
+    final suitColor = switch (card.suit) {
+      Suit.hearts => pt.suitRed,
+      Suit.diamonds => pt.suitDiamond,
+      Suit.clubs => pt.suitClub,
+      Suit.spades => pt.suitBlack,
+    };
 
     final w = (30 * scale).clamp(22.0, 34.0);
     final h = (42 * scale).clamp(30.0, 46.0);

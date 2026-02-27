@@ -4,6 +4,7 @@
 library;
 
 import '../models/game_state.dart';
+import '../models/game_type.dart';
 
 class LegalActionSet {
   final bool canFold;
@@ -26,9 +27,10 @@ class LegalActionSet {
 
   /// Compute the legal actions for the player whose turn it is.
   ///
-  /// Follows No-Limit Hold'em rules:
+  /// Follows No-Limit rules for Hold'em, Pot-Limit rules for Omaha:
   ///   - Min bet = big blind
   ///   - Min raise = current bet + last raise size (at least BB)
+  ///   - Pot-limit: max bet = pot, max raise-to = tableBet + (pot + toCall)
   ///   - All-in is always available if the player has chips
   static LegalActionSet compute(GameState state) {
     if (state.isHandComplete) {
@@ -90,6 +92,33 @@ class LegalActionSet {
       }
       // If stack > toCall but < minRaiseAmount, the player can still all-in
       // (handled below), but cannot make a legal raise.
+    }
+
+    // --- Pot-limit cap (Omaha is always pot-limit) ---
+    if (state.gameType == GameType.omaha) {
+      if (betRange != null) {
+        // Opening bet: max = current pot size, capped at stack.
+        final potMax = state.pot.clamp(betRange.min, stack);
+        if (potMax >= betRange.min) {
+          betRange = (min: betRange.min, max: potMax);
+        } else {
+          betRange = null; // Can't make a legal bet; only all-in.
+        }
+      }
+      if (raiseRange != null) {
+        // Pot-limit raise: player calls first (pot grows by toCall),
+        // then may raise up to the new pot size.
+        //   potAfterCall = pot + toCall
+        //   maxRaiseTo   = tableBet + potAfterCall
+        final potAfterCall = state.pot + toCall;
+        final maxRaiseTo =
+            (tableBet + potAfterCall).clamp(raiseRange.min, playerBet + stack);
+        if (maxRaiseTo >= raiseRange.min) {
+          raiseRange = (min: raiseRange.min, max: maxRaiseTo);
+        } else {
+          raiseRange = null;
+        }
+      }
     }
 
     // --- All-in ---

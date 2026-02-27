@@ -1298,6 +1298,30 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _dealerIndexMeta = const VerificationMeta(
+    'dealerIndex',
+  );
+  @override
+  late final GeneratedColumn<int> dealerIndex = GeneratedColumn<int>(
+    'dealer_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _holeCardsJsonMeta = const VerificationMeta(
+    'holeCardsJson',
+  );
+  @override
+  late final GeneratedColumn<String> holeCardsJson = GeneratedColumn<String>(
+    'hole_cards_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<List<PlayerConfig>, String>
   playerConfigs = GeneratedColumn<String>(
@@ -1372,6 +1396,8 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     ante,
     gameType,
     straddle,
+    dealerIndex,
+    holeCardsJson,
     playerConfigs,
     communityCards,
     parentHandId,
@@ -1454,6 +1480,24 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         straddle.isAcceptableOrUnknown(data['straddle']!, _straddleMeta),
       );
     }
+    if (data.containsKey('dealer_index')) {
+      context.handle(
+        _dealerIndexMeta,
+        dealerIndex.isAcceptableOrUnknown(
+          data['dealer_index']!,
+          _dealerIndexMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hole_cards_json')) {
+      context.handle(
+        _holeCardsJsonMeta,
+        holeCardsJson.isAcceptableOrUnknown(
+          data['hole_cards_json']!,
+          _holeCardsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('parent_hand_id')) {
       context.handle(
         _parentHandIdMeta,
@@ -1529,6 +1573,14 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         DriftSqlType.double,
         data['${effectivePrefix}straddle'],
       )!,
+      dealerIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dealer_index'],
+      )!,
+      holeCardsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hole_cards_json'],
+      )!,
       playerConfigs: $HandsTable.$converterplayerConfigs.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -1581,6 +1633,8 @@ class Hand extends DataClass implements Insertable<Hand> {
   final double ante;
   final int gameType;
   final double straddle;
+  final int dealerIndex;
+  final String holeCardsJson;
   final List<PlayerConfig> playerConfigs;
   final List<int> communityCards;
   final int? parentHandId;
@@ -1597,6 +1651,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     required this.ante,
     required this.gameType,
     required this.straddle,
+    required this.dealerIndex,
+    required this.holeCardsJson,
     required this.playerConfigs,
     required this.communityCards,
     this.parentHandId,
@@ -1620,6 +1676,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     map['ante'] = Variable<double>(ante);
     map['game_type'] = Variable<int>(gameType);
     map['straddle'] = Variable<double>(straddle);
+    map['dealer_index'] = Variable<int>(dealerIndex);
+    map['hole_cards_json'] = Variable<String>(holeCardsJson);
     {
       map['player_configs'] = Variable<String>(
         $HandsTable.$converterplayerConfigs.toSql(playerConfigs),
@@ -1656,6 +1714,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       ante: Value(ante),
       gameType: Value(gameType),
       straddle: Value(straddle),
+      dealerIndex: Value(dealerIndex),
+      holeCardsJson: Value(holeCardsJson),
       playerConfigs: Value(playerConfigs),
       communityCards: Value(communityCards),
       parentHandId: parentHandId == null && nullToAbsent
@@ -1684,6 +1744,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       ante: serializer.fromJson<double>(json['ante']),
       gameType: serializer.fromJson<int>(json['gameType']),
       straddle: serializer.fromJson<double>(json['straddle']),
+      dealerIndex: serializer.fromJson<int>(json['dealerIndex']),
+      holeCardsJson: serializer.fromJson<String>(json['holeCardsJson']),
       playerConfigs: serializer.fromJson<List<PlayerConfig>>(
         json['playerConfigs'],
       ),
@@ -1709,6 +1771,8 @@ class Hand extends DataClass implements Insertable<Hand> {
       'ante': serializer.toJson<double>(ante),
       'gameType': serializer.toJson<int>(gameType),
       'straddle': serializer.toJson<double>(straddle),
+      'dealerIndex': serializer.toJson<int>(dealerIndex),
+      'holeCardsJson': serializer.toJson<String>(holeCardsJson),
       'playerConfigs': serializer.toJson<List<PlayerConfig>>(playerConfigs),
       'communityCards': serializer.toJson<List<int>>(communityCards),
       'parentHandId': serializer.toJson<int?>(parentHandId),
@@ -1728,6 +1792,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     double? ante,
     int? gameType,
     double? straddle,
+    int? dealerIndex,
+    String? holeCardsJson,
     List<PlayerConfig>? playerConfigs,
     List<int>? communityCards,
     Value<int?> parentHandId = const Value.absent(),
@@ -1744,6 +1810,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     ante: ante ?? this.ante,
     gameType: gameType ?? this.gameType,
     straddle: straddle ?? this.straddle,
+    dealerIndex: dealerIndex ?? this.dealerIndex,
+    holeCardsJson: holeCardsJson ?? this.holeCardsJson,
     playerConfigs: playerConfigs ?? this.playerConfigs,
     communityCards: communityCards ?? this.communityCards,
     parentHandId: parentHandId.present ? parentHandId.value : this.parentHandId,
@@ -1770,6 +1838,12 @@ class Hand extends DataClass implements Insertable<Hand> {
       ante: data.ante.present ? data.ante.value : this.ante,
       gameType: data.gameType.present ? data.gameType.value : this.gameType,
       straddle: data.straddle.present ? data.straddle.value : this.straddle,
+      dealerIndex: data.dealerIndex.present
+          ? data.dealerIndex.value
+          : this.dealerIndex,
+      holeCardsJson: data.holeCardsJson.present
+          ? data.holeCardsJson.value
+          : this.holeCardsJson,
       playerConfigs: data.playerConfigs.present
           ? data.playerConfigs.value
           : this.playerConfigs,
@@ -1799,6 +1873,8 @@ class Hand extends DataClass implements Insertable<Hand> {
           ..write('ante: $ante, ')
           ..write('gameType: $gameType, ')
           ..write('straddle: $straddle, ')
+          ..write('dealerIndex: $dealerIndex, ')
+          ..write('holeCardsJson: $holeCardsJson, ')
           ..write('playerConfigs: $playerConfigs, ')
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')
@@ -1820,6 +1896,8 @@ class Hand extends DataClass implements Insertable<Hand> {
     ante,
     gameType,
     straddle,
+    dealerIndex,
+    holeCardsJson,
     playerConfigs,
     communityCards,
     parentHandId,
@@ -1840,6 +1918,8 @@ class Hand extends DataClass implements Insertable<Hand> {
           other.ante == this.ante &&
           other.gameType == this.gameType &&
           other.straddle == this.straddle &&
+          other.dealerIndex == this.dealerIndex &&
+          other.holeCardsJson == this.holeCardsJson &&
           other.playerConfigs == this.playerConfigs &&
           other.communityCards == this.communityCards &&
           other.parentHandId == this.parentHandId &&
@@ -1858,6 +1938,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
   final Value<double> ante;
   final Value<int> gameType;
   final Value<double> straddle;
+  final Value<int> dealerIndex;
+  final Value<String> holeCardsJson;
   final Value<List<PlayerConfig>> playerConfigs;
   final Value<List<int>> communityCards;
   final Value<int?> parentHandId;
@@ -1874,6 +1956,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     this.ante = const Value.absent(),
     this.gameType = const Value.absent(),
     this.straddle = const Value.absent(),
+    this.dealerIndex = const Value.absent(),
+    this.holeCardsJson = const Value.absent(),
     this.playerConfigs = const Value.absent(),
     this.communityCards = const Value.absent(),
     this.parentHandId = const Value.absent(),
@@ -1891,6 +1975,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     this.ante = const Value.absent(),
     this.gameType = const Value.absent(),
     this.straddle = const Value.absent(),
+    this.dealerIndex = const Value.absent(),
+    this.holeCardsJson = const Value.absent(),
     required List<PlayerConfig> playerConfigs,
     required List<int> communityCards,
     this.parentHandId = const Value.absent(),
@@ -1912,6 +1998,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Expression<double>? ante,
     Expression<int>? gameType,
     Expression<double>? straddle,
+    Expression<int>? dealerIndex,
+    Expression<String>? holeCardsJson,
     Expression<String>? playerConfigs,
     Expression<String>? communityCards,
     Expression<int>? parentHandId,
@@ -1929,6 +2017,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       if (ante != null) 'ante': ante,
       if (gameType != null) 'game_type': gameType,
       if (straddle != null) 'straddle': straddle,
+      if (dealerIndex != null) 'dealer_index': dealerIndex,
+      if (holeCardsJson != null) 'hole_cards_json': holeCardsJson,
       if (playerConfigs != null) 'player_configs': playerConfigs,
       if (communityCards != null) 'community_cards': communityCards,
       if (parentHandId != null) 'parent_hand_id': parentHandId,
@@ -1949,6 +2039,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Value<double>? ante,
     Value<int>? gameType,
     Value<double>? straddle,
+    Value<int>? dealerIndex,
+    Value<String>? holeCardsJson,
     Value<List<PlayerConfig>>? playerConfigs,
     Value<List<int>>? communityCards,
     Value<int?>? parentHandId,
@@ -1966,6 +2058,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       ante: ante ?? this.ante,
       gameType: gameType ?? this.gameType,
       straddle: straddle ?? this.straddle,
+      dealerIndex: dealerIndex ?? this.dealerIndex,
+      holeCardsJson: holeCardsJson ?? this.holeCardsJson,
       playerConfigs: playerConfigs ?? this.playerConfigs,
       communityCards: communityCards ?? this.communityCards,
       parentHandId: parentHandId ?? this.parentHandId,
@@ -2005,6 +2099,12 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     if (straddle.present) {
       map['straddle'] = Variable<double>(straddle.value);
     }
+    if (dealerIndex.present) {
+      map['dealer_index'] = Variable<int>(dealerIndex.value);
+    }
+    if (holeCardsJson.present) {
+      map['hole_cards_json'] = Variable<String>(holeCardsJson.value);
+    }
     if (playerConfigs.present) {
       map['player_configs'] = Variable<String>(
         $HandsTable.$converterplayerConfigs.toSql(playerConfigs.value),
@@ -2042,6 +2142,8 @@ class HandsCompanion extends UpdateCompanion<Hand> {
           ..write('ante: $ante, ')
           ..write('gameType: $gameType, ')
           ..write('straddle: $straddle, ')
+          ..write('dealerIndex: $dealerIndex, ')
+          ..write('holeCardsJson: $holeCardsJson, ')
           ..write('playerConfigs: $playerConfigs, ')
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')

@@ -3,6 +3,7 @@ import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/models/action.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Callback for when the user selects an action.
 typedef OnAction = void Function(PokerAction action);
@@ -14,6 +15,7 @@ class ActionBar extends StatefulWidget {
   final LegalActionSet legalActions;
   final double currentPot;
   final OnAction onAction;
+  final GameType gameType;
 
   const ActionBar({
     super.key,
@@ -21,6 +23,7 @@ class ActionBar extends StatefulWidget {
     required this.legalActions,
     required this.currentPot,
     required this.onAction,
+    this.gameType = GameType.texasHoldem,
   });
 
   @override
@@ -254,12 +257,19 @@ class _ActionBarState extends State<ActionBar>
   Widget _buildBetSlider(BuildContext context) {
     final pt = context.poker;
     final pot = widget.currentPot;
-    final presets = <(String, double)>[
-      ('1/3', pot / 3),
-      ('1/2', pot / 2),
-      ('3/4', pot * 3 / 4),
-      ('Pot', pot),
-    ];
+    final presets = widget.gameType == GameType.omaha
+        ? <(String, double)>[
+            ('1/2', pot / 2),
+            ('2/3', pot * 2 / 3),
+            ('3/4', pot * 3 / 4),
+            ('Pot', pot),
+          ]
+        : <(String, double)>[
+            ('1/3', pot / 3),
+            ('1/2', pot / 2),
+            ('3/4', pot * 3 / 4),
+            ('Pot', pot),
+          ];
 
     return FadeTransition(
       opacity: _sliderAnimation,
@@ -322,10 +332,7 @@ class _ActionBarState extends State<ActionBar>
                         min: _minBet,
                         max: _maxBet,
                         divisions: _maxBet > _minBet
-                            ? ((_maxBet - _minBet) /
-                                    (_minBet > 0 ? _minBet : 1))
-                                .round()
-                                .clamp(1, 100)
+                            ? _sliderDivisions(_minBet, _maxBet)
                             : 1,
                         onChanged: (v) {
                           setState(() {
@@ -423,6 +430,14 @@ class _ActionBarState extends State<ActionBar>
         ),
       ),
     );
+  }
+
+  int _sliderDivisions(double min, double max) {
+    final range = max - min;
+    final rawDivisions = range / (min > 0 ? min : 1);
+    // Target 15-20 smooth steps to avoid jitter.
+    if (rawDivisions <= 20) return rawDivisions.round().clamp(1, 20);
+    return (rawDivisions / (rawDivisions / 15).ceil()).round().clamp(1, 20);
   }
 
   double _roundBet(double value) {

@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/database/converters/player_config_list_converter.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/poker/models/action.dart';
+import 'package:poker_trainer/poker/models/card.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/game_type.dart';
 
@@ -17,14 +20,30 @@ class HandMapper {
     final sorted = List<PlayerConfig>.of(configs)
       ..sort((a, b) => a.seatIndex.compareTo(b.seatIndex));
 
+    // Restore hole cards from JSON.
+    List<List<PokerCard>?>? holeCards;
+    try {
+      final decoded = jsonDecode(hand.holeCardsJson) as List;
+      if (decoded.isNotEmpty) {
+        holeCards = decoded.map<List<PokerCard>?>((entry) {
+          if (entry == null) return null;
+          final cardValues = (entry as List).cast<int>();
+          return cardValues.map((v) => PokerCard(v)).toList();
+        }).toList();
+      }
+    } catch (_) {
+      // Best-effort: if JSON is malformed, proceed without hole cards.
+    }
+
     return HandSetup(
       playerCount: hand.playerCount,
       smallBlind: hand.smallBlind,
       bigBlind: hand.bigBlind,
       ante: hand.ante,
-      dealerIndex: 0, // Default: first player is dealer
+      dealerIndex: hand.dealerIndex,
       playerNames: sorted.map((c) => c.name).toList(),
       stacks: sorted.map((c) => c.stack).toList(),
+      holeCards: holeCards,
       gameType: GameType.values[hand.gameType],
       straddleEnabled: hand.straddle > 0,
       straddleMultiplier:
@@ -63,6 +82,8 @@ class HandMapper {
       title: Value(title),
       gameType: Value(setup.gameType.index),
       straddle: Value(setup.straddleAmount),
+      dealerIndex: Value(setup.dealerIndex),
+      holeCardsJson: Value(_encodeHoleCards(setup.holeCards)),
     );
   }
 
@@ -125,6 +146,11 @@ class HandMapper {
     final communityCardValues =
         finalState.communityCards.map((c) => c.value).toList();
 
+    // Capture hole cards from the final game state for deterministic replay.
+    final holeCardsFromState = finalState.players.map<List<PokerCard>?>((p) {
+      return p.holeCards.isNotEmpty ? p.holeCards : null;
+    }).toList();
+
     return HandsCompanion.insert(
       playerCount: setup.playerCount,
       smallBlind: setup.smallBlind,
@@ -137,6 +163,18 @@ class HandMapper {
       branchAtActionIndex: Value(branchAtActionIndex),
       gameType: Value(setup.gameType.index),
       straddle: Value(setup.straddleAmount),
+      dealerIndex: Value(setup.dealerIndex),
+      holeCardsJson: Value(_encodeHoleCards(holeCardsFromState)),
     );
+  }
+
+  /// Encode hole cards as JSON string: `[[0,13],[1,14],null,...]`
+  static String _encodeHoleCards(List<List<PokerCard>?>? holeCards) {
+    if (holeCards == null || holeCards.isEmpty) return '[]';
+    final encoded = holeCards.map((cards) {
+      if (cards == null || cards.isEmpty) return null;
+      return cards.map((c) => c.value).toList();
+    }).toList();
+    return jsonEncode(encoded);
   }
 }

@@ -67,8 +67,9 @@ final router = GoRouter(
                 GoRoute(
                   path: 'replay/:handId',
                   builder: (context, state) => HandReplayScreen(
-                    handId:
-                        int.parse(state.pathParameters['handId']!),
+                    handId: int.tryParse(
+                            state.pathParameters['handId'] ?? '') ??
+                        0,
                   ),
                 ),
               ],

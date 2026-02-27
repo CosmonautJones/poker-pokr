@@ -32,8 +32,15 @@ class PokerTableWidget extends StatelessWidget {
         final centerX = width / 2;
         final centerY = height / 2;
 
+        // Scale seats down for crowded tables.
+        final seatScale = gameState.playerCount <= 6
+            ? 1.0
+            : gameState.playerCount <= 8
+                ? 0.85
+                : 0.75;
+
         // Responsive sizes.
-        final seatWidth = (90 * scale).clamp(72.0, 100.0);
+        final seatWidth = (90 * scale * seatScale).clamp(60.0, 100.0);
         final communityWidth = (240 * scale).clamp(180.0, 260.0);
         final potWidth = (160 * scale).clamp(120.0, 180.0);
 
@@ -117,7 +124,7 @@ class PokerTableWidget extends StatelessWidget {
                       isDealer: i == gameState.dealerIndex,
                       isStraddler: i == gameState.straddlePlayerIndex,
                       isWinner: winners.contains(i),
-                      scale: scale,
+                      scale: scale * seatScale,
                     ),
                   ),
                 ),
@@ -310,25 +317,17 @@ class _AnimatedStreetBadge extends StatelessWidget {
     final pt = context.poker;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
       transitionBuilder: (child, animation) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
         return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, -0.5),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutBack,
-            )),
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.7, end: 1.0).animate(
-                CurvedAnimation(
-                    parent: animation, curve: Curves.elasticOut),
-              ),
-              child: child,
-            ),
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(curved),
+            child: child,
           ),
         );
       },
