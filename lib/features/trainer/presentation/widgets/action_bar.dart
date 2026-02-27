@@ -376,9 +376,13 @@ class _ActionBarState extends State<ActionBar>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
                         child: _PresetButton(
-                          label: 'Max',
+                          label: widget.gameType == GameType.omaha
+                              ? 'Pot'
+                              : 'Max',
                           isActive: (_betAmount - _maxBet).abs() < 0.01,
-                          accentColor: pt.actionAllIn,
+                          accentColor: widget.gameType == GameType.omaha
+                              ? null
+                              : pt.actionAllIn,
                           onPressed: () {
                             setState(() {
                               _betAmount = _maxBet;
