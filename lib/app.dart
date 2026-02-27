@@ -9,6 +9,8 @@ import 'package:poker_trainer/features/bookkeeper/presentation/screens/reports_s
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_list_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
+import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
+import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -71,6 +73,24 @@ final router = GoRouter(
                             state.pathParameters['handId'] ?? '') ??
                         0,
                   ),
+                ),
+                GoRoute(
+                  path: 'lesson/:lessonId',
+                  builder: (context, state) => LessonDetailScreen(
+                    lessonId: state.pathParameters['lessonId'] ?? '',
+                  ),
+                  routes: [
+                    GoRoute(
+                      path: 'play/:scenarioIndex',
+                      builder: (context, state) => LessonPlayScreen(
+                        lessonId: state.pathParameters['lessonId'] ?? '',
+                        scenarioIndex: int.tryParse(
+                                state.pathParameters['scenarioIndex'] ??
+                                    '') ??
+                            0,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -313,8 +313,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
             tooltip: 'Redo',
             visualDensity: VisualDensity.compact,
           ),
-          // Save (when hand is complete or has branches)
-          if (replayState.isComplete || hasBranches)
+          // Save (available once any action has been taken)
+          if (replayState.actionHistory.isNotEmpty || hasBranches)
             IconButton(
               icon: const Icon(Icons.save_rounded, size: 20),
               onPressed: _saveHand,
