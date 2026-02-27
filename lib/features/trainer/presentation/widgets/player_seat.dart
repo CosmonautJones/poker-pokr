@@ -144,27 +144,21 @@ class _PlayerSeatState extends State<PlayerSeat>
             if (player.holeCards.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
-                child: player.holeCards.length <= 2
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: player.holeCards
-                            .map((c) => Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 1),
-                                  child: MiniCardWidget(
-                                      card: c, scale: scale),
-                                ))
-                            .toList(),
-                      )
-                    : Wrap(
-                        spacing: 1,
-                        runSpacing: 1,
-                        alignment: WrapAlignment.center,
-                        children: player.holeCards
-                            .map((c) => MiniCardWidget(
-                                card: c, scale: scale * 0.85))
-                            .toList(),
-                      ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: player.holeCards
+                      .map((c) => Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 0.5),
+                            child: MiniCardWidget(
+                              card: c,
+                              scale: player.holeCards.length <= 2
+                                  ? scale
+                                  : scale * 0.7,
+                            ),
+                          ))
+                      .toList(),
+                ),
               ),
             // Main seat container with animations
             Stack(

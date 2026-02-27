@@ -26,6 +26,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
   final Color cardBackSecondary;
   final Color suitRed;
   final Color suitBlack;
+  final Color suitClub;
+  final Color suitDiamond;
 
   // ── Player seats ──
   final Color seatBackground;
@@ -101,6 +103,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     required this.cardBackSecondary,
     required this.suitRed,
     required this.suitBlack,
+    required this.suitClub,
+    required this.suitDiamond,
     required this.seatBackground,
     required this.seatActive,
     required this.seatActiveBorder,
@@ -163,6 +167,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     cardBackSecondary: Color(0xFF283593),
     suitRed: Color(0xFFD50000),
     suitBlack: Color(0xFF212121),
+    suitClub: Color(0xFF388E3C),
+    suitDiamond: Color(0xFF1565C0),
     // Player seats
     seatBackground: Color(0xFF212121),
     seatActive: Color(0xFF1B5E20),
@@ -236,6 +242,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     Color? cardBackSecondary,
     Color? suitRed,
     Color? suitBlack,
+    Color? suitClub,
+    Color? suitDiamond,
     Color? seatBackground,
     Color? seatActive,
     Color? seatActiveBorder,
@@ -293,6 +301,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       cardBackSecondary: cardBackSecondary ?? this.cardBackSecondary,
       suitRed: suitRed ?? this.suitRed,
       suitBlack: suitBlack ?? this.suitBlack,
+      suitClub: suitClub ?? this.suitClub,
+      suitDiamond: suitDiamond ?? this.suitDiamond,
       seatBackground: seatBackground ?? this.seatBackground,
       seatActive: seatActive ?? this.seatActive,
       seatActiveBorder: seatActiveBorder ?? this.seatActiveBorder,
@@ -355,6 +365,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       cardBackSecondary: Color.lerp(cardBackSecondary, other.cardBackSecondary, t)!,
       suitRed: Color.lerp(suitRed, other.suitRed, t)!,
       suitBlack: Color.lerp(suitBlack, other.suitBlack, t)!,
+      suitClub: Color.lerp(suitClub, other.suitClub, t)!,
+      suitDiamond: Color.lerp(suitDiamond, other.suitDiamond, t)!,
       seatBackground: Color.lerp(seatBackground, other.seatBackground, t)!,
       seatActive: Color.lerp(seatActive, other.seatActive, t)!,
       seatActiveBorder: Color.lerp(seatActiveBorder, other.seatActiveBorder, t)!,
