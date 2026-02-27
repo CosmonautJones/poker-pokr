@@ -19,6 +19,7 @@ class Hands extends Table {
   TextColumn get holeCardsJson => text().withDefault(const Constant('[]'))();
   IntColumn get parentHandId => integer().nullable()();
   IntColumn get branchAtActionIndex => integer().nullable()();
+  BoolColumn get isSetupOnly => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt =>

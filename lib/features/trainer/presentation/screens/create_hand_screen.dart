@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/hole_card_selector.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/stack_picker.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
@@ -82,13 +84,11 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
     super.dispose();
   }
 
-  void _onStartHand() {
-    if (!_formKey.currentState!.validate()) return;
-
+  /// Sync text field values into the handSetupProvider state.
+  void _syncFieldsToState() {
     final notifier = ref.read(handSetupProvider.notifier);
     final setup = ref.read(handSetupProvider);
 
-    // Apply text field values to the state.
     notifier.setSmallBlind(double.tryParse(_sbController.text) ?? 1);
     notifier.setBigBlind(double.tryParse(_bbController.text) ?? 2);
     notifier.setAnte(double.tryParse(_anteController.text) ?? 0);
@@ -102,6 +102,12 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
         if (stack != null) notifier.setPlayerStack(i, stack);
       }
     }
+  }
+
+  void _onStartHand() {
+    if (!_formKey.currentState!.validate()) return;
+
+    _syncFieldsToState();
 
     // Store setup for the replay screen to pick up.
     ref.read(activeHandSetupProvider.notifier).state =
@@ -109,6 +115,67 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
 
     // Navigate to replay with handId=0 to indicate a new hand.
     context.go('/trainer/replay/0');
+  }
+
+  Future<void> _onSaveSetup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _syncFieldsToState();
+    final setup = ref.read(handSetupProvider);
+
+    // Show a dialog to enter a title.
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController(
+          text: '${setup.smallBlind}/${setup.bigBlind} '
+              '${setup.playerCount}-handed',
+        );
+        return AlertDialog(
+          title: const Text('Save Setup'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Title',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (title == null) return; // User cancelled.
+
+    try {
+      final companion = HandMapper.setupToSavedCompanion(
+        setup,
+        title: title.isEmpty ? null : title,
+      );
+      await ref.read(handsDaoProvider).insertSavedSetup(companion);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Setup saved for practice')),
+        );
+        context.go('/trainer');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save setup: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _openStackPicker(int playerIndex) async {
@@ -478,14 +545,31 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                 ),
             const SizedBox(height: 24),
 
-            // -- Start Button --
-            FilledButton.icon(
-              onPressed: _onStartHand,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Start Hand'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 52),
-              ),
+            // -- Action Buttons --
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _onSaveSetup,
+                    icon: const Icon(Icons.bookmark_add),
+                    label: const Text('Save Setup'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 52),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _onStartHand,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start Hand'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 52),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
           ],

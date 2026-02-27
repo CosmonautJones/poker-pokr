@@ -26,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
         ));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -39,6 +39,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await m.addColumn(hands, hands.dealerIndex);
             await m.addColumn(hands, hands.holeCardsJson);
+          }
+          if (from < 4) {
+            await m.addColumn(hands, hands.isSetupOnly);
           }
         },
       );

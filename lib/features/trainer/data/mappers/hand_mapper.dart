@@ -168,6 +168,13 @@ class HandMapper {
     );
   }
 
+  /// Convert a [HandSetup] to a [HandsCompanion] marked as setup-only.
+  static HandsCompanion setupToSavedCompanion(HandSetup setup,
+      {String? title}) {
+    return setupToCompanion(setup, title: title)
+        .copyWith(isSetupOnly: const Value(true));
+  }
+
   /// Encode hole cards as JSON string: `[[0,13],[1,14],null,...]`
   static String _encodeHoleCards(List<List<PokerCard>?>? holeCards) {
     if (holeCards == null || holeCards.isEmpty) return '[]';

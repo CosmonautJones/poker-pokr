@@ -247,6 +247,62 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     }
   }
 
+  Future<void> _saveAsSetup() async {
+    if (_setup == null) return;
+
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController(
+          text: '${_setup!.smallBlind}/${_setup!.bigBlind} '
+              '${_setup!.playerCount}-handed',
+        );
+        return AlertDialog(
+          title: const Text('Save as Setup'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Title',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (title == null) return;
+
+    try {
+      final companion = HandMapper.setupToSavedCompanion(
+        _setup!,
+        title: title.isEmpty ? null : title,
+      );
+      await ref.read(handsDaoProvider).insertSavedSetup(companion);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Setup saved for practice')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save setup: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
@@ -331,6 +387,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                   PokerGlossarySheet.show(context);
                 case 'history':
                   _showHistorySheet(context, setup);
+                case 'save_setup':
+                  _saveAsSetup();
               }
             },
             itemBuilder: (_) => [
@@ -339,6 +397,15 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                 child: ListTile(
                   leading: Icon(Icons.history, size: 20),
                   title: Text('Action History'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'save_setup',
+                child: ListTile(
+                  leading: Icon(Icons.bookmark_add, size: 20),
+                  title: Text('Save as Setup'),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                 ),
