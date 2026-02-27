@@ -15,6 +15,8 @@ class Hands extends Table {
   TextColumn get communityCards => text().map(const CardListConverter())();
   IntColumn get gameType => integer().withDefault(const Constant(0))();
   RealColumn get straddle => real().withDefault(const Constant(0.0))();
+  IntColumn get dealerIndex => integer().withDefault(const Constant(0))();
+  TextColumn get holeCardsJson => text().withDefault(const Constant('[]'))();
   IntColumn get parentHandId => integer().nullable()();
   IntColumn get branchAtActionIndex => integer().nullable()();
   DateTimeColumn get createdAt =>

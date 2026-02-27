@@ -209,6 +209,8 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                       if (v == null || v.isEmpty) return 'Required';
                       final val = double.tryParse(v);
                       if (val == null || val <= 0) return 'Must be > 0';
+                      final bb = double.tryParse(_bbController.text);
+                      if (bb != null && val >= bb) return 'Must be < BB';
                       return null;
                     },
                   ),
@@ -321,9 +323,38 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
             Text(
               'Tap cards to pick, long-press to clear',
               style: TextStyle(
-                color: Colors.grey.shade500,
+                color: Colors.grey.shade300,
                 fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      for (int i = 0; i < setup.playerCount; i++) {
+                        notifier.dealRandomHoleCards(i);
+                      }
+                    },
+                    icon: const Icon(Icons.casino, size: 16),
+                    label: const Text('Deal All'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      for (int i = 0; i < setup.playerCount; i++) {
+                        notifier.clearPlayerHoleCards(i);
+                      }
+                    },
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text('Clear All'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             for (int i = 0; i < setup.playerCount; i++)

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 
-final sessionsStreamProvider = StreamProvider<List<Session>>((ref) {
+final sessionsStreamProvider = StreamProvider.autoDispose<List<Session>>((ref) {
   return ref.watch(sessionsDaoProvider).watchAllSessions();
 });
 

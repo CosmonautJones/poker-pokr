@@ -175,21 +175,23 @@ class _PlayerSeatState extends State<PlayerSeat>
                   ),
                 // Rotating sweep indicator for current player
                 if (widget.isCurrentPlayer)
-                  AnimatedBuilder(
-                    animation: _sweepController,
-                    builder: (context, _) {
-                      return CustomPaint(
-                        painter: _SweepIndicatorPainter(
-                          progress: _sweepController.value,
-                          color: pt.turnIndicatorGlow,
-                          borderRadius: 12 * scale,
-                        ),
-                        child: SizedBox(
-                          width: maxW + 6,
-                          height: 60 * scale + 6,
-                        ),
-                      );
-                    },
+                  RepaintBoundary(
+                    child: AnimatedBuilder(
+                      animation: _sweepController,
+                      builder: (context, _) {
+                        return CustomPaint(
+                          painter: _SweepIndicatorPainter(
+                            progress: _sweepController.value,
+                            color: pt.turnIndicatorGlow,
+                            borderRadius: 12 * scale,
+                          ),
+                          child: SizedBox(
+                            width: maxW + 6,
+                            height: 60 * scale + 6,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 // Glass seat container
                 AnimatedBuilder(
@@ -389,8 +391,8 @@ class _PlayerSeatState extends State<PlayerSeat>
               vertical: 1,
             ),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
+              gradient: LinearGradient(
+                colors: [pt.straddlePrimary, pt.straddleSecondary],
               ),
               borderRadius: BorderRadius.circular(4),
             ),

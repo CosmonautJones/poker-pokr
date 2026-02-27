@@ -69,7 +69,17 @@ class PlayerState {
           other.isFolded == isFolded &&
           other.isAllIn == isAllIn &&
           other.currentBet == currentBet &&
-          other.totalInvested == totalInvested);
+          other.totalInvested == totalInvested &&
+          _holeCardsEqual(other.holeCards, holeCards));
+
+  static bool _holeCardsEqual(List<PokerCard> a, List<PokerCard> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 
   @override
   int get hashCode => Object.hash(
@@ -80,5 +90,6 @@ class PlayerState {
         isAllIn,
         currentBet,
         totalInvested,
+        Object.hashAll(holeCards),
       );
 }

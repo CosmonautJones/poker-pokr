@@ -60,6 +60,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
   final Color badgeAllIn;
   final Color badgeFold;
 
+  // ── Straddle ──
+  final Color straddlePrimary;
+  final Color straddleSecondary;
+
   // ── Glow / effects ──
   final Color winnerGlow;
   final Color allInGlow;
@@ -128,6 +132,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     required this.chipGreen,
     required this.badgeAllIn,
     required this.badgeFold,
+    required this.straddlePrimary,
+    required this.straddleSecondary,
     required this.winnerGlow,
     required this.allInGlow,
     required this.accent,
@@ -196,6 +202,9 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     // Status badges
     badgeAllIn: Color(0xFFEF6C00),
     badgeFold: Color(0xFF424242),
+    // Straddle
+    straddlePrimary: Color(0xFF7B1FA2),
+    straddleSecondary: Color(0xFF4A148C),
     // Glow / effects
     winnerGlow: Color(0xFFD4AF37),
     allInGlow: Color(0xFFFF6D00),
@@ -267,6 +276,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     Color? chipGreen,
     Color? badgeAllIn,
     Color? badgeFold,
+    Color? straddlePrimary,
+    Color? straddleSecondary,
     Color? winnerGlow,
     Color? allInGlow,
     Color? accent,
@@ -326,6 +337,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       chipGreen: chipGreen ?? this.chipGreen,
       badgeAllIn: badgeAllIn ?? this.badgeAllIn,
       badgeFold: badgeFold ?? this.badgeFold,
+      straddlePrimary: straddlePrimary ?? this.straddlePrimary,
+      straddleSecondary: straddleSecondary ?? this.straddleSecondary,
       winnerGlow: winnerGlow ?? this.winnerGlow,
       allInGlow: allInGlow ?? this.allInGlow,
       accent: accent ?? this.accent,
@@ -390,6 +403,8 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       chipGreen: Color.lerp(chipGreen, other.chipGreen, t)!,
       badgeAllIn: Color.lerp(badgeAllIn, other.badgeAllIn, t)!,
       badgeFold: Color.lerp(badgeFold, other.badgeFold, t)!,
+      straddlePrimary: Color.lerp(straddlePrimary, other.straddlePrimary, t)!,
+      straddleSecondary: Color.lerp(straddleSecondary, other.straddleSecondary, t)!,
       winnerGlow: Color.lerp(winnerGlow, other.winnerGlow, t)!,
       allInGlow: Color.lerp(allInGlow, other.allInGlow, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
