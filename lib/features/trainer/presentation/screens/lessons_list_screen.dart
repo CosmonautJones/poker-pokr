@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
+import 'package:poker_trainer/features/trainer/presentation/screens/lesson_icons.dart';
 
 /// Displays all available poker lessons as a scrollable list of cards.
 class LessonsListScreen extends StatelessWidget {
@@ -56,7 +57,7 @@ class _LessonCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  IconData(lesson.iconCodePoint, fontFamily: 'MaterialIcons'),
+                  lessonIcon(lesson.iconCodePoint),
                   color: Colors.white,
                   size: 24,
                 ),
