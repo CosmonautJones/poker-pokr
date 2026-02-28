@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
 
@@ -95,7 +97,16 @@ class _ProTipBannerState extends State<ProTipBanner>
                   Icons.lightbulb_rounded,
                   size: 14,
                   color: pt.accent,
-                ),
+                )
+                    .animate(
+                      onPlay: (c) => c.repeat(reverse: true),
+                    )
+                    .scaleXY(
+                      begin: 1.0,
+                      end: 1.15,
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeInOut,
+                    ),
                 const SizedBox(width: 6),
                 Container(
                   padding:
@@ -127,12 +138,15 @@ class _ProTipBannerState extends State<ProTipBanner>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
-                  _expanded
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
-                  size: 18,
-                  color: pt.accent.withValues(alpha: 0.6),
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: Icon(
+                    Icons.expand_more_rounded,
+                    size: 18,
+                    color: pt.accent.withValues(alpha: 0.6),
+                  ),
                 ),
               ],
             ),
@@ -161,6 +175,14 @@ class _ProTipBannerState extends State<ProTipBanner>
           ],
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: PokerAnimations.kTipEntrance)
+        .slideY(
+          begin: -0.15,
+          end: 0,
+          duration: PokerAnimations.kTipEntrance,
+          curve: PokerAnimations.tipEntranceCurve,
+        );
   }
 }

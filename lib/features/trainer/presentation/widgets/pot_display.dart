@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/pot.dart';
@@ -52,7 +53,19 @@ class PotDisplay extends StatelessWidget {
                         fontSize: (10 * scale).clamp(8.0, 11.0),
                       ),
                     ),
-                  ),
+                  )
+                      .animate()
+                      .fadeIn(
+                        delay: Duration(milliseconds: 80 * i),
+                        duration: const Duration(milliseconds: 300),
+                      )
+                      .slideY(
+                        begin: 0.3,
+                        end: 0,
+                        delay: Duration(milliseconds: 80 * i),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                      ),
               ],
             ),
           ),
@@ -68,7 +81,8 @@ class PotDisplay extends StatelessWidget {
   }
 }
 
-/// The main pot pill with gold shimmer, chip icon, and scale-flash on change.
+/// The main pot pill with gold shimmer, chip icon, scale-flash on change,
+/// and enhanced ambient glow for large pots.
 class _PotPill extends StatefulWidget {
   final double pot;
   final double scale;
@@ -86,6 +100,9 @@ class _PotPillState extends State<_PotPill>
 
   late AnimationController _flashController;
   late Animation<double> _flashScale;
+
+  late AnimationController _chipWobbleController;
+  late Animation<double> _chipWobble;
 
   double _previousPot = 0;
 
@@ -118,6 +135,31 @@ class _PotPillState extends State<_PotPill>
               .chain(CurveTween(curve: Curves.elasticOut)),
           weight: 60),
     ]).animate(_flashController);
+
+    // Chip wobble on pot change
+    _chipWobbleController = AnimationController(
+      duration: PokerAnimations.kChipWobble,
+      vsync: this,
+    );
+    _chipWobble = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 0.08),
+        weight: 15,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.08, end: -0.06),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -0.06, end: 0.03),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.03, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
+      ),
+    ]).animate(_chipWobbleController);
   }
 
   @override
@@ -126,6 +168,7 @@ class _PotPillState extends State<_PotPill>
     if ((widget.pot - _previousPot).abs() > 0.01) {
       _previousPot = widget.pot;
       _flashController.forward(from: 0);
+      _chipWobbleController.forward(from: 0);
     }
   }
 
@@ -133,6 +176,7 @@ class _PotPillState extends State<_PotPill>
   void dispose() {
     _shimmerController.dispose();
     _flashController.dispose();
+    _chipWobbleController.dispose();
     super.dispose();
   }
 
@@ -140,6 +184,9 @@ class _PotPillState extends State<_PotPill>
   Widget build(BuildContext context) {
     final pt = context.poker;
     final scale = widget.scale;
+
+    // Enhanced glow for large pots (more gold glow when pot is big)
+    final potGlowIntensity = (widget.pot / 500).clamp(0.05, 0.25);
 
     return AnimatedBuilder(
       animation: _flashScale,
@@ -170,38 +217,49 @@ class _PotPillState extends State<_PotPill>
           ),
           boxShadow: [
             BoxShadow(
-              color: pt.goldPrimary.withValues(alpha: 0.1),
-              blurRadius: 8,
-              spreadRadius: 1,
+              color: pt.goldPrimary.withValues(alpha: potGlowIntensity),
+              blurRadius: 8 + potGlowIntensity * 16,
+              spreadRadius: 1 + potGlowIntensity * 2,
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Chip stack icon
-            SizedBox(
-              width: 10,
-              height: 14,
-              child: Stack(
-                children: [
-                  Positioned(
-                    bottom: 0,
-                    child: _chipSlice(pt.chipRed, 10),
-                  ),
-                  Positioned(
-                    bottom: 3,
-                    child: _chipSlice(pt.chipBlue, 10),
-                  ),
-                  Positioned(
-                    bottom: 6,
-                    child: _chipSlice(pt.chipGreen, 10),
-                  ),
-                  Positioned(
-                    bottom: 9,
-                    child: _chipSlice(pt.chipWhite, 10),
-                  ),
-                ],
+            // Chip stack icon with wobble on change
+            AnimatedBuilder(
+              animation: _chipWobble,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _chipWobbleController.isAnimating
+                      ? _chipWobble.value
+                      : 0,
+                  child: child,
+                );
+              },
+              child: SizedBox(
+                width: 10,
+                height: 14,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      bottom: 0,
+                      child: _chipSlice(pt.chipRed, 10),
+                    ),
+                    Positioned(
+                      bottom: 3,
+                      child: _chipSlice(pt.chipBlue, 10),
+                    ),
+                    Positioned(
+                      bottom: 6,
+                      child: _chipSlice(pt.chipGreen, 10),
+                    ),
+                    Positioned(
+                      bottom: 9,
+                      child: _chipSlice(pt.chipWhite, 10),
+                    ),
+                  ],
+                ),
               ),
             ),
             SizedBox(width: 5 * scale),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/educational_context.dart';
 import 'package:poker_trainer/features/trainer/domain/poker_glossary.dart';
@@ -36,7 +38,7 @@ class ContextStrip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Situation chips - compact single row
+          // Row 1: Situation chips - compact single row with staggered entrance
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -45,6 +47,7 @@ class ContextStrip extends StatelessWidget {
                   label: ctx.positionLabel,
                   color: _positionColor(context, ctx.positionCategory),
                   glossaryTerm: posAbbrev,
+                  staggerIndex: 0,
                 ),
                 if (ctx.potOddsDisplay != null)
                   _ContextChip(
@@ -52,19 +55,23 @@ class ContextStrip extends StatelessWidget {
                     value: ctx.potOddsDisplay!,
                     color: pt.accent,
                     glossaryTerm: 'Pot Odds',
+                    staggerIndex: 1,
                   ),
                 _ContextChip(
                   label: 'SPR',
                   value: ctx.stackToPotRatio.toStringAsFixed(1),
                   color: ctx.stackToPotRatio < 4 ? pt.positionMiddle : null,
                   glossaryTerm: 'SPR',
+                  staggerIndex: 2,
                 ),
                 _ContextChip(
                   label: '${ctx.playersInHand} in',
+                  staggerIndex: 3,
                 ),
                 if (ctx.playersYetToAct > 0)
                   _ContextChip(
                     label: '${ctx.playersYetToAct} behind',
+                    staggerIndex: 4,
                   ),
               ],
             ),
@@ -102,12 +109,14 @@ class _ContextChip extends StatelessWidget {
   final String? value;
   final Color? color;
   final String? glossaryTerm;
+  final int staggerIndex;
 
   const _ContextChip({
     required this.label,
     this.value,
     this.color,
     this.glossaryTerm,
+    this.staggerIndex = 0,
   });
 
   @override
@@ -148,7 +157,21 @@ class _ContextChip extends StatelessWidget {
           ),
         ],
       ),
-    );
+    )
+        .animate()
+        .fadeIn(
+          delay: Duration(
+            milliseconds: 40 * staggerIndex,
+          ),
+          duration: PokerAnimations.kContextChipEntrance,
+        )
+        .scaleXY(
+          begin: 0.85,
+          end: 1.0,
+          delay: Duration(milliseconds: 40 * staggerIndex),
+          duration: PokerAnimations.kContextChipEntrance,
+          curve: Curves.easeOutBack,
+        );
 
     if (!isTappable) {
       return Padding(
@@ -210,15 +233,19 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacity;
+  late Animation<double> _slideY;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slideY = Tween<double>(begin: 6.0, end: 0.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
     _controller.forward();
 
     // Auto-dismiss after 4 seconds.
@@ -266,8 +293,17 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
         Positioned(
           left: left,
           bottom: bottom,
-          child: FadeTransition(
-            opacity: _opacity,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _slideY.value),
+                child: Opacity(
+                  opacity: _opacity.value,
+                  child: child,
+                ),
+              );
+            },
             child: Material(
               color: Colors.transparent,
               child: Container(
@@ -335,7 +371,7 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
   }
 }
 
-/// Row 2 variant: explains the last action with a colored dot.
+/// Row 2 variant: explains the last action with a colored dot and slide-in.
 class _ActionExplanationRow extends StatelessWidget {
   final ActionExplanation explanation;
 
@@ -371,7 +407,15 @@ class _ActionExplanationRow extends StatelessWidget {
           ),
         ),
       ],
-    );
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 250))
+        .slideX(
+          begin: -0.05,
+          end: 0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        );
   }
 
   static Color _inferActionColor(PokerTheme pt, String description) {
@@ -387,7 +431,7 @@ class _ActionExplanationRow extends StatelessWidget {
   }
 }
 
-/// Row 2 variant: street transition summary.
+/// Row 2 variant: street transition summary with fade-in.
 class _StreetSummaryRow extends StatelessWidget {
   final StreetSummary summary;
 
@@ -410,6 +454,14 @@ class _StreetSummaryRow extends StatelessWidget {
           ),
         ),
       ],
-    );
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 350))
+        .slideX(
+          begin: -0.03,
+          end: 0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
   }
 }

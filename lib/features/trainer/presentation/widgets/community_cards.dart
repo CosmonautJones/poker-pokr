@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/card.dart';
@@ -27,6 +28,7 @@ class CommunityCardsWidget extends StatelessWidget {
             child: _CardFlipDeal(
               key: ValueKey('community_${cards[i].rank}_${cards[i].suit}'),
               dealIndex: i,
+              scale: scale,
               child: _CardFace(card: cards[i], scale: scale),
             ),
           );
@@ -40,15 +42,18 @@ class CommunityCardsWidget extends StatelessWidget {
   }
 }
 
-/// Cinematic 3D card deal: slide-in phase → Y-axis flip from back to face.
+/// Cinematic 3D card deal: slide-in phase → Y-axis flip from back to face
+/// → post-flip shimmer highlight.
 class _CardFlipDeal extends StatefulWidget {
   final Widget child;
   final int dealIndex;
+  final double scale;
 
   const _CardFlipDeal({
     super.key,
     required this.child,
     this.dealIndex = 0,
+    this.scale = 1.0,
   });
 
   @override
@@ -59,44 +64,68 @@ class _CardFlipDealState extends State<_CardFlipDeal>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
-  // Phase 1: slide-in + scale (0.0 → 0.5)
+  // Phase 1: slide-in + scale (0.0 → 0.4)
   late Animation<double> _slideProgress;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
-  // Phase 2: flip (0.5 → 1.0)
+  // Phase 2: flip (0.4 → 0.85)
   late Animation<double> _flipProgress;
+
+  // Phase 3: post-flip shimmer trigger (0.85 → 1.0)
+  late Animation<double> _shimmerProgress;
+
+  // Shadow grows during deal
+  late Animation<double> _shadowAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: PokerAnimations.kCardFlip,
+      duration: PokerAnimations.kCardFlip + PokerAnimations.kCardShimmer,
       vsync: this,
     );
+
+    final flipEnd = PokerAnimations.kCardFlip.inMilliseconds /
+        (PokerAnimations.kCardFlip.inMilliseconds +
+            PokerAnimations.kCardShimmer.inMilliseconds);
+    final slideEnd = flipEnd * 0.5;
+    final flipStart = flipEnd * 0.5;
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+        curve: Interval(0.0, slideEnd * 0.6, curve: Curves.easeOut),
       ),
     );
     _slideProgress = Tween<double>(begin: -0.3, end: 0.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOutCubic),
+        curve: Interval(0.0, slideEnd, curve: Curves.easeOutCubic),
       ),
     );
     _scaleAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
+        curve: Interval(0.0, slideEnd, curve: Curves.easeOutBack),
       ),
     );
     _flipProgress = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeInOutCubic),
+        curve: Interval(flipStart, flipEnd, curve: Curves.easeInOutCubic),
+      ),
+    );
+    _shimmerProgress = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(flipEnd, 1.0, curve: Curves.easeOut),
+      ),
+    );
+    _shadowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.0, flipEnd, curve: Curves.easeOut),
       ),
     );
 
@@ -114,6 +143,8 @@ class _CardFlipDealState extends State<_CardFlipDeal>
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
@@ -129,24 +160,86 @@ class _CardFlipDealState extends State<_CardFlipDeal>
             ? math.pi * (1.0 - flip) // -90° → 0°
             : math.pi * flip; // 0° → 90°
 
+        // Growing shadow during deal
+        final shadowBlur = 6.0 + _shadowAnimation.value * 6.0;
+        final shadowOpacity = 0.2 + _shadowAnimation.value * 0.25;
+
+        // Phase 3: post-flip shimmer highlight
+        final shimmer = _shimmerProgress.value;
+
         return Opacity(
           opacity: opacity,
           child: Transform.translate(
             offset: Offset(0, slide * 40),
             child: Transform.scale(
               scale: scaleVal,
-              child: Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.001)
-                  ..rotateY(flipAngle),
-                child: showFace
-                    ? widget.child
-                    : _CardBack(
-                        width: null,
-                        height: null,
-                        scale: 1.0,
-                      ),
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: shadowOpacity),
+                      blurRadius: shadowBlur,
+                      offset: Offset(1.5, 3 + _shadowAnimation.value * 2),
+                    ),
+                  ],
+                  borderRadius: BorderRadius.circular(
+                      (8 * widget.scale).clamp(4.0, 10.0)),
+                ),
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateY(flipAngle),
+                  child: showFace
+                      ? Stack(
+                          children: [
+                            widget.child,
+                            // Shimmer highlight sweep across face after flip
+                            if (shimmer > 0 && shimmer < 1)
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                    (8 * widget.scale).clamp(4.0, 10.0),
+                                  ),
+                                  child: IgnorePointer(
+                                    child: ShaderMask(
+                                      shaderCallback: (bounds) {
+                                        final pos = shimmer * 3 - 1;
+                                        return LinearGradient(
+                                          colors: [
+                                            Colors.transparent,
+                                            pt.goldLight
+                                                .withValues(alpha: 0.3),
+                                            Colors.white
+                                                .withValues(alpha: 0.15),
+                                            pt.goldLight
+                                                .withValues(alpha: 0.3),
+                                            Colors.transparent,
+                                          ],
+                                          stops: const [
+                                            0.0, 0.35, 0.5, 0.65, 1.0
+                                          ],
+                                          begin: Alignment(pos - 0.5, -1),
+                                          end: Alignment(pos + 0.5, 1),
+                                        ).createShader(bounds);
+                                      },
+                                      blendMode: BlendMode.srcATop,
+                                      child: Container(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.1),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : _CardBack(
+                          width: null,
+                          height: null,
+                          scale: widget.scale,
+                        ),
+                ),
               ),
             ),
           ),
@@ -218,6 +311,22 @@ class _CardBack extends StatelessWidget {
                       border: Border.all(
                         color: pt.goldDark.withValues(alpha: 0.12),
                         width: 1,
+                      ),
+                    ),
+                    // Diamond center motif
+                    child: Center(
+                      child: Transform.rotate(
+                        angle: math.pi / 4,
+                        child: Container(
+                          width: w * 0.15,
+                          height: w * 0.15,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: pt.goldDark.withValues(alpha: 0.1),
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -380,7 +489,7 @@ class _CardFace extends StatelessWidget {
   }
 }
 
-/// A grayed-out placeholder for an undealt card slot.
+/// A grayed-out placeholder for an undealt card slot with subtle pulse.
 class _CardPlaceholder extends StatelessWidget {
   final double scale;
 
@@ -403,7 +512,22 @@ class _CardPlaceholder extends StatelessWidget {
           width: 0.5,
         ),
       ),
-    );
+    )
+        .animate(
+          onPlay: (c) => c.repeat(reverse: true),
+        )
+        .fadeIn(duration: Duration.zero)
+        .then()
+        .custom(
+          duration: const Duration(milliseconds: 2500),
+          builder: (context, value, child) {
+            final pulse = 0.15 + (math.sin(value * math.pi) * 0.08);
+            return Opacity(
+              opacity: pulse / 0.23,
+              child: child,
+            );
+          },
+        );
   }
 }
 

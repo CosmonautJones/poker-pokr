@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/player.dart';
@@ -36,6 +37,7 @@ class _PlayerSeatState extends State<PlayerSeat>
   late Animation<double> _pulseAnimation;
 
   AnimationController? _winnerController;
+  AnimationController? _sparkleController;
 
   @override
   void initState() {
@@ -91,16 +93,24 @@ class _PlayerSeatState extends State<PlayerSeat>
       }
     }
 
-    // Winner ring.
+    // Winner ring + sparkle particles.
     if (widget.isWinner) {
       _winnerController ??= AnimationController(
         duration: PokerAnimations.kWinnerRing,
         vsync: this,
       );
       _winnerController!.repeat();
+
+      _sparkleController ??= AnimationController(
+        duration: PokerAnimations.kWinnerSparkle,
+        vsync: this,
+      );
+      _sparkleController!.repeat();
     } else {
       _winnerController?.stop();
       _winnerController?.value = 0;
+      _sparkleController?.stop();
+      _sparkleController?.value = 0;
     }
   }
 
@@ -109,6 +119,7 @@ class _PlayerSeatState extends State<PlayerSeat>
     _sweepController.dispose();
     _pulseController.dispose();
     _winnerController?.dispose();
+    _sparkleController?.dispose();
     super.dispose();
   }
 
@@ -137,207 +148,242 @@ class _PlayerSeatState extends State<PlayerSeat>
       child: AnimatedScale(
         duration: PokerAnimations.kFold,
         scale: isFolded ? 0.97 : 1.0,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Hole cards
-            if (player.holeCards.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 3),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: player.holeCards
-                      .map((c) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 0.5),
-                            child: MiniCardWidget(
-                              card: c,
-                              scale: player.holeCards.length <= 2
-                                  ? scale
-                                  : scale * 0.7,
-                            ),
-                          ))
-                      .toList(),
+        child: AnimatedRotation(
+          duration: PokerAnimations.kFold,
+          turns: isFolded ? -0.01 : 0.0,
+          curve: Curves.easeOut,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Hole cards
+              if (player.holeCards.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: player.holeCards
+                        .map((c) => Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 0.5),
+                              child: MiniCardWidget(
+                                card: c,
+                                scale: player.holeCards.length <= 2
+                                    ? scale
+                                    : scale * 0.7,
+                              ),
+                            ))
+                        .toList(),
+                  ),
                 ),
-              ),
-            // Main seat container with animations
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                // Winner ring effect
-                if (widget.isWinner && _winnerController != null)
-                  _WinnerRingEffect(
-                    controller: _winnerController!,
-                    color: pt.winnerGlow,
-                    minWidth: minW,
-                    maxWidth: maxW,
-                    borderRadius: borderRadius,
-                  ),
-                // Rotating sweep indicator for current player
-                if (widget.isCurrentPlayer)
-                  RepaintBoundary(
-                    child: AnimatedBuilder(
-                      animation: _sweepController,
-                      builder: (context, _) {
-                        return CustomPaint(
-                          painter: _SweepIndicatorPainter(
-                            progress: _sweepController.value,
-                            color: pt.turnIndicatorGlow,
-                            borderRadius: 12 * scale,
-                          ),
-                          child: SizedBox(
-                            width: maxW + 6,
-                            height: 60 * scale + 6,
-                          ),
-                        );
-                      },
+              // Main seat container with animations
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Winner sparkle particles
+                  if (widget.isWinner && _sparkleController != null)
+                    RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _sparkleController!,
+                        builder: (context, _) {
+                          return CustomPaint(
+                            painter: _SparklePainter(
+                              progress: _sparkleController!.value,
+                              color: pt.winnerGlow,
+                              particleCount: 12,
+                            ),
+                            child: SizedBox(
+                              width: maxW + 24,
+                              height: 60 * scale + 24,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                // Glass seat container
-                AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Container(
-                      constraints:
-                          BoxConstraints(minWidth: minW, maxWidth: maxW),
-                      decoration: BoxDecoration(
-                        borderRadius: borderRadius,
-                        boxShadow: widget.isCurrentPlayer
-                            ? [
-                                BoxShadow(
-                                  color: pt.turnIndicatorGlow.withValues(
-                                    alpha: _pulseAnimation.value * 0.4,
-                                  ),
-                                  blurRadius:
-                                      12 * _pulseAnimation.value,
-                                  spreadRadius:
-                                      2 * _pulseAnimation.value,
-                                ),
-                              ]
-                            : isAllIn
-                                ? [
-                                    BoxShadow(
-                                      color: pt.allInGlow.withValues(
-                                        alpha:
-                                            _pulseAnimation.value * 0.4,
-                                      ),
-                                      blurRadius:
-                                          8 * _pulseAnimation.value,
-                                      spreadRadius: 1,
+                  // Winner ring effect
+                  if (widget.isWinner && _winnerController != null)
+                    _WinnerRingEffect(
+                      controller: _winnerController!,
+                      color: pt.winnerGlow,
+                      minWidth: minW,
+                      maxWidth: maxW,
+                      borderRadius: borderRadius,
+                    ),
+                  // Rotating sweep indicator for current player
+                  if (widget.isCurrentPlayer)
+                    RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _sweepController,
+                        builder: (context, _) {
+                          return CustomPaint(
+                            painter: _SweepIndicatorPainter(
+                              progress: _sweepController.value,
+                              color: pt.turnIndicatorGlow,
+                              borderRadius: 12 * scale,
+                            ),
+                            child: SizedBox(
+                              width: maxW + 6,
+                              height: 60 * scale + 6,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  // Glass seat container
+                  AnimatedBuilder(
+                    animation: _pulseAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        constraints:
+                            BoxConstraints(minWidth: minW, maxWidth: maxW),
+                        decoration: BoxDecoration(
+                          borderRadius: borderRadius,
+                          boxShadow: widget.isCurrentPlayer
+                              ? [
+                                  BoxShadow(
+                                    color: pt.turnIndicatorGlow.withValues(
+                                      alpha: _pulseAnimation.value * 0.4,
                                     ),
-                                  ]
-                                : widget.isWinner
-                                    ? [
-                                        BoxShadow(
-                                          color: pt.winnerGlow
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 12,
-                                          spreadRadius: 2,
-                                        ),
-                                      ]
-                                    : [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                      ),
-                      child: child,
-                    );
-                  },
-                  child: ClipRRect(
-                    borderRadius: borderRadius,
-                    child: Container(
-                      constraints:
-                          BoxConstraints(minWidth: minW, maxWidth: maxW),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: (8 * scale).clamp(4.0, 8.0),
-                        vertical: (5 * scale).clamp(3.0, 5.0),
-                      ),
-                      decoration: BoxDecoration(
-                        // Glass base — semi-transparent dark
-                        color: widget.isCurrentPlayer
-                            ? Colors.black.withValues(alpha: 0.55)
-                            : Colors.black.withValues(alpha: 0.65),
-                        borderRadius: borderRadius,
-                        border: Border.all(
-                          color: widget.isCurrentPlayer
-                              ? pt.turnIndicatorGlow
-                                  .withValues(alpha: 0.4)
+                                    blurRadius:
+                                        12 * _pulseAnimation.value,
+                                    spreadRadius:
+                                        2 * _pulseAnimation.value,
+                                  ),
+                                ]
                               : isAllIn
-                                  ? pt.seatBorderAllIn
-                                      .withValues(alpha: 0.6)
+                                  ? [
+                                      BoxShadow(
+                                        color: pt.allInGlow.withValues(
+                                          alpha:
+                                              _pulseAnimation.value * 0.4,
+                                        ),
+                                        blurRadius:
+                                            8 * _pulseAnimation.value,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
                                   : widget.isWinner
-                                      ? pt.winnerGlow
-                                          .withValues(alpha: 0.5)
-                                      : Colors.white
-                                          .withValues(alpha: 0.08),
-                          width: widget.isCurrentPlayer ? 1.5 : 1,
+                                      ? [
+                                          BoxShadow(
+                                            color: pt.winnerGlow
+                                                .withValues(alpha: 0.3),
+                                            blurRadius: 12,
+                                            spreadRadius: 2,
+                                          ),
+                                        ]
+                                      : [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.3),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
                         ),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Glass sheen overlay
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: IgnorePointer(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: borderRadius,
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white
-                                          .withValues(alpha: 0.08),
-                                      Colors.transparent,
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    stops: const [0.0, 0.5],
+                        child: child,
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: borderRadius,
+                      child: Container(
+                        constraints:
+                            BoxConstraints(minWidth: minW, maxWidth: maxW),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: (8 * scale).clamp(4.0, 8.0),
+                          vertical: (5 * scale).clamp(3.0, 5.0),
+                        ),
+                        decoration: BoxDecoration(
+                          // Glass base — semi-transparent dark
+                          color: widget.isCurrentPlayer
+                              ? Colors.black.withValues(alpha: 0.55)
+                              : Colors.black.withValues(alpha: 0.65),
+                          borderRadius: borderRadius,
+                          border: Border.all(
+                            color: widget.isCurrentPlayer
+                                ? pt.turnIndicatorGlow
+                                    .withValues(alpha: 0.4)
+                                : isAllIn
+                                    ? pt.seatBorderAllIn
+                                        .withValues(alpha: 0.6)
+                                    : widget.isWinner
+                                        ? pt.winnerGlow
+                                            .withValues(alpha: 0.5)
+                                        : Colors.white
+                                            .withValues(alpha: 0.08),
+                            width: widget.isCurrentPlayer ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            // Glass sheen overlay
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: borderRadius,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.white
+                                            .withValues(alpha: 0.08),
+                                        Colors.transparent,
+                                      ],
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      stops: const [0.0, 0.5],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          // Content
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildNameRow(pt, player, scale),
-                              SizedBox(height: 2 * scale),
-                              _buildStack(pt, player, scale),
-                              if (isAllIn)
-                                _AllInBadge(scale: scale),
-                              if (isFolded)
-                                _StatusBadge(
-                                  label: 'FOLD',
-                                  color: pt.badgeFold,
-                                  textColor: pt.textMuted,
-                                  scale: scale,
-                                ),
-                            ],
-                          ),
-                        ],
+                            // Content
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildNameRow(pt, player, scale),
+                                SizedBox(height: 2 * scale),
+                                _buildStack(pt, player, scale),
+                                if (isAllIn)
+                                  _AllInBadge(scale: scale),
+                                if (isFolded)
+                                  _StatusBadge(
+                                    label: 'FOLD',
+                                    color: pt.badgeFold,
+                                    textColor: pt.textMuted,
+                                    scale: scale,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            // Current bet display with chip icon
-            if (player.currentBet > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: _BetChipDisplay(
-                  amount: _formatChips(player.currentBet),
-                  scale: scale,
-                ),
+                ],
               ),
-          ],
+              // Current bet display with chip icon — animated entrance
+              if (player.currentBet > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: _BetChipDisplay(
+                    amount: _formatChips(player.currentBet),
+                    scale: scale,
+                  )
+                      .animate()
+                      .slideY(
+                        begin: -0.5,
+                        end: 0,
+                        duration: PokerAnimations.kBetSlideIn,
+                        curve: PokerAnimations.betSlideCurve,
+                      )
+                      .fadeIn(
+                        duration: const Duration(milliseconds: 200),
+                      ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -347,7 +393,7 @@ class _PlayerSeatState extends State<PlayerSeat>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Premium dealer chip — concentric gold circles
+        // Premium dealer chip — concentric gold circles with entrance animation
         if (widget.isDealer)
           Container(
             margin: EdgeInsets.only(right: 3 * scale),
@@ -381,7 +427,20 @@ class _PlayerSeatState extends State<PlayerSeat>
                 ),
               ),
             ),
-          ),
+          )
+              .animate()
+              .scale(
+                begin: const Offset(0.0, 0.0),
+                end: const Offset(1.0, 1.0),
+                duration: PokerAnimations.kDealerEntrance,
+                curve: PokerAnimations.dealerEntranceCurve,
+              )
+              .rotate(
+                begin: -0.5,
+                end: 0,
+                duration: PokerAnimations.kDealerEntrance,
+                curve: Curves.easeOutCubic,
+              ),
         // Straddle badge
         if (widget.isStraddler)
           Container(
@@ -404,7 +463,15 @@ class _PlayerSeatState extends State<PlayerSeat>
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+          )
+              .animate()
+              .fadeIn(duration: const Duration(milliseconds: 300))
+              .slideX(
+                begin: -0.3,
+                end: 0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+              ),
         // Player name
         Flexible(
           child: Text(
@@ -488,6 +555,86 @@ class _SweepIndicatorPainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
+/// Sparkle particles that radiate outward from the winner's seat.
+class _SparklePainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final int particleCount;
+
+  static final _random = math.Random(42);
+  late final List<_Particle> _particles;
+
+  _SparklePainter({
+    required this.progress,
+    required this.color,
+    this.particleCount = 12,
+  }) {
+    _particles = List.generate(particleCount, (i) {
+      final angle = (i / particleCount) * math.pi * 2 +
+          _random.nextDouble() * 0.5;
+      final speed = 0.6 + _random.nextDouble() * 0.6;
+      final size = 1.5 + _random.nextDouble() * 2.0;
+      final phaseOffset = _random.nextDouble();
+      return _Particle(angle, speed, size, phaseOffset);
+    });
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = size.width / 2;
+
+    for (final p in _particles) {
+      final t = (progress + p.phaseOffset) % 1.0;
+      final radius = t * maxRadius * p.speed;
+      final opacity = (1.0 - t).clamp(0.0, 1.0) * 0.8;
+
+      if (opacity <= 0.01) continue;
+
+      final x = center.dx + math.cos(p.angle) * radius;
+      final y = center.dy + math.sin(p.angle) * radius;
+
+      // Draw a 4-pointed star
+      final paint = Paint()
+        ..color = color.withValues(alpha: opacity)
+        ..style = PaintingStyle.fill;
+
+      final starSize = p.size * (1.0 - t * 0.5);
+      final path = Path();
+      for (int i = 0; i < 4; i++) {
+        final a = (i / 4) * math.pi * 2 - math.pi / 4;
+        final outerX = x + math.cos(a) * starSize;
+        final outerY = y + math.sin(a) * starSize;
+        final innerA = a + math.pi / 4;
+        final innerX = x + math.cos(innerA) * starSize * 0.3;
+        final innerY = y + math.sin(innerA) * starSize * 0.3;
+
+        if (i == 0) {
+          path.moveTo(outerX, outerY);
+        } else {
+          path.lineTo(outerX, outerY);
+        }
+        path.lineTo(innerX, innerY);
+      }
+      path.close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SparklePainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+class _Particle {
+  final double angle;
+  final double speed;
+  final double size;
+  final double phaseOffset;
+
+  const _Particle(this.angle, this.speed, this.size, this.phaseOffset);
+}
+
 /// Animated expanding gold rings for winner celebration.
 class _WinnerRingEffect extends StatelessWidget {
   final AnimationController controller;
@@ -510,12 +657,13 @@ class _WinnerRingEffect extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final t = controller.value;
-        // Two staggered rings
+        // Three staggered rings for richer celebration
         return Stack(
           alignment: Alignment.center,
           children: [
             _buildRing(t, 0.0),
-            _buildRing(t, 0.25),
+            _buildRing(t, 0.2),
+            _buildRing(t, 0.4),
           ],
         );
       },
@@ -524,7 +672,7 @@ class _WinnerRingEffect extends StatelessWidget {
 
   Widget _buildRing(double t, double offset) {
     final adjusted = (t + offset) % 1.0;
-    final scale = 1.0 + adjusted * 0.4;
+    final scale = 1.0 + adjusted * 0.45;
     final opacity = (1.0 - adjusted).clamp(0.0, 0.6);
 
     return Transform.scale(
@@ -544,7 +692,7 @@ class _WinnerRingEffect extends StatelessWidget {
   }
 }
 
-/// Pulsing ALL IN badge with glow effect.
+/// Pulsing ALL IN badge with glow effect and shimmer.
 class _AllInBadge extends StatefulWidget {
   final double scale;
   const _AllInBadge({required this.scale});
@@ -611,11 +759,19 @@ class _AllInBadgeState extends State<_AllInBadge>
           ),
         );
       },
-    );
+    )
+        .animate(
+          onPlay: (c) => c.repeat(reverse: true),
+        )
+        .shimmer(
+          delay: const Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 1800),
+          color: Colors.orange.withValues(alpha: 0.3),
+        );
   }
 }
 
-/// Compact status badge (FOLD).
+/// Compact status badge (FOLD) with entrance animation.
 class _StatusBadge extends StatelessWidget {
   final String label;
   final Color color;
@@ -650,11 +806,19 @@ class _StatusBadge extends StatelessWidget {
           letterSpacing: 0.5,
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 250))
+        .scaleXY(
+          begin: 0.8,
+          end: 1.0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutBack,
+        );
   }
 }
 
-/// Bet display with stacked chip icon.
+/// Bet display with stacked chip icon and animated entrance.
 class _BetChipDisplay extends StatelessWidget {
   final String amount;
   final double scale;

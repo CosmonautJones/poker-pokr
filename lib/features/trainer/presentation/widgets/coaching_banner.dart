@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 
@@ -15,8 +17,19 @@ class CoachingBanner extends StatefulWidget {
   State<CoachingBanner> createState() => _CoachingBannerState();
 }
 
-class _CoachingBannerState extends State<CoachingBanner> {
+class _CoachingBannerState extends State<CoachingBanner>
+    with SingleTickerProviderStateMixin {
   bool _expanded = true;
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    )..repeat();
+  }
 
   @override
   void didUpdateWidget(CoachingBanner oldWidget) {
@@ -28,6 +41,12 @@ class _CoachingBannerState extends State<CoachingBanner> {
   }
 
   @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tip = widget.tip;
     if (tip == null) return const SizedBox.shrink();
@@ -36,29 +55,50 @@ class _CoachingBannerState extends State<CoachingBanner> {
 
     return GestureDetector(
       onTap: () => setState(() => _expanded = !_expanded),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        padding: EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: _expanded ? 12 : 8,
-        ),
-        decoration: BoxDecoration(
-          color: pt.tooltipBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: pt.goldPrimary.withValues(alpha: 0.4),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: pt.goldPrimary.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: AnimatedBuilder(
+        animation: _shimmerController,
+        builder: (context, child) {
+          // Subtle border shimmer sweep
+          final shimmerPos = _shimmerController.value * 3 - 1;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: _expanded ? 12 : 8,
             ),
-          ],
-        ),
+            decoration: BoxDecoration(
+              color: pt.tooltipBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: pt.goldPrimary.withValues(alpha: 0.4),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: pt.goldPrimary.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  pt.goldLight.withValues(alpha: 0.06),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+                begin: Alignment(shimmerPos - 0.5, 0),
+                end: Alignment(shimmerPos + 0.5, 0),
+              ),
+            ),
+            child: child,
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -98,30 +138,66 @@ class _CoachingBannerState extends State<CoachingBanner> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
+                  )
+                      .animate()
+                      .fadeIn(duration: const Duration(milliseconds: 300))
+                      .scaleXY(
+                        begin: 0.8,
+                        end: 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutBack,
+                      ),
                 const SizedBox(width: 4),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: pt.textMuted,
-                  size: 18,
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: Icon(
+                    Icons.expand_more,
+                    color: pt.textMuted,
+                    size: 18,
+                  ),
                 ),
               ],
             ),
-            // Body (expanded)
-            if (_expanded) ...[
-              const SizedBox(height: 6),
-              Text(
-                tip.body,
-                style: TextStyle(
-                  color: pt.textMuted,
-                  fontSize: 12,
-                  height: 1.45,
+            // Body (expanded) with fade-in
+            AnimatedCrossFade(
+              firstChild: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  tip.body,
+                  style: TextStyle(
+                    color: pt.textMuted,
+                    fontSize: 12,
+                    height: 1.45,
+                  ),
                 ),
               ),
-            ],
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: _expanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              duration: const Duration(milliseconds: 200),
+              sizeCurve: Curves.easeOut,
+              firstCurve: Curves.easeOut,
+            ),
           ],
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: PokerAnimations.kCoachingEntrance)
+        .scaleXY(
+          begin: 0.95,
+          end: 1.0,
+          duration: PokerAnimations.kCoachingEntrance,
+          curve: Curves.easeOutCubic,
+        )
+        .slideY(
+          begin: 0.05,
+          end: 0,
+          duration: PokerAnimations.kCoachingEntrance,
+          curve: Curves.easeOutCubic,
+        );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
@@ -45,7 +46,7 @@ class _ActionBarState extends State<ActionBar>
   void initState() {
     super.initState();
     _sliderAnimController = AnimationController(
-      duration: const Duration(milliseconds: 250),
+      duration: PokerAnimations.kSliderReveal,
       vsync: this,
     );
     _sliderAnimation = CurvedAnimation(
@@ -128,6 +129,9 @@ class _ActionBarState extends State<ActionBar>
     final fontSize = compact ? 13.0 : 14.0;
     const btnHeight = 48.0;
 
+    // Build button list with stagger index for animation
+    int staggerIndex = 0;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         compact ? 8 : 12,
@@ -154,6 +158,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionFold,
                     height: btnHeight,
                     fontSize: fontSize,
+                    staggerIndex: staggerIndex++,
                     onPressed: () {
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
@@ -172,6 +177,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionCheck,
                     height: btnHeight,
                     fontSize: fontSize,
+                    staggerIndex: staggerIndex++,
                     onPressed: () {
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
@@ -190,6 +196,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionCall,
                     height: btnHeight,
                     fontSize: fontSize,
+                    staggerIndex: staggerIndex++,
                     onPressed: () {
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
@@ -209,6 +216,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionBet,
                     height: btnHeight,
                     fontSize: fontSize,
+                    staggerIndex: staggerIndex++,
                     onPressed: () => _openBetSlider(isRaise: false),
                   ),
                 ),
@@ -222,6 +230,7 @@ class _ActionBarState extends State<ActionBar>
                     color: pt.actionBet,
                     height: btnHeight,
                     fontSize: fontSize,
+                    staggerIndex: staggerIndex++,
                     onPressed: () => _openBetSlider(isRaise: true),
                   ),
                 ),
@@ -238,6 +247,7 @@ class _ActionBarState extends State<ActionBar>
                     height: btnHeight,
                     fontSize: fontSize,
                     isAllIn: true,
+                    staggerIndex: staggerIndex++,
                     onPressed: () {
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
@@ -271,8 +281,17 @@ class _ActionBarState extends State<ActionBar>
             ('Pot', pot),
           ];
 
-    return FadeTransition(
-      opacity: _sliderAnimation,
+    return AnimatedBuilder(
+      animation: _sliderAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, (1 - _sliderAnimation.value) * 20),
+          child: Opacity(
+            opacity: _sliderAnimation.value,
+            child: child,
+          ),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
@@ -348,28 +367,44 @@ class _ActionBarState extends State<ActionBar>
                   ),
                 ],
               ),
-              // Preset buttons
+              // Preset buttons with staggered entrance
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Row(
                   children: [
-                    for (final (label, amount) in presets)
-                      if (amount >= _minBet && amount <= _maxBet)
+                    for (int idx = 0; idx < presets.length; idx++)
+                      if (presets[idx].$2 >= _minBet &&
+                          presets[idx].$2 <= _maxBet)
                         Expanded(
                           child: Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 2),
                             child: _PresetButton(
-                              label: label,
+                              label: presets[idx].$1,
                               isActive:
-                                  (_betAmount - _roundBet(amount)).abs() <
+                                  (_betAmount - _roundBet(presets[idx].$2))
+                                          .abs() <
                                       0.01,
                               onPressed: () {
                                 setState(() {
-                                  _betAmount = _roundBet(amount);
+                                  _betAmount = _roundBet(presets[idx].$2);
                                 });
                               },
-                            ),
+                            )
+                                .animate()
+                                .fadeIn(
+                                  delay: Duration(milliseconds: 40 * idx),
+                                  duration:
+                                      const Duration(milliseconds: 200),
+                                )
+                                .scaleXY(
+                                  begin: 0.9,
+                                  end: 1.0,
+                                  delay: Duration(milliseconds: 40 * idx),
+                                  duration:
+                                      const Duration(milliseconds: 200),
+                                  curve: Curves.easeOutCubic,
+                                ),
                           ),
                         ),
                     Expanded(
@@ -451,13 +486,15 @@ class _ActionBarState extends State<ActionBar>
   }
 }
 
-/// Premium 3D-embossed action button with tactile press animation.
+/// Premium 3D-embossed action button with tactile press animation
+/// and optional shimmer for All-In.
 class _ActionButton extends StatefulWidget {
   final String label;
   final Color color;
   final double height;
   final double fontSize;
   final bool isAllIn;
+  final int staggerIndex;
   final VoidCallback onPressed;
 
   const _ActionButton({
@@ -466,6 +503,7 @@ class _ActionButton extends StatefulWidget {
     required this.height,
     required this.fontSize,
     this.isAllIn = false,
+    this.staggerIndex = 0,
     required this.onPressed,
   });
 
@@ -534,7 +572,7 @@ class _ActionButtonState extends State<_ActionButton>
     final lightened = Color.lerp(color, Colors.white, 0.15)!;
     final darkened = Color.lerp(color, Colors.black, 0.25)!;
 
-    return AnimatedBuilder(
+    Widget button = AnimatedBuilder(
       animation: _pressController,
       builder: (context, child) {
         final isDown = _pressController.value > 0;
@@ -631,10 +669,42 @@ class _ActionButtonState extends State<_ActionButton>
         ),
       ),
     );
+
+    // All-In button gets a continuous shimmer effect
+    if (widget.isAllIn) {
+      button = button
+          .animate(
+            onPlay: (c) => c.repeat(),
+          )
+          .shimmer(
+            delay: const Duration(milliseconds: 1000),
+            duration: const Duration(milliseconds: 2000),
+            color: Colors.orange.withValues(alpha: 0.2),
+          );
+    }
+
+    // Stagger entrance for action buttons
+    if (widget.staggerIndex > 0) {
+      button = button
+          .animate()
+          .fadeIn(
+            delay: Duration(milliseconds: 50 * widget.staggerIndex),
+            duration: const Duration(milliseconds: 200),
+          )
+          .slideY(
+            begin: 0.15,
+            end: 0,
+            delay: Duration(milliseconds: 50 * widget.staggerIndex),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+          );
+    }
+
+    return button;
   }
 }
 
-/// A compact preset button for bet sizing.
+/// A compact preset button for bet sizing with animated active state.
 class _PresetButton extends StatelessWidget {
   final String label;
   final bool isActive;
@@ -653,26 +723,42 @@ class _PresetButton extends StatelessWidget {
     final pt = context.poker;
     final borderColor = accentColor ?? pt.goldPrimary;
 
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        minimumSize: const Size(0, 34),
-        textStyle:
-            const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        side: BorderSide(
-          color:
-              isActive ? borderColor : borderColor.withValues(alpha: 0.4),
-          width: isActive ? 1.5 : 1,
-        ),
-        backgroundColor: isActive
-            ? borderColor.withValues(alpha: 0.15)
-            : Colors.transparent,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: borderColor.withValues(alpha: 0.2),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
+                ),
+              ]
+            : null,
       ),
-      child: Text(label),
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          minimumSize: const Size(0, 34),
+          textStyle:
+              const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          side: BorderSide(
+            color:
+                isActive ? borderColor : borderColor.withValues(alpha: 0.4),
+            width: isActive ? 1.5 : 1,
+          ),
+          backgroundColor: isActive
+              ? borderColor.withValues(alpha: 0.15)
+              : Colors.transparent,
+        ),
+        child: Text(label),
+      ),
     );
   }
 }
