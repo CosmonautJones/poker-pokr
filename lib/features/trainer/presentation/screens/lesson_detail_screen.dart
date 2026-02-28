@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
+import 'package:poker_trainer/features/trainer/presentation/screens/lesson_icons.dart';
 import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Shows lesson introduction and list of scenarios to play.
@@ -50,8 +51,7 @@ class LessonDetailScreen extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        IconData(lesson.iconCodePoint,
-                            fontFamily: 'MaterialIcons'),
+                        lessonIcon(lesson.iconCodePoint),
                         color: pt.goldPrimary,
                         size: 20,
                       ),
