@@ -38,6 +38,7 @@ class _PlayerSeatState extends State<PlayerSeat>
 
   AnimationController? _winnerController;
   AnimationController? _sparkleController;
+  List<_Particle>? _sparkleParticles;
 
   @override
   void initState() {
@@ -105,6 +106,7 @@ class _PlayerSeatState extends State<PlayerSeat>
         duration: PokerAnimations.kWinnerSparkle,
         vsync: this,
       );
+      _sparkleParticles ??= _Particle.generate(12);
       _sparkleController!.repeat();
     } else {
       _winnerController?.stop();
@@ -180,7 +182,9 @@ class _PlayerSeatState extends State<PlayerSeat>
                 alignment: Alignment.center,
                 children: [
                   // Winner sparkle particles
-                  if (widget.isWinner && _sparkleController != null)
+                  if (widget.isWinner &&
+                      _sparkleController != null &&
+                      _sparkleParticles != null)
                     RepaintBoundary(
                       child: AnimatedBuilder(
                         animation: _sparkleController!,
@@ -189,7 +193,7 @@ class _PlayerSeatState extends State<PlayerSeat>
                             painter: _SparklePainter(
                               progress: _sparkleController!.value,
                               color: pt.winnerGlow,
-                              particleCount: 12,
+                              particles: _sparkleParticles!,
                             ),
                             child: SizedBox(
                               width: maxW + 24,
@@ -556,35 +560,26 @@ class _SweepIndicatorPainter extends CustomPainter {
 }
 
 /// Sparkle particles that radiate outward from the winner's seat.
+///
+/// Particles are pre-generated and passed in to avoid re-randomizing
+/// every frame when the painter is reconstructed inside AnimatedBuilder.
 class _SparklePainter extends CustomPainter {
   final double progress;
   final Color color;
-  final int particleCount;
+  final List<_Particle> particles;
 
-  static final _random = math.Random(42);
-  late final List<_Particle> _particles;
-
-  _SparklePainter({
+  const _SparklePainter({
     required this.progress,
     required this.color,
-    this.particleCount = 12,
-  }) {
-    _particles = List.generate(particleCount, (i) {
-      final angle = (i / particleCount) * math.pi * 2 +
-          _random.nextDouble() * 0.5;
-      final speed = 0.6 + _random.nextDouble() * 0.6;
-      final size = 1.5 + _random.nextDouble() * 2.0;
-      final phaseOffset = _random.nextDouble();
-      return _Particle(angle, speed, size, phaseOffset);
-    });
-  }
+    required this.particles,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = size.width / 2;
 
-    for (final p in _particles) {
+    for (final p in particles) {
       final t = (progress + p.phaseOffset) % 1.0;
       final radius = t * maxRadius * p.speed;
       final opacity = (1.0 - t).clamp(0.0, 1.0) * 0.8;
@@ -633,6 +628,19 @@ class _Particle {
   final double phaseOffset;
 
   const _Particle(this.angle, this.speed, this.size, this.phaseOffset);
+
+  /// Pre-generate a stable list of particles with fixed seed.
+  static List<_Particle> generate(int count) {
+    final random = math.Random(42);
+    return List.generate(count, (i) {
+      final angle = (i / count) * math.pi * 2 +
+          random.nextDouble() * 0.5;
+      final speed = 0.6 + random.nextDouble() * 0.6;
+      final size = 1.5 + random.nextDouble() * 2.0;
+      final phaseOffset = random.nextDouble();
+      return _Particle(angle, speed, size, phaseOffset);
+    });
+  }
 }
 
 /// Animated expanding gold rings for winner celebration.
