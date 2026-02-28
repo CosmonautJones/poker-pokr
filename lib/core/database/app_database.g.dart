@@ -1361,6 +1361,20 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isSetupOnlyMeta =
+      const VerificationMeta('isSetupOnly');
+  @override
+  late final GeneratedColumn<bool> isSetupOnly = GeneratedColumn<bool>(
+    'is_setup_only',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_setup_only" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1402,6 +1416,7 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
     communityCards,
     parentHandId,
     branchAtActionIndex,
+    isSetupOnly,
     createdAt,
     updatedAt,
   ];
@@ -1516,6 +1531,15 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         ),
       );
     }
+    if (data.containsKey('is_setup_only')) {
+      context.handle(
+        _isSetupOnlyMeta,
+        isSetupOnly.isAcceptableOrUnknown(
+          data['is_setup_only']!,
+          _isSetupOnlyMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1601,6 +1625,10 @@ class $HandsTable extends Hands with TableInfo<$HandsTable, Hand> {
         DriftSqlType.int,
         data['${effectivePrefix}branch_at_action_index'],
       ),
+      isSetupOnly: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_setup_only'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1639,6 +1667,7 @@ class Hand extends DataClass implements Insertable<Hand> {
   final List<int> communityCards;
   final int? parentHandId;
   final int? branchAtActionIndex;
+  final bool isSetupOnly;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Hand({
@@ -1657,6 +1686,7 @@ class Hand extends DataClass implements Insertable<Hand> {
     required this.communityCards,
     this.parentHandId,
     this.branchAtActionIndex,
+    required this.isSetupOnly,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1694,6 +1724,7 @@ class Hand extends DataClass implements Insertable<Hand> {
     if (!nullToAbsent || branchAtActionIndex != null) {
       map['branch_at_action_index'] = Variable<int>(branchAtActionIndex);
     }
+    map['is_setup_only'] = Variable<bool>(isSetupOnly);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1724,6 +1755,7 @@ class Hand extends DataClass implements Insertable<Hand> {
       branchAtActionIndex: branchAtActionIndex == null && nullToAbsent
           ? const Value.absent()
           : Value(branchAtActionIndex),
+      isSetupOnly: Value(isSetupOnly),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1754,6 +1786,7 @@ class Hand extends DataClass implements Insertable<Hand> {
       branchAtActionIndex: serializer.fromJson<int?>(
         json['branchAtActionIndex'],
       ),
+      isSetupOnly: serializer.fromJson<bool>(json['isSetupOnly']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1777,6 +1810,7 @@ class Hand extends DataClass implements Insertable<Hand> {
       'communityCards': serializer.toJson<List<int>>(communityCards),
       'parentHandId': serializer.toJson<int?>(parentHandId),
       'branchAtActionIndex': serializer.toJson<int?>(branchAtActionIndex),
+      'isSetupOnly': serializer.toJson<bool>(isSetupOnly),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1798,6 +1832,7 @@ class Hand extends DataClass implements Insertable<Hand> {
     List<int>? communityCards,
     Value<int?> parentHandId = const Value.absent(),
     Value<int?> branchAtActionIndex = const Value.absent(),
+    bool? isSetupOnly,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Hand(
@@ -1818,6 +1853,7 @@ class Hand extends DataClass implements Insertable<Hand> {
     branchAtActionIndex: branchAtActionIndex.present
         ? branchAtActionIndex.value
         : this.branchAtActionIndex,
+    isSetupOnly: isSetupOnly ?? this.isSetupOnly,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1856,6 +1892,9 @@ class Hand extends DataClass implements Insertable<Hand> {
       branchAtActionIndex: data.branchAtActionIndex.present
           ? data.branchAtActionIndex.value
           : this.branchAtActionIndex,
+      isSetupOnly: data.isSetupOnly.present
+          ? data.isSetupOnly.value
+          : this.isSetupOnly,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1879,6 +1918,7 @@ class Hand extends DataClass implements Insertable<Hand> {
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')
           ..write('branchAtActionIndex: $branchAtActionIndex, ')
+          ..write('isSetupOnly: $isSetupOnly, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1902,6 +1942,7 @@ class Hand extends DataClass implements Insertable<Hand> {
     communityCards,
     parentHandId,
     branchAtActionIndex,
+    isSetupOnly,
     createdAt,
     updatedAt,
   );
@@ -1924,6 +1965,7 @@ class Hand extends DataClass implements Insertable<Hand> {
           other.communityCards == this.communityCards &&
           other.parentHandId == this.parentHandId &&
           other.branchAtActionIndex == this.branchAtActionIndex &&
+          other.isSetupOnly == this.isSetupOnly &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1944,6 +1986,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
   final Value<List<int>> communityCards;
   final Value<int?> parentHandId;
   final Value<int?> branchAtActionIndex;
+  final Value<bool> isSetupOnly;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const HandsCompanion({
@@ -1962,6 +2005,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     this.communityCards = const Value.absent(),
     this.parentHandId = const Value.absent(),
     this.branchAtActionIndex = const Value.absent(),
+    this.isSetupOnly = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1981,6 +2025,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     required List<int> communityCards,
     this.parentHandId = const Value.absent(),
     this.branchAtActionIndex = const Value.absent(),
+    this.isSetupOnly = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : playerCount = Value(playerCount),
@@ -2004,6 +2049,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Expression<String>? communityCards,
     Expression<int>? parentHandId,
     Expression<int>? branchAtActionIndex,
+    Expression<bool>? isSetupOnly,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -2024,6 +2070,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       if (parentHandId != null) 'parent_hand_id': parentHandId,
       if (branchAtActionIndex != null)
         'branch_at_action_index': branchAtActionIndex,
+      if (isSetupOnly != null) 'is_setup_only': isSetupOnly,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -2045,6 +2092,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     Value<List<int>>? communityCards,
     Value<int?>? parentHandId,
     Value<int?>? branchAtActionIndex,
+    Value<bool>? isSetupOnly,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -2064,6 +2112,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
       communityCards: communityCards ?? this.communityCards,
       parentHandId: parentHandId ?? this.parentHandId,
       branchAtActionIndex: branchAtActionIndex ?? this.branchAtActionIndex,
+      isSetupOnly: isSetupOnly ?? this.isSetupOnly,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -2121,6 +2170,9 @@ class HandsCompanion extends UpdateCompanion<Hand> {
     if (branchAtActionIndex.present) {
       map['branch_at_action_index'] = Variable<int>(branchAtActionIndex.value);
     }
+    if (isSetupOnly.present) {
+      map['is_setup_only'] = Variable<bool>(isSetupOnly.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2148,6 +2200,7 @@ class HandsCompanion extends UpdateCompanion<Hand> {
           ..write('communityCards: $communityCards, ')
           ..write('parentHandId: $parentHandId, ')
           ..write('branchAtActionIndex: $branchAtActionIndex, ')
+          ..write('isSetupOnly: $isSetupOnly, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3742,6 +3795,7 @@ typedef $$HandsTableCreateCompanionBuilder =
       required List<int> communityCards,
       Value<int?> parentHandId,
       Value<int?> branchAtActionIndex,
+      Value<bool> isSetupOnly,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -3760,6 +3814,7 @@ typedef $$HandsTableUpdateCompanionBuilder =
       Value<List<int>> communityCards,
       Value<int?> parentHandId,
       Value<int?> branchAtActionIndex,
+      Value<bool> isSetupOnly,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -3836,6 +3891,11 @@ class $$HandsTableFilterComposer extends Composer<_$AppDatabase, $HandsTable> {
 
   ColumnFilters<int> get branchAtActionIndex => $composableBuilder(
     column: $table.branchAtActionIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSetupOnly => $composableBuilder(
+    column: $table.isSetupOnly,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3924,6 +3984,11 @@ class $$HandsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isSetupOnly => $composableBuilder(
+    column: $table.isSetupOnly,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3999,6 +4064,11 @@ class $$HandsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isSetupOnly => $composableBuilder(
+    column: $table.isSetupOnly,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4047,6 +4117,7 @@ class $$HandsTableTableManager
                 Value<List<int>> communityCards = const Value.absent(),
                 Value<int?> parentHandId = const Value.absent(),
                 Value<int?> branchAtActionIndex = const Value.absent(),
+                Value<bool> isSetupOnly = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => HandsCompanion(
@@ -4063,6 +4134,7 @@ class $$HandsTableTableManager
                 communityCards: communityCards,
                 parentHandId: parentHandId,
                 branchAtActionIndex: branchAtActionIndex,
+                isSetupOnly: isSetupOnly,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -4081,6 +4153,7 @@ class $$HandsTableTableManager
                 required List<int> communityCards,
                 Value<int?> parentHandId = const Value.absent(),
                 Value<int?> branchAtActionIndex = const Value.absent(),
+                Value<bool> isSetupOnly = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => HandsCompanion.insert(
@@ -4097,6 +4170,7 @@ class $$HandsTableTableManager
                 communityCards: communityCards,
                 parentHandId: parentHandId,
                 branchAtActionIndex: branchAtActionIndex,
+                isSetupOnly: isSetupOnly,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

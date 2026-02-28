@@ -53,6 +53,27 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
             ..orderBy([(t) => OrderingTerm.asc(t.id)]))
           .get();
 
+  /// Watch only setup-only (saved for practice) hands.
+  Stream<List<Hand>> watchSavedSetups() => (select(hands)
+        ..where(
+            (t) => t.isSetupOnly.equals(true) & t.parentHandId.isNull())
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch();
+
+  /// Watch only played (non-setup-only) hands.
+  Stream<List<Hand>> watchPlayedHands() => (select(hands)
+        ..where(
+            (t) => t.isSetupOnly.equals(false) & t.parentHandId.isNull())
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch();
+
+  /// Insert a setup-only hand (no actions, just the configuration).
+  Future<int> insertSavedSetup(HandsCompanion hand) {
+    return into(hands).insert(
+      hand.copyWith(isSetupOnly: const Value(true)),
+    );
+  }
+
   /// Delete a hand and cascade-delete its branches and all associated actions.
   Future<int> deleteHand(int id) async {
     // First, find and delete child branches recursively.
