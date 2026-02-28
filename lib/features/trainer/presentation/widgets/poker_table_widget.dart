@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
@@ -157,8 +158,9 @@ class PokerTableWidget extends StatelessWidget {
   }
 }
 
-/// Premium table felt with gold rail, directional lighting, and vignette.
-class _TableFelt extends StatelessWidget {
+/// Premium table felt with gold rail, directional lighting, vignette,
+/// and subtle ambient light animation.
+class _TableFelt extends StatefulWidget {
   final double width;
   final double height;
   final double scale;
@@ -170,14 +172,41 @@ class _TableFelt extends StatelessWidget {
   });
 
   @override
+  State<_TableFelt> createState() => _TableFeltState();
+}
+
+class _TableFeltState extends State<_TableFelt>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ambientController;
+  late Animation<double> _ambientAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _ambientController = AnimationController(
+      duration: const Duration(milliseconds: 6000),
+      vsync: this,
+    )..repeat(reverse: true);
+    _ambientAnimation = Tween<double>(begin: -0.15, end: -0.35).animate(
+      CurvedAnimation(parent: _ambientController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ambientController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pt = context.poker;
-    final railWidth = (5 * scale).clamp(3.0, 6.0);
-    final radius = BorderRadius.circular(height / 2);
+    final railWidth = (5 * widget.scale).clamp(3.0, 6.0);
+    final radius = BorderRadius.circular(widget.height / 2);
 
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       decoration: BoxDecoration(
         borderRadius: radius,
         boxShadow: [
@@ -214,20 +243,25 @@ class _TableFelt extends StatelessWidget {
                 ),
               ),
             ),
-            // Directional highlight — simulates overhead lamp
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.07),
-                    Colors.white.withValues(alpha: 0.02),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.3, 0.7],
-                  radius: 0.6,
-                  center: const Alignment(-0.3, -0.4),
-                ),
-              ),
+            // Animated directional highlight — simulates overhead lamp sway
+            AnimatedBuilder(
+              animation: _ambientAnimation,
+              builder: (context, _) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.07),
+                        Colors.white.withValues(alpha: 0.02),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.3, 0.7],
+                      radius: 0.6,
+                      center: Alignment(_ambientAnimation.value, -0.4),
+                    ),
+                  ),
+                );
+              },
             ),
             // Vignette — darkens edges, draws eye to center
             Container(
@@ -266,7 +300,7 @@ class _TableFelt extends StatelessWidget {
               margin: EdgeInsets.all(railWidth),
               decoration: BoxDecoration(
                 borderRadius:
-                    BorderRadius.circular(height / 2 - railWidth),
+                    BorderRadius.circular(widget.height / 2 - railWidth),
                 border: Border.all(
                   color: pt.goldLight.withValues(alpha: 0.12),
                   width: 1,
@@ -278,7 +312,7 @@ class _TableFelt extends StatelessWidget {
               margin: EdgeInsets.all(railWidth + 1),
               decoration: BoxDecoration(
                 borderRadius:
-                    BorderRadius.circular(height / 2 - railWidth - 1),
+                    BorderRadius.circular(widget.height / 2 - railWidth - 1),
                 border: Border.all(
                   color: Colors.black.withValues(alpha: 0.3),
                   width: 1,
@@ -292,7 +326,7 @@ class _TableFelt extends StatelessWidget {
   }
 }
 
-/// Metallic gold street badge with cinematic transitions.
+/// Metallic gold street badge with cinematic transitions and shimmer sweep.
 class _AnimatedStreetBadge extends StatelessWidget {
   final Street street;
   final double scale;
@@ -379,7 +413,15 @@ class _AnimatedStreetBadge extends StatelessWidget {
             ],
           ),
         ),
-      ),
+      )
+          .animate(
+            onPlay: (c) => c.repeat(),
+          )
+          .shimmer(
+            delay: const Duration(milliseconds: 2000),
+            duration: const Duration(milliseconds: 2500),
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
     );
   }
 }
