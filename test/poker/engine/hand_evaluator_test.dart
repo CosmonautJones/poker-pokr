@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poker_trainer/poker/engine/hand_evaluator.dart';
 import 'package:poker_trainer/poker/models/card.dart';
+import 'package:poker_trainer/poker/models/player.dart';
 
 PokerCard c(Rank rank, Suit suit) => PokerCard.from(rank, suit);
 
