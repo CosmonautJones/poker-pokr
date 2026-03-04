@@ -295,12 +295,23 @@ class EducationalContextCalculator {
   // -------------------------------------------------------------------------
 
   static int _playersYetToAct(GameState state, int currentIndex) {
-    // Total active players excluding the current player, minus those who
-    // have already acted this street.
+    if (state.currentBet > 0) {
+      // Betting round: count active players who haven't yet matched the
+      // current bet. This is the ground truth regardless of fold counts,
+      // avoiding the over-counting that occurs when playersActedThisStreet
+      // includes folds from players who are no longer active.
+      return state.players
+          .where((p) =>
+              p.isActive &&
+              p.index != currentIndex &&
+              p.currentBet < state.currentBet)
+          .length;
+    }
+    // Check-around (no bet): folds cannot occur without a bet, so the
+    // acted-this-street counter reliably tracks remaining players.
     final totalActiveExcludingCurrent =
         state.players.where((p) => p.isActive && p.index != currentIndex).length;
-    final alreadyActed = state.playersActedThisStreet;
-    final yetToAct = totalActiveExcludingCurrent - alreadyActed;
+    final yetToAct = totalActiveExcludingCurrent - state.playersActedThisStreet;
     return yetToAct < 0 ? 0 : yetToAct;
   }
 

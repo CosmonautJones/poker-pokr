@@ -69,6 +69,13 @@ class HandReplayNotifier
           if (existing != null && existing.length == expectedCards) {
             return existing;
           }
+          if (deck.remaining < expectedCards) {
+            throw ArgumentError(
+              'Not enough cards in deck to deal to player $i '
+              '(need $expectedCards, have ${deck.remaining}). '
+              'Too many pre-assigned cards may overlap.',
+            );
+          }
           return deck.dealMany(expectedCards);
         });
       }

@@ -72,12 +72,22 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_setup != null) {
             final notifier = ref.read(handReplayProvider(_setup!).notifier);
-            for (final action in actions) {
+            int? failedAt;
+            for (var i = 0; i < actions.length; i++) {
               try {
-                notifier.applyAction(action);
+                notifier.applyAction(actions[i]);
               } catch (e) {
+                failedAt = i;
                 break;
               }
+            }
+            if (failedAt != null && mounted) {
+              setState(() {
+                _error =
+                    'Replay stopped at action ${failedAt! + 1} — hand data may be incomplete.';
+                _isLoading = false;
+              });
+              return;
             }
             // Load saved branches.
             _loadBranches();
