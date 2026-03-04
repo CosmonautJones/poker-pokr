@@ -25,6 +25,16 @@ class ProTip {
 class ProTipEngine {
   ProTipEngine._();
 
+  // Thresholds used across tip rules.
+  static const double _sprLow = 4;
+  static const double _sprMediumLow = 7;
+  static const double _sprMediumHigh = 10;
+  static const double _sprHigh = 13;
+  static const int _potOddsGoodPct = 20;
+  static const int _potOddsExpensivePct = 40;
+  static const int _multiWayMinPlayers = 4;
+  static const int _manyBehindThreshold = 3;
+
   /// Compute the most relevant pro tip for the current situation.
   ///
   /// Returns `null` if no tip applies (e.g. hand is complete).
@@ -60,7 +70,7 @@ class ProTipEngine {
   static ProTip? _facingBetWithPotOdds(EducationalContext ctx) {
     if (ctx.potOdds == null) return null;
     final pct = (ctx.potOdds! * 100).round();
-    if (pct <= 20) {
+    if (pct <= _potOddsGoodPct) {
       return ProTip(
         title: 'Good price to call',
         body:
@@ -69,7 +79,7 @@ class ProTipEngine {
         category: 'Pot Odds',
       );
     }
-    if (pct >= 40) {
+    if (pct >= _potOddsExpensivePct) {
       return ProTip(
         title: 'Expensive call',
         body:
@@ -88,7 +98,7 @@ class ProTipEngine {
   }
 
   static ProTip? _lowSprTip(EducationalContext ctx) {
-    if (ctx.stackToPotRatio >= 4) return null;
+    if (ctx.stackToPotRatio >= _sprLow) return null;
     if (ctx.stackToPotRatio <= 0) return null;
     return const ProTip(
       title: 'Low SPR — commit or fold',
@@ -100,7 +110,7 @@ class ProTipEngine {
   }
 
   static ProTip? _highSprTip(EducationalContext ctx) {
-    if (ctx.stackToPotRatio < 13) return null;
+    if (ctx.stackToPotRatio < _sprHigh) return null;
     return const ProTip(
       title: 'Deep stacks — play speculative hands',
       body:
@@ -158,7 +168,7 @@ class ProTipEngine {
   }
 
   static ProTip? _multiWayPotTip(EducationalContext ctx) {
-    if (ctx.playersInHand < 4) return null;
+    if (ctx.playersInHand < _multiWayMinPlayers) return null;
     return const ProTip(
       title: 'Multiway pot — tighten up',
       body:
@@ -181,7 +191,7 @@ class ProTipEngine {
   }
 
   static ProTip? _firstToActTip(EducationalContext ctx) {
-    if (ctx.playersYetToAct < 3) return null;
+    if (ctx.playersYetToAct < _manyBehindThreshold) return null;
     if (ctx.potOdds != null) return null;
     if (ctx.positionCategory == 'early') return null; // Already covered
     return ProTip(
@@ -194,9 +204,9 @@ class ProTipEngine {
   }
 
   static ProTip? _mediumSprTip(EducationalContext ctx) {
-    if (ctx.stackToPotRatio < 4 || ctx.stackToPotRatio > 13) return null;
+    if (ctx.stackToPotRatio < _sprLow || ctx.stackToPotRatio > _sprHigh) return null;
     if (ctx.potOdds != null) return null; // Pot odds tip takes priority
-    if (ctx.stackToPotRatio >= 7 && ctx.stackToPotRatio <= 10) {
+    if (ctx.stackToPotRatio >= _sprMediumLow && ctx.stackToPotRatio <= _sprMediumHigh) {
       return const ProTip(
         title: 'Medium SPR — balanced play',
         body:

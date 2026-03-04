@@ -75,14 +75,23 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
   }
 
   /// Delete a hand and cascade-delete its branches and all associated actions.
-  Future<int> deleteHand(int id) async {
-    // First, find and delete child branches recursively.
-    final branches = await getBranchesForHand(id);
+  ///
+  /// Collects all descendant IDs first, then deletes in bulk inside a single
+  /// transaction so partial failures cannot leave orphaned records.
+  Future<int> deleteHand(int id) {
+    return transaction(() async {
+      final allIds = await _collectHandIds(id);
+      await (delete(handActions)..where((t) => t.handId.isIn(allIds))).go();
+      return (delete(hands)..where((t) => t.id.isIn(allIds))).go();
+    });
+  }
+
+  Future<List<int>> _collectHandIds(int rootId) async {
+    final ids = <int>[rootId];
+    final branches = await getBranchesForHand(rootId);
     for (final branch in branches) {
-      await deleteHand(branch.id);
+      ids.addAll(await _collectHandIds(branch.id));
     }
-    // Delete actions for this hand, then the hand itself.
-    await (delete(handActions)..where((t) => t.handId.equals(id))).go();
-    return (delete(hands)..where((t) => t.id.equals(id))).go();
+    return ids;
   }
 }
