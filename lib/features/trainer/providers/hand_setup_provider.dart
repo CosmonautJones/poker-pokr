@@ -76,6 +76,10 @@ class HandSetupNotifier extends Notifier<HandSetup> {
   }
 
   void setPlayerName(int index, String name) {
+    if (index < 0 || index >= state.playerNames.length) {
+      throw RangeError.index(index, state.playerNames, 'index',
+        'Player index out of range [0, ${state.playerNames.length})');
+    }
     final names = List<String>.of(state.playerNames);
     names[index] = name;
     state = state.copyWith(playerNames: names);
@@ -160,7 +164,9 @@ class HandSetupNotifier extends Notifier<HandSetup> {
 
   List<List<PokerCard>?> _ensureHoleCards() {
     final existing = state.holeCards;
-    if (existing != null) return List<List<PokerCard>?>.of(existing);
+    if (existing != null && existing.length == state.playerCount) {
+      return List<List<PokerCard>?>.of(existing);
+    }
     return List<List<PokerCard>?>.filled(state.playerCount, null);
   }
 }

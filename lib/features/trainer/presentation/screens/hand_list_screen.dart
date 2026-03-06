@@ -189,7 +189,13 @@ class _SavedSetupTile extends ConsumerWidget {
         );
       },
       onDismissed: (_) {
-        ref.read(handsDaoProvider).deleteHand(hand.id);
+        ref.read(handsDaoProvider).deleteHand(hand.id).catchError((e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to delete hand: $e')),
+            );
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$title deleted')),
         );
@@ -331,7 +337,13 @@ class _HandListTile extends ConsumerWidget {
         );
       },
       onDismissed: (_) {
-        ref.read(handsDaoProvider).deleteHand(hand.id);
+        ref.read(handsDaoProvider).deleteHand(hand.id).catchError((e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to delete hand: $e')),
+            );
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$title deleted')),
         );

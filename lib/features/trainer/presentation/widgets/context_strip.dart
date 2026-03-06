@@ -104,7 +104,7 @@ class ContextStrip extends StatelessWidget {
 /// A small rounded chip showing a label and optional value.
 /// When [glossaryTerm] is set, tapping the chip shows an inline tooltip
 /// with the definition, and long-pressing opens the full glossary.
-class _ContextChip extends StatelessWidget {
+class _ContextChip extends StatefulWidget {
   final String label;
   final String? value;
   final Color? color;
@@ -120,12 +120,26 @@ class _ContextChip extends StatelessWidget {
   });
 
   @override
+  State<_ContextChip> createState() => _ContextChipState();
+}
+
+class _ContextChipState extends State<_ContextChip> {
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pt = context.poker;
     final entry =
-        glossaryTerm != null ? PokerGlossary.lookup(glossaryTerm!) : null;
+        widget.glossaryTerm != null ? PokerGlossary.lookup(widget.glossaryTerm!) : null;
     final isTappable = entry != null;
-    final chipColor = color ?? pt.textMuted;
+    final chipColor = widget.color ?? pt.textMuted;
 
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -136,19 +150,19 @@ class _ContextChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (color != null) ...[
+          if (widget.color != null) ...[
             Container(
               width: 5,
               height: 5,
               decoration: BoxDecoration(
-                color: color,
+                color: widget.color,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 4),
           ],
           Text(
-            value != null ? '$label $value' : label,
+            widget.value != null ? '${widget.label} ${widget.value}' : widget.label,
             style: TextStyle(
               fontSize: 10.5,
               color: chipColor,
@@ -161,14 +175,14 @@ class _ContextChip extends StatelessWidget {
         .animate()
         .fadeIn(
           delay: Duration(
-            milliseconds: 40 * staggerIndex,
+            milliseconds: 40 * widget.staggerIndex,
           ),
           duration: PokerAnimations.kContextChipEntrance,
         )
         .scaleXY(
           begin: 0.85,
           end: 1.0,
-          delay: Duration(milliseconds: 40 * staggerIndex),
+          delay: Duration(milliseconds: 40 * widget.staggerIndex),
           duration: PokerAnimations.kContextChipEntrance,
           curve: Curves.easeOutBack,
         );
@@ -185,7 +199,7 @@ class _ContextChip extends StatelessWidget {
       child: GestureDetector(
         onTap: () => _showDefinitionTooltip(context, entry),
         onLongPress: () =>
-            PokerGlossarySheet.show(context, highlightTerm: glossaryTerm),
+            PokerGlossarySheet.show(context, highlightTerm: widget.glossaryTerm),
         child: chip,
       ),
     );
@@ -197,16 +211,18 @@ class _ContextChip extends StatelessWidget {
     final offset = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
 
-    late OverlayEntry overlayEntry;
-    overlayEntry = OverlayEntry(
+    _overlayEntry = OverlayEntry(
       builder: (ctx) => _GlossaryTooltipOverlay(
         entry: entry,
         anchorOffset: offset,
         anchorSize: size,
-        onDismiss: () => overlayEntry.remove(),
+        onDismiss: () {
+          _overlayEntry?.remove();
+          _overlayEntry = null;
+        },
       ),
     );
-    overlay.insert(overlayEntry);
+    overlay.insert(_overlayEntry!);
   }
 }
 

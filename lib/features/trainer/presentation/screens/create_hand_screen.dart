@@ -105,6 +105,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
   }
 
   void _onStartHand() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     _syncFieldsToState();
@@ -118,6 +119,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
   }
 
   Future<void> _onSaveSetup() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     _syncFieldsToState();

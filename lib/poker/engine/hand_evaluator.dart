@@ -265,7 +265,7 @@ class HandEvaluator {
       final lowPair =
           groups[0].key > groups[1].key ? groups[1].key : groups[0].key;
       final kicker =
-          groups.firstWhere((g) => g.value == 1).key;
+          groups.firstWhere((g) => g.value == 1, orElse: () => MapEntry(0, 0)).key;
       return EvaluatedHand(
         rank: HandRank.twoPair,
         values: [highPair, lowPair, kicker],
@@ -411,6 +411,7 @@ class HandEvaluator {
   /// Check for ace-low straight (wheel): A-2-3-4-5.
   /// In sorted order: [2, 3, 4, 5, 14].
   static bool _isWheel(List<int> sortedRanks) {
+    assert(sortedRanks.length == 5, '_isWheel requires exactly 5 ranks, got ${sortedRanks.length}');
     return sortedRanks.length == 5 &&
         sortedRanks[0] == 2 &&
         sortedRanks[1] == 3 &&

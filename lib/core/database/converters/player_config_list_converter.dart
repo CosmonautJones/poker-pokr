@@ -30,9 +30,20 @@ class PlayerConfigListConverter
   const PlayerConfigListConverter();
 
   @override
-  List<PlayerConfig> fromSql(String fromDb) => (jsonDecode(fromDb) as List)
-      .map((e) => PlayerConfig.fromJson(e as Map<String, dynamic>))
-      .toList();
+  List<PlayerConfig> fromSql(String fromDb) {
+    try {
+      final decoded = jsonDecode(fromDb);
+      if (decoded is! List) {
+        throw FormatException('Expected JSON array for player configs, got ${decoded.runtimeType}');
+      }
+      return decoded.map((e) {
+        if (e is! Map) throw FormatException('Expected JSON object for player config, got ${e.runtimeType}');
+        return PlayerConfig.fromJson(e as Map<String, dynamic>);
+      }).toList();
+    } catch (e) {
+      throw FormatException('Invalid player config JSON "$fromDb": $e');
+    }
+  }
 
   @override
   String toSql(List<PlayerConfig> value) =>

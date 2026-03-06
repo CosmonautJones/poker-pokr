@@ -794,4 +794,73 @@ void main() {
       expect(state.actionHistory[2].type, ActionType.check);
     });
   });
+
+  group('straddle validation', () {
+    test('throws ArgumentError when straddle < bigBlind', () {
+      expect(
+        () => GameEngine.createInitialState(
+          playerCount: 6,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          straddle: 1, // < bigBlind = 2
+          deckSeed: 42,
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('straddle equals 0 means no straddle and does not throw', () {
+      // straddle == 0 means no straddle: should not throw
+      expect(
+        () => GameEngine.createInitialState(
+          playerCount: 6,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          straddle: 0,
+          deckSeed: 42,
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('valid straddle >= bigBlind does not throw', () {
+      expect(
+        () => GameEngine.createInitialState(
+          playerCount: 6,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          straddle: 4,
+          deckSeed: 42,
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('lastRaiseSize is never 0 when straddle equals bigBlind', () {
+      final state = GameEngine.createInitialState(
+        playerCount: 6,
+        smallBlind: 1,
+        bigBlind: 2,
+        dealerIndex: 0,
+        straddle: 2, // straddle == bigBlind → lastRaiseSize should be bigBlind, not 0
+        deckSeed: 42,
+      );
+      expect(state.lastRaiseSize, greaterThan(0));
+    });
+
+    test('lastRaiseSize is positive when straddle is 2x bigBlind', () {
+      final state = GameEngine.createInitialState(
+        playerCount: 6,
+        smallBlind: 1,
+        bigBlind: 2,
+        dealerIndex: 0,
+        straddle: 4,
+        deckSeed: 42,
+      );
+      expect(state.lastRaiseSize, greaterThan(0));
+    });
+  });
 }

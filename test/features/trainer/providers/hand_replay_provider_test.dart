@@ -364,6 +364,30 @@ void main() {
       });
     });
 
+    group('branch bounds checking', () {
+      test('switchToBranch with valid index 0 does not throw', () {
+        final setup = _defaultSetup();
+        final notifier = readNotifier(setup);
+        expect(() => notifier.switchToBranch(0), returnsNormally);
+      });
+
+      test('switchToBranch with out-of-range index does not throw and leaves branch unchanged', () {
+        final setup = _defaultSetup();
+        final notifier = readNotifier(setup);
+        // Only one branch exists (index 0). Index 1 is out of range.
+        // switchToBranch guards before accessing _history and returns silently.
+        expect(() => notifier.switchToBranch(1), returnsNormally);
+        expect(readState(setup).activeBranchIndex, 0);
+      });
+
+      test('switchToBranch with negative index does not throw and leaves branch unchanged', () {
+        final setup = _defaultSetup();
+        final notifier = readNotifier(setup);
+        expect(() => notifier.switchToBranch(-1), returnsNormally);
+        expect(readState(setup).activeBranchIndex, 0);
+      });
+    });
+
     group('allBranches / allStates', () {
       test('allStates returns history for active branch', () {
         final setup = _defaultSetup();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
@@ -120,8 +121,9 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           dbHandId: branch.id,
         );
       }
-    } catch (_) {
-      // Branch loading is best-effort; don't block the UI.
+    } catch (e, st) {
+      debugPrint('Failed to load branches for hand ${widget.handId}: $e\n$st');
+      // Branch loading is best-effort; UI continues without branches.
     }
   }
 
@@ -200,7 +202,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     try {
       final dao = ref.read(handsDaoProvider);
 
-      // Save the main line (branch 0).
+      // Build the primary companion + actions (branch 0).
       final (mainInfo, mainStates) = allBranches[0];
       final mainActions = mainStates.last.actionHistory;
       final companion = HandMapper.gameStateToCompanion(
@@ -213,10 +215,10 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
         mainActions,
         mainStates,
       );
-      final parentId =
-          await dao.insertBranchWithActions(companion, actionCompanions);
 
-      // Save additional branches.
+      // Build branch tuples for branches[1..].
+      final branchTuples =
+          <(HandsCompanion, List<HandActionsCompanion>)>[];
       for (var i = 1; i < allBranches.length; i++) {
         final (branchInfo, branchStates) = allBranches[i];
         final branchActions = branchStates.last.actionHistory;
@@ -229,7 +231,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           _setup!,
           branchStates.last,
           title: branchInfo.label,
-          parentHandId: parentId,
+          parentHandId: 0, // will be overwritten by insertHandWithAllBranches
           branchAtActionIndex: forkIdx,
         );
         final branchActionCompanions = HandMapper.actionsToCompanions(
@@ -238,9 +240,12 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           newStates,
           startIndex: forkIdx,
         );
-        await dao.insertBranchWithActions(
-            branchCompanion, branchActionCompanions);
+        branchTuples.add((branchCompanion, branchActionCompanions));
       }
+
+      // Save atomically in a single call.
+      await dao.insertHandWithAllBranches(
+          companion, actionCompanions, branchTuples);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

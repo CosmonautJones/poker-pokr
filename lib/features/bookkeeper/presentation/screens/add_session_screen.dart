@@ -70,7 +70,10 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
             _isLoading = false;
           });
         } else if (mounted) {
-          setState(() => _isLoading = false);
+          setState(() {
+            _error = 'Session not found.';
+            _isLoading = false;
+          });
         }
       });
     });
@@ -95,6 +98,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return; // Guard against double-tap
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
@@ -139,9 +143,9 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
         await ref.read(addSessionProvider)(companion);
       }
 
-      if (mounted) {
-        context.pop();
-      }
+      FocusManager.instance.primaryFocus?.unfocus();
+      if (!mounted) return;
+      context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
