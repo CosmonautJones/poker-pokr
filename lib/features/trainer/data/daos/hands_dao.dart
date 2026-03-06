@@ -121,8 +121,9 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
   Future<List<int>> _collectHandIds(int rootId) async {
     final ids = <int>[rootId];
     final queue = <int>[rootId];
-    while (queue.isNotEmpty) {
-      final current = queue.removeAt(0);
+    var front = 0;
+    while (front < queue.length) {
+      final current = queue[front++];
       final branches = await getBranchesForHand(current);
       for (final branch in branches) {
         ids.add(branch.id);

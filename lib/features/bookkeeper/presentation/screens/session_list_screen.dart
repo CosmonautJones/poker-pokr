@@ -116,7 +116,13 @@ class SessionListScreen extends ConsumerWidget {
                   );
                 },
                 onDismissed: (_) {
-                  ref.read(deleteSessionProvider)(session.id);
+                  ref.read(deleteSessionProvider)(session.id).catchError((Object e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to delete session: $e')),
+                      );
+                    }
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Session deleted')),
                   );
