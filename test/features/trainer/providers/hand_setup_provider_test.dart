@@ -131,6 +131,30 @@ void main() {
       });
     });
 
+    group('setPlayerName bounds checking', () {
+      test('valid index 0 does not throw', () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final notifier = container.read(handSetupProvider.notifier);
+        expect(() => notifier.setPlayerName(0, 'Alice'), returnsNormally);
+      });
+
+      test('negative index throws RangeError', () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final notifier = container.read(handSetupProvider.notifier);
+        expect(() => notifier.setPlayerName(-1, 'Alice'), throwsA(isA<RangeError>()));
+      });
+
+      test('index >= playerCount throws RangeError', () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final notifier = container.read(handSetupProvider.notifier);
+        final playerCount = container.read(handSetupProvider).playerCount;
+        expect(() => notifier.setPlayerName(playerCount, 'Alice'), throwsA(isA<RangeError>()));
+      });
+    });
+
     group('setPlayerStack', () {
       test('changes a specific player stack', () {
         readNotifier().setPlayerStack(1, 500);

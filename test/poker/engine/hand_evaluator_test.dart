@@ -311,6 +311,50 @@ void main() {
     });
   });
 
+  group('two pair kicker fallback', () {
+    test('two pair with ace kicker evaluates to twoPair without throwing', () {
+      // Ah As Kh Ks Qh — two pair aces and kings, queen kicker
+      final hand = HandEvaluator.evaluate5([
+        c(Rank.ace, Suit.hearts),
+        c(Rank.ace, Suit.spades),
+        c(Rank.king, Suit.hearts),
+        c(Rank.king, Suit.spades),
+        c(Rank.queen, Suit.hearts),
+      ]);
+      expect(hand.rank, HandRank.twoPair);
+    });
+
+    test('two pair with low kicker evaluates to twoPair without throwing', () {
+      // 6h 6d 9s 9c 2h — two pair nines and sixes, deuce kicker
+      final hand = HandEvaluator.evaluate5([
+        c(Rank.six, Suit.hearts),
+        c(Rank.six, Suit.diamonds),
+        c(Rank.nine, Suit.spades),
+        c(Rank.nine, Suit.clubs),
+        c(Rank.two, Suit.hearts),
+      ]);
+      expect(hand.rank, HandRank.twoPair);
+    });
+
+    test('higher two pair beats lower two pair', () {
+      final higher = HandEvaluator.evaluate5([
+        c(Rank.ace, Suit.hearts),
+        c(Rank.ace, Suit.spades),
+        c(Rank.king, Suit.hearts),
+        c(Rank.king, Suit.spades),
+        c(Rank.two, Suit.clubs),
+      ]);
+      final lower = HandEvaluator.evaluate5([
+        c(Rank.six, Suit.hearts),
+        c(Rank.six, Suit.diamonds),
+        c(Rank.nine, Suit.spades),
+        c(Rank.nine, Suit.clubs),
+        c(Rank.ace, Suit.hearts),
+      ]);
+      expect(higher > lower, true);
+    });
+  });
+
   group('determineWinners', () {
     test('pair beats high card', () {
       final players = [
