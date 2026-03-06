@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/database/converters/player_config_list_converter.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -31,7 +32,8 @@ class HandMapper {
           return cardValues.map((v) => PokerCard(v)).toList();
         }).toList();
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('WARNING: Failed to deserialize hole cards from JSON: $e');
       // Best-effort: if JSON is malformed, proceed without hole cards.
     }
 
@@ -64,6 +66,12 @@ class HandMapper {
 
   /// Convert a [HandSetup] to a [HandsCompanion] for database insertion.
   static HandsCompanion setupToCompanion(HandSetup setup, {String? title}) {
+    if (setup.playerNames.length != setup.playerCount || setup.stacks.length != setup.playerCount) {
+      throw ArgumentError(
+        'playerNames (${setup.playerNames.length}) and stacks (${setup.stacks.length}) '
+        'must both have length playerCount (${setup.playerCount})',
+      );
+    }
     final configs = List.generate(setup.playerCount, (i) {
       return PlayerConfig(
         name: setup.playerNames[i],
@@ -104,6 +112,12 @@ class HandMapper {
     List<GameState> states, {
     int startIndex = 0,
   }) {
+    if (states.length != actions.length + 1) {
+      throw ArgumentError(
+        'states must have exactly one more element than actions '
+        '(got states=${states.length}, actions=${actions.length})',
+      );
+    }
     return List.generate(actions.length, (i) {
       final action = actions[i];
       // The state *after* this action is at index i + 1.
@@ -135,6 +149,12 @@ class HandMapper {
     int? parentHandId,
     int? branchAtActionIndex,
   }) {
+    if (setup.playerNames.length != setup.playerCount || setup.stacks.length != setup.playerCount) {
+      throw ArgumentError(
+        'playerNames (${setup.playerNames.length}) and stacks (${setup.stacks.length}) '
+        'must both have length playerCount (${setup.playerCount})',
+      );
+    }
     final configs = List.generate(setup.playerCount, (i) {
       return PlayerConfig(
         name: setup.playerNames[i],

@@ -22,11 +22,15 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
       (delete(sessions)..where((t) => t.id.equals(id))).go();
 
   Stream<List<Session>> watchSessionsByDateRange(
-          DateTime start, DateTime end) =>
-      (select(sessions)
-            ..where((t) => t.date.isBetweenValues(start, end))
-            ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-          .watch();
+      DateTime start, DateTime end) {
+    if (start.isAfter(end)) {
+      throw ArgumentError('start ($start) must not be after end ($end)');
+    }
+    return (select(sessions)
+          ..where((t) => t.date.isBetweenValues(start, end))
+          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+        .watch();
+  }
 
   Future<List<Session>> getAllSessions() =>
       (select(sessions)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();

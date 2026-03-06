@@ -152,6 +152,10 @@ class GameEngine {
     final double effectiveCurrentBet;
     final double effectiveLastRaise;
 
+    if (straddle > 0 && straddle < bigBlind) {
+      throw ArgumentError('Straddle ($straddle) must be >= big blind ($bigBlind)');
+    }
+
     if (isHeadsUp) {
       firstToAct = dealerIndex; // dealer = SB acts first preflop
       effectiveCurrentBet = bigBlind;
@@ -160,7 +164,10 @@ class GameEngine {
       firstToAct = _nextActivePlayer(players, straddleIndex!);
       effectiveCurrentBet = straddle;
       // The raise increment from BB to straddle determines min-raise.
-      effectiveLastRaise = straddle - bigBlind;
+      // Use max(bigBlind, straddle - bigBlind) so lastRaiseSize is never 0.
+      effectiveLastRaise = (straddle - bigBlind) > bigBlind
+          ? straddle - bigBlind
+          : bigBlind;
     } else {
       firstToAct = _nextActivePlayer(players, bbIndex);
       effectiveCurrentBet = bigBlind;
@@ -349,9 +356,10 @@ class GameEngine {
 
     // Only reset playersActedThisStreet if this is a raise (re-opens action).
     // A "short all-in" that doesn't meet the min raise does NOT re-open
-    // action. However, for simplicity and correctness we check if the all-in
-    // exceeds current bet.
-    final bool reopensAction = wasRaise && raiseSize >= state.lastRaiseSize;
+    // action. Guard against lastRaiseSize == 0 (which would make the
+    // comparison trivially true and incorrectly reopen action).
+    final bool reopensAction =
+        wasRaise && state.lastRaiseSize > 0 && raiseSize >= state.lastRaiseSize;
 
     return state.copyWith(
       players: _updatePlayer(state.players, updatedPlayer),

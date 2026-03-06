@@ -472,6 +472,7 @@ class _ActionBarState extends State<ActionBar>
   }
 
   int _sliderDivisions(double min, double max) {
+    if (min >= max) return 1;
     final range = max - min;
     final rawDivisions = range / (min > 0 ? min : 1);
     // Target 15-20 smooth steps to avoid jitter.

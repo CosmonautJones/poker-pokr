@@ -5,7 +5,15 @@ import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.da
 
 final reportsProvider = Provider<AsyncValue<SessionStats>>((ref) {
   final sessionsAsync = ref.watch(sessionsStreamProvider);
-  return sessionsAsync.whenData(
-    (sessions) => ReportGenerator.generate(sessions),
+  return sessionsAsync.when(
+    data: (sessions) {
+      try {
+        return AsyncValue.data(ReportGenerator.generate(sessions));
+      } catch (e, st) {
+        return AsyncValue.error(e, st);
+      }
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
   );
 });

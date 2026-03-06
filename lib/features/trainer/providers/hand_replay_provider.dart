@@ -44,7 +44,15 @@ class HandReplayNotifier
   int _activeBranchIndex = 0;
 
   /// The active branch's history.
-  StateHistory<GameState> get _history => _branches[_activeBranchIndex];
+  StateHistory<GameState> get _history {
+    if (_activeBranchIndex < 0 || _activeBranchIndex >= _branches.length) {
+      throw StateError(
+        'Branch index $_activeBranchIndex is out of range '
+        '[0, ${_branches.length}) — this is a bug',
+      );
+    }
+    return _branches[_activeBranchIndex];
+  }
 
   @override
   HandReplayState build(HandSetup arg) {

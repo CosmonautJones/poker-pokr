@@ -14,8 +14,13 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
         ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
       .watch();
 
-  Future<Hand> getHand(int id) =>
-      (select(hands)..where((t) => t.id.equals(id))).getSingle();
+  Future<Hand> getHand(int id) async {
+    final result = await (select(hands)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (result == null) {
+      throw StateError('Hand with id=$id not found in database');
+    }
+    return result;
+  }
 
   Future<List<HandAction>> getActionsForHand(int handId) => (select(handActions)
         ..where((t) => t.handId.equals(handId))
@@ -43,6 +48,33 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
             .insert(action.copyWith(handId: Value(handId)));
       }
       return handId;
+    });
+  }
+
+  /// Insert the primary hand and all branch hands atomically.
+  ///
+  /// [primaryHand] and [primaryActions] are inserted first.
+  /// Each entry in [branches] is a (HandsCompanion, List<HandActionsCompanion>) pair.
+  /// Returns the new primary hand ID.
+  Future<int> insertHandWithAllBranches(
+    HandsCompanion primaryHand,
+    List<HandActionsCompanion> primaryActions,
+    List<(HandsCompanion, List<HandActionsCompanion>)> branches,
+  ) {
+    return transaction(() async {
+      final parentId = await into(hands).insert(primaryHand);
+      for (final action in primaryActions) {
+        await into(handActions).insert(action.copyWith(handId: Value(parentId)));
+      }
+      for (final (branchHand, branchActions) in branches) {
+        final branchId = await into(hands).insert(
+          branchHand.copyWith(parentHandId: Value(parentId)),
+        );
+        for (final action in branchActions) {
+          await into(handActions).insert(action.copyWith(handId: Value(branchId)));
+        }
+      }
+      return parentId;
     });
   }
 
@@ -88,9 +120,14 @@ class HandsDao extends DatabaseAccessor<AppDatabase> with _$HandsDaoMixin {
 
   Future<List<int>> _collectHandIds(int rootId) async {
     final ids = <int>[rootId];
-    final branches = await getBranchesForHand(rootId);
-    for (final branch in branches) {
-      ids.addAll(await _collectHandIds(branch.id));
+    final queue = <int>[rootId];
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      final branches = await getBranchesForHand(current);
+      for (final branch in branches) {
+        ids.add(branch.id);
+        queue.add(branch.id);
+      }
     }
     return ids;
   }

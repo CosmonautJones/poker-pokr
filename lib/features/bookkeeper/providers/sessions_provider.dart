@@ -7,15 +7,34 @@ final sessionsStreamProvider = StreamProvider.autoDispose<List<Session>>((ref) {
 });
 
 final addSessionProvider = Provider((ref) {
-  return (SessionsCompanion entry) =>
-      ref.read(sessionsDaoProvider).insertSession(entry);
+  return (SessionsCompanion entry) async {
+    try {
+      await ref.read(sessionsDaoProvider).insertSession(entry);
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+          Exception('Failed to add session: $e'), st);
+    }
+  };
 });
 
 final updateSessionProvider = Provider((ref) {
-  return (SessionsCompanion entry) =>
-      ref.read(sessionsDaoProvider).updateSession(entry);
+  return (SessionsCompanion entry) async {
+    try {
+      await ref.read(sessionsDaoProvider).updateSession(entry);
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+          Exception('Failed to update session: $e'), st);
+    }
+  };
 });
 
 final deleteSessionProvider = Provider((ref) {
-  return (int id) => ref.read(sessionsDaoProvider).deleteSessionById(id);
+  return (int id) async {
+    try {
+      await ref.read(sessionsDaoProvider).deleteSessionById(id);
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+          Exception('Failed to delete session: $e'), st);
+    }
+  };
 });
