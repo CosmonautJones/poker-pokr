@@ -591,6 +591,124 @@ class GameEngine {
   }
 
   // ---------------------------------------------------------------------------
+  // Card editing (mid-hand)
+  // ---------------------------------------------------------------------------
+
+  /// Replace a player's hole cards, returning a new [GameState] with an
+  /// updated deck that reflects the swap.
+  static GameState replaceHoleCards(
+    GameState state,
+    int playerIndex,
+    List<PokerCard> newCards,
+  ) {
+    final player = state.players[playerIndex];
+    final oldCards = player.holeCards;
+
+    // Rebuild deck: add old cards back, remove new ones.
+    final deckCards = List<PokerCard>.of(state.deck.cards);
+    deckCards.addAll(oldCards);
+    for (final card in newCards) {
+      deckCards.remove(card);
+    }
+
+    final updatedPlayer = player.copyWith(holeCards: newCards);
+    final updatedPlayers = _updatePlayer(state.players, updatedPlayer);
+
+    return state.copyWith(
+      players: updatedPlayers,
+      deck: Deck.fromCards(deckCards),
+    );
+  }
+
+  /// Replace community cards, returning a new [GameState] with an
+  /// updated deck that reflects the swap.
+  static GameState replaceCommunityCards(
+    GameState state,
+    List<PokerCard> newCommunityCards,
+  ) {
+    final oldCommunity = state.communityCards;
+
+    // Rebuild deck: add old community back, remove new ones.
+    final deckCards = List<PokerCard>.of(state.deck.cards);
+    deckCards.addAll(oldCommunity);
+    for (final card in newCommunityCards) {
+      deckCards.remove(card);
+    }
+
+    return state.copyWith(
+      communityCards: newCommunityCards,
+      deck: Deck.fromCards(deckCards),
+    );
+  }
+
+  /// Stack the deck so that upcoming streets deal specific cards.
+  ///
+  /// Cards are placed at the end of the deck (since [Deck.deal] pops from
+  /// the end) in the correct order accounting for burn cards.
+  ///
+  /// Only cards for streets that haven't been dealt yet are accepted.
+  static GameState stackUpcomingCards(
+    GameState state, {
+    List<PokerCard>? flopCards,
+    PokerCard? turnCard,
+    PokerCard? riverCard,
+  }) {
+    final deckCards = List<PokerCard>.of(state.deck.cards);
+
+    // Remove the cards we're going to stack from wherever they are in the deck.
+    final toStack = <PokerCard>[];
+    if (state.street == Street.preflop && flopCards != null) {
+      assert(flopCards.length == 3, 'Flop must have exactly 3 cards');
+      toStack.addAll(flopCards);
+    }
+    if (state.street.index <= Street.flop.index && turnCard != null) {
+      toStack.add(turnCard);
+    }
+    if (state.street.index <= Street.turn.index && riverCard != null) {
+      toStack.add(riverCard);
+    }
+
+    for (final card in toStack) {
+      deckCards.remove(card);
+    }
+
+    // Stack in reverse order at the end (deal pops from end).
+    // Pattern: burn, card(s), burn, card, burn, card
+    // We need burn cards too — use whatever's already in the deck.
+    // River: [burn, river]  → river at end, burn before it
+    // Turn:  [burn, turn]
+    // Flop:  [burn, flop1, flop2, flop3]
+    final stacked = <PokerCard>[];
+
+    if (state.street.index <= Street.turn.index && riverCard != null) {
+      // Need a burn card before river — take first available from deck.
+      if (deckCards.isNotEmpty) {
+        stacked.add(deckCards.removeAt(0)); // burn
+      }
+      stacked.add(riverCard);
+    }
+
+    if (state.street.index <= Street.flop.index && turnCard != null) {
+      if (deckCards.isNotEmpty) {
+        stacked.add(deckCards.removeAt(0)); // burn
+      }
+      stacked.add(turnCard);
+    }
+
+    if (state.street == Street.preflop && flopCards != null) {
+      if (deckCards.isNotEmpty) {
+        stacked.add(deckCards.removeAt(0)); // burn
+      }
+      stacked.addAll(flopCards);
+    }
+
+    // Put the stacked cards at the end of the deck.
+    deckCards.addAll(stacked);
+
+    return state.copyWith(deck: Deck.fromCards(deckCards));
+  }
+
+  // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 

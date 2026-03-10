@@ -8,10 +8,13 @@ import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/action_bar.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/auto_play_controls.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/context_strip.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/mid_hand_edit_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_banner.dart';
+import 'package:poker_trainer/features/trainer/providers/auto_play_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 import 'package:poker_trainer/poker/models/action.dart';
@@ -262,6 +265,34 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     }
   }
 
+  void _startAutoPlay(HandSetup setup) {
+    ref.read(autoPlayProvider(setup).notifier).start();
+  }
+
+  Future<void> _showEditSheet(HandSetup setup, {int? playerIndex}) async {
+    // Pause auto-play if running.
+    final autoNotifier = ref.read(autoPlayProvider(setup).notifier);
+    final wasAutoPlaying = ref.read(autoPlayProvider(setup)).isRunning;
+    if (wasAutoPlaying) autoNotifier.pause();
+
+    final replayState = ref.read(handReplayProvider(setup));
+    final result = await MidHandEditSheet.show(
+      context,
+      gameState: replayState.gameState,
+      initialPlayerIndex: playerIndex,
+    );
+
+    if (result != null && mounted) {
+      final notifier = ref.read(handReplayProvider(setup).notifier);
+      switch (result) {
+        case HoleCardEdit(:final playerIndex, :final newCards):
+          notifier.editHoleCards(playerIndex, newCards);
+        case CommunityCardEdit(:final newCommunityCards):
+          notifier.editCommunityCards(newCommunityCards);
+      }
+    }
+  }
+
   Future<void> _saveAsSetup() async {
     if (_setup == null) return;
 
@@ -357,6 +388,8 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     final notifier = ref.read(handReplayProvider(setup).notifier);
     final gs = replayState.gameState;
     final hasBranches = replayState.branches.length > 1;
+    final autoPlay = ref.watch(autoPlayProvider(setup));
+    final isAutoPlaying = autoPlay.isRunning;
 
     return Scaffold(
       appBar: AppBar(
@@ -398,6 +431,10 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
             tooltip: 'More',
             onSelected: (value) {
               switch (value) {
+                case 'auto_play':
+                  _startAutoPlay(setup);
+                case 'edit_cards':
+                  _showEditSheet(setup);
                 case 'glossary':
                   PokerGlossarySheet.show(context);
                 case 'history':
@@ -407,6 +444,26 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               }
             },
             itemBuilder: (_) => [
+              if (!replayState.isComplete)
+                const PopupMenuItem(
+                  value: 'auto_play',
+                  child: ListTile(
+                    leading: Icon(Icons.play_arrow_rounded, size: 20),
+                    title: Text('Auto Play'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              if (!replayState.isComplete)
+                const PopupMenuItem(
+                  value: 'edit_cards',
+                  child: ListTile(
+                    leading: Icon(Icons.edit_rounded, size: 20),
+                    title: Text('Edit Cards'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               const PopupMenuItem(
                 value: 'history',
                 child: ListTile(
@@ -444,7 +501,13 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           Expanded(
             child: Stack(
               children: [
-                PokerTableWidget(gameState: gs),
+                PokerTableWidget(
+                  gameState: gs,
+                  onPlayerLongPress: !replayState.isComplete
+                      ? (playerIndex) =>
+                          _showEditSheet(setup, playerIndex: playerIndex)
+                      : null,
+                ),
                 // Hand complete overlay with animation
                 if (replayState.isComplete)
                   Positioned(
@@ -462,16 +525,33 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               ],
             ),
           ),
-          // Educational context strip
-          if (!replayState.isComplete)
+          // Educational context strip (hidden during auto-play)
+          if (!replayState.isComplete && !isAutoPlaying)
             ContextStrip(context_: replayState.educationalContext),
-          // Pro tip banner
-          if (!replayState.isComplete)
+          // Pro tip banner (hidden during auto-play)
+          if (!replayState.isComplete && !isAutoPlaying)
             ProTipBanner(
               tip: ProTipEngine.compute(replayState.educationalContext),
             ),
-          // Action bar (only when hand is not complete)
-          if (!replayState.isComplete)
+          // Auto-play controls (shown during auto-play)
+          if (isAutoPlaying)
+            AutoPlayControls(
+              autoPlayState: autoPlay,
+              onPauseResume: () {
+                final ap = ref.read(autoPlayProvider(setup).notifier);
+                if (autoPlay.isPaused) {
+                  ap.resume();
+                } else {
+                  ap.pause();
+                }
+              },
+              onStop: () =>
+                  ref.read(autoPlayProvider(setup).notifier).stop(),
+              onSpeedChanged: (speed) =>
+                  ref.read(autoPlayProvider(setup).notifier).setSpeed(speed),
+            ),
+          // Action bar (only when hand is not complete and not auto-playing)
+          if (!replayState.isComplete && !isAutoPlaying)
             ActionBar(
               currentPlayerIndex: gs.currentPlayerIndex,
               legalActions: replayState.legalActions,

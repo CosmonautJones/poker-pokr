@@ -15,7 +15,14 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/pot_display.
 class PokerTableWidget extends StatelessWidget {
   final GameState gameState;
 
-  const PokerTableWidget({super.key, required this.gameState});
+  /// Called when a player seat is long-pressed (for editing hole cards).
+  final void Function(int playerIndex)? onPlayerLongPress;
+
+  const PokerTableWidget({
+    super.key,
+    required this.gameState,
+    this.onPlayerLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,17 +122,22 @@ class PokerTableWidget extends StatelessWidget {
               Positioned(
                 left: seats[i].dx - seatWidth / 2,
                 top: seats[i].dy - 36 * scale,
-                child: SizedBox(
-                  width: seatWidth,
-                  child: Center(
-                    child: PlayerSeat(
-                      player: gameState.players[i],
-                      isCurrentPlayer: i == gameState.currentPlayerIndex &&
-                          !gameState.isHandComplete,
-                      isDealer: i == gameState.dealerIndex,
-                      isStraddler: i == gameState.straddlePlayerIndex,
-                      isWinner: winners.contains(i),
-                      scale: scale * seatScale,
+                child: GestureDetector(
+                  onLongPress: onPlayerLongPress != null
+                      ? () => onPlayerLongPress!(i)
+                      : null,
+                  child: SizedBox(
+                    width: seatWidth,
+                    child: Center(
+                      child: PlayerSeat(
+                        player: gameState.players[i],
+                        isCurrentPlayer: i == gameState.currentPlayerIndex &&
+                            !gameState.isHandComplete,
+                        isDealer: i == gameState.dealerIndex,
+                        isStraddler: i == gameState.straddlePlayerIndex,
+                        isWinner: winners.contains(i),
+                        scale: scale * seatScale,
+                      ),
                     ),
                   ),
                 ),

@@ -203,6 +203,42 @@ class HandReplayNotifier
     ));
   }
 
+  // ---------------------------------------------------------------------------
+  // Card editing (mid-hand)
+  // ---------------------------------------------------------------------------
+
+  /// Replace a player's hole cards mid-hand. Pushes new state (undoable).
+  void editHoleCards(int playerIndex, List<PokerCard> newCards) {
+    final newState =
+        GameEngine.replaceHoleCards(_history.current, playerIndex, newCards);
+    _history.push(newState);
+    state = _buildState(newState);
+  }
+
+  /// Replace community cards mid-hand. Pushes new state (undoable).
+  void editCommunityCards(List<PokerCard> newCommunityCards) {
+    final newState = GameEngine.replaceCommunityCards(
+        _history.current, newCommunityCards);
+    _history.push(newState);
+    state = _buildState(newState);
+  }
+
+  /// Stack the deck so upcoming streets deal specific cards. Undoable.
+  void setUpcomingCards({
+    List<PokerCard>? flopCards,
+    PokerCard? turnCard,
+    PokerCard? riverCard,
+  }) {
+    final newState = GameEngine.stackUpcomingCards(
+      _history.current,
+      flopCards: flopCards,
+      turnCard: turnCard,
+      riverCard: riverCard,
+    );
+    _history.push(newState);
+    state = _buildState(newState);
+  }
+
   /// Returns all game states in the active branch's history (for saving).
   List<GameState> get allStates => _history.states;
 
