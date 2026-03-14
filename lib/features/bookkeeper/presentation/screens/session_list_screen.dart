@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/widgets/session_card.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
 import 'package:poker_trainer/shared/widgets/empty_state.dart';
@@ -81,12 +82,12 @@ class SessionListScreen extends ConsumerWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
+                    color: context.poker.loss.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    color: context.poker.loss,
                   ),
                 ),
                 confirmDismiss: (direction) async {
@@ -140,6 +141,8 @@ class SessionListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/bookkeeper/add'),
         tooltip: 'Add Session',
+        backgroundColor: context.poker.goldPrimary,
+        foregroundColor: Colors.black,
         child: const Icon(Icons.add),
       ),
     );

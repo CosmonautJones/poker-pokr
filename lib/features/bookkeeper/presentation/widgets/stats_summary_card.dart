@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 class StatsSummaryCard extends StatelessWidget {
   final String title;
@@ -17,8 +18,13 @@ class StatsSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pt = context.poker;
 
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: pt.borderSubtle.withValues(alpha: 0.3)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -31,7 +37,7 @@ class StatsSummaryCard extends StatelessWidget {
                   Icon(
                     icon,
                     size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: pt.goldPrimary,
                   ),
                   const SizedBox(width: 6),
                 ],
@@ -39,7 +45,7 @@ class StatsSummaryCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: pt.textMuted,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

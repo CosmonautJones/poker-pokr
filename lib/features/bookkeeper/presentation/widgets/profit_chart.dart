@@ -15,10 +15,12 @@ class ProfitChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chartHeight = MediaQuery.sizeOf(context).width < 360 ? 170.0 : 200.0;
+
     if (profitByMonth.isEmpty) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: Text('No data to display')),
+      return SizedBox(
+        height: chartHeight,
+        child: const Center(child: Text('No data to display')),
       );
     }
 
@@ -43,7 +45,7 @@ class ProfitChart extends StatelessWidget {
     final chartMaxY = maxY + yPadding;
 
     return SizedBox(
-      height: 200,
+      height: chartHeight,
       child: Padding(
         padding: const EdgeInsets.only(right: 8, top: 12),
         child: LineChart(
@@ -53,7 +55,7 @@ class ProfitChart extends StatelessWidget {
               drawVerticalLine: false,
               horizontalInterval: _calculateInterval(chartMinY, chartMaxY),
               getDrawingHorizontalLine: (value) => FlLine(
-                color: theme.colorScheme.surfaceContainerHighest,
+                color: pt.borderSubtle.withValues(alpha: 0.2),
                 strokeWidth: 1,
               ),
             ),
@@ -87,7 +89,7 @@ class ProfitChart extends StatelessWidget {
                       child: Text(
                         label,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: pt.textMuted,
                         ),
                       ),
                     );
@@ -103,7 +105,7 @@ class ProfitChart extends StatelessWidget {
                     return Text(
                       CurrencyFormatter.format(value),
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: pt.textMuted,
                         fontSize: 10,
                       ),
                     );
@@ -152,8 +154,7 @@ class ProfitChart extends StatelessWidget {
             ],
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) =>
-                    theme.colorScheme.surfaceContainerHighest,
+                getTooltipColor: (_) => pt.tooltipBackground,
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
                     final index = spot.x.toInt();

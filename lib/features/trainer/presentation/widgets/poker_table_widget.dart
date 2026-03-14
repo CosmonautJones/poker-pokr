@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/core/utils/motion.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/player_seat.dart';
@@ -198,10 +199,18 @@ class _TableFeltState extends State<_TableFelt>
     _ambientController = AnimationController(
       duration: const Duration(milliseconds: 6000),
       vsync: this,
-    )..repeat(reverse: true);
+    );
     _ambientAnimation = Tween<double>(begin: -0.15, end: -0.35).animate(
       CurvedAnimation(parent: _ambientController, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (Motion.shouldAnimate(context) && !_ambientController.isAnimating) {
+      _ambientController.repeat(reverse: true);
+    }
   }
 
   @override

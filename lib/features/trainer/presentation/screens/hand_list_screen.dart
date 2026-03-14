@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lessons_list_screen.dart';
@@ -83,7 +84,7 @@ class _SavedSetupsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+            Icon(Icons.error_outline, size: 48, color: context.poker.loss),
             const SizedBox(height: 16),
             Text(
               'Failed to load saved setups',
@@ -107,20 +108,20 @@ class _SavedSetupsTab extends ConsumerWidget {
                 Icon(
                   Icons.bookmark_border,
                   size: 64,
-                  color: Colors.grey.shade600,
+                  color: context.poker.borderSubtle,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No saved setups yet',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey.shade500,
+                        color: context.poker.textMuted,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Tap + to create and save a hand setup for practice',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: context.poker.textMuted,
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -157,14 +158,15 @@ class _SavedSetupTile extends ConsumerWidget {
         '${hand.smallBlind}/${hand.bigBlind}  |  '
         '$gameTypeLabel';
 
+    final pt = context.poker;
     return Dismissible(
       key: ValueKey(hand.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        color: Colors.red.shade800,
-        child: const Icon(Icons.delete, color: Colors.white),
+        color: pt.loss.withValues(alpha: 0.2),
+        child: Icon(Icons.delete, color: pt.loss),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
@@ -180,7 +182,7 @@ class _SavedSetupTile extends ConsumerWidget {
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
+                  backgroundColor: pt.loss,
                 ),
                 child: const Text('Delete'),
               ),
@@ -202,11 +204,11 @@ class _SavedSetupTile extends ConsumerWidget {
       },
       child: Card(
         child: ListTile(
-          leading: const Icon(Icons.bookmark, size: 24),
+          leading: Icon(Icons.bookmark, size: 24, color: pt.goldPrimary),
           title: Text(title),
           subtitle: Text(subtitle),
           trailing: IconButton(
-            icon: const Icon(Icons.play_arrow),
+            icon: Icon(Icons.play_arrow, color: pt.profit),
             tooltip: 'Practice',
             onPressed: () => _practiceSetup(context, ref),
           ),
@@ -234,7 +236,7 @@ class _HandsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+            Icon(Icons.error_outline, size: 48, color: context.poker.loss),
             const SizedBox(height: 16),
             Text(
               'Failed to load hands',
@@ -258,20 +260,20 @@ class _HandsTab extends ConsumerWidget {
                 Icon(
                   Icons.style_outlined,
                   size: 64,
-                  color: Colors.grey.shade600,
+                  color: context.poker.borderSubtle,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No saved hands yet',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey.shade500,
+                        color: context.poker.textMuted,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Tap + to create your first hand',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: context.poker.textMuted,
                       ),
                 ),
               ],
@@ -305,14 +307,15 @@ class _HandListTile extends ConsumerWidget {
         '${hand.smallBlind}/${hand.bigBlind}';
     final dateStr = DateFormatter.formatDateTime(hand.createdAt);
 
+    final pt = context.poker;
     return Dismissible(
       key: ValueKey(hand.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        color: Colors.red.shade800,
-        child: const Icon(Icons.delete, color: Colors.white),
+        color: pt.loss.withValues(alpha: 0.2),
+        child: Icon(Icons.delete, color: pt.loss),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
@@ -328,7 +331,7 @@ class _HandListTile extends ConsumerWidget {
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
+                  backgroundColor: pt.loss,
                 ),
                 child: const Text('Delete'),
               ),
@@ -355,7 +358,7 @@ class _HandListTile extends ConsumerWidget {
           trailing: Text(
             dateStr,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade500,
+                  color: pt.textMuted,
                 ),
           ),
           onTap: () => context.go('/trainer/replay/${hand.id}'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/core/utils/motion.dart';
 import 'package:poker_trainer/poker/models/pot.dart';
 
 /// Displays the current pot with gold shimmer text, chip icon, and
@@ -111,11 +112,11 @@ class _PotPillState extends State<_PotPill>
     super.initState();
     _previousPot = widget.pot;
 
-    // Gold shimmer sweep
+    // Gold shimmer sweep (deferred until didChangeDependencies for motion check)
     _shimmerController = AnimationController(
       duration: PokerAnimations.kShimmer,
       vsync: this,
-    )..repeat();
+    );
     _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
     );
@@ -160,6 +161,14 @@ class _PotPillState extends State<_PotPill>
         weight: 40,
       ),
     ]).animate(_chipWobbleController);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (Motion.shouldAnimate(context) && !_shimmerController.isAnimating) {
+      _shimmerController.repeat();
+    }
   }
 
   @override
