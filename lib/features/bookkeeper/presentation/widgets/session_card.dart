@@ -26,9 +26,22 @@ class SessionCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: pt.borderSubtle.withValues(alpha: 0.3)),
+      ),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
+        child: Row(
+          children: [
+            // Left-edge vertical color bar
+            Container(
+              width: 4,
+              height: 80,
+              color: isProfit ? pt.profit : pt.loss,
+            ),
+            Expanded(
+              child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -50,13 +63,13 @@ class SessionCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
+                            color: pt.goldPrimary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _gameTypeLabel,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
+                              color: pt.goldPrimary,
                             ),
                           ),
                         ),
@@ -67,13 +80,13 @@ class SessionCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.secondaryContainer,
+                            color: pt.accent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _formatLabel,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSecondaryContainer,
+                              color: pt.accent,
                             ),
                           ),
                         ),
@@ -89,7 +102,7 @@ class SessionCard extends StatelessWidget {
                     Text(
                       '${session.stakes}  |  ${session.hoursPlayed.toStringAsFixed(1)}h',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: pt.textMuted,
                       ),
                     ),
                   ],
@@ -118,6 +131,9 @@ class SessionCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+            ),
+          ],
         ),
       ),
     );

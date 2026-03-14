@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/core/utils/motion.dart';
 import 'package:poker_trainer/poker/models/player.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/community_cards.dart';
 
@@ -73,18 +74,20 @@ class _PlayerSeatState extends State<PlayerSeat>
   }
 
   void _syncAnimations() {
+    final animate = context.mounted && Motion.shouldAnimate(context);
+
     // Turn indicator sweep.
-    if (widget.isCurrentPlayer) {
+    if (widget.isCurrentPlayer && animate) {
       if (!_sweepController.isAnimating) _sweepController.repeat();
       if (!_pulseController.isAnimating) {
         _pulseController.repeat(reverse: true);
       }
-    } else {
+    } else if (!widget.isCurrentPlayer || !animate) {
       _sweepController.stop();
       _sweepController.value = 0;
 
       // All-in pulse.
-      if (widget.player.isAllIn) {
+      if (widget.player.isAllIn && animate) {
         if (!_pulseController.isAnimating) {
           _pulseController.repeat(reverse: true);
         }
@@ -95,7 +98,7 @@ class _PlayerSeatState extends State<PlayerSeat>
     }
 
     // Winner ring + sparkle particles.
-    if (widget.isWinner) {
+    if (widget.isWinner && animate) {
       _winnerController ??= AnimationController(
         duration: PokerAnimations.kWinnerRing,
         vsync: this,

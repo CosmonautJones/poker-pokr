@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 /// A bottom sheet that lets the user pick a chip stack amount by scrolling.
 class StackPickerBottomSheet extends StatefulWidget {
@@ -88,6 +89,7 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final pt = context.poker;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -99,7 +101,7 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade600,
+                color: pt.borderSubtle,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -116,7 +118,7 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
             Text(
               _formatBBs(_amounts[_selectedIndex]),
               style: TextStyle(
-                color: Colors.amber.shade400,
+                color: pt.dealerChip,
                 fontSize: 14,
               ),
             ),
@@ -132,7 +134,7 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
                       decoration: BoxDecoration(
                         border: Border.symmetric(
                           horizontal:
-                              BorderSide(color: Colors.grey.shade700, width: 1),
+                              BorderSide(color: pt.borderSubtle, width: 1),
                         ),
                       ),
                     ),
@@ -155,7 +157,7 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
                             style: TextStyle(
                               color: isSelected
                                   ? Colors.white
-                                  : Colors.grey.shade500,
+                                  : pt.textMuted,
                               fontSize: isSelected ? 24 : 18,
                               fontWeight: isSelected
                                   ? FontWeight.bold
@@ -203,8 +205,8 @@ class _StackPickerBottomSheetState extends State<StackPickerBottomSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade400,
-                      side: BorderSide(color: Colors.grey.shade700),
+                      foregroundColor: pt.textMuted,
+                      side: BorderSide(color: pt.borderSubtle),
                     ),
                     child: const Text('Cancel'),
                   ),

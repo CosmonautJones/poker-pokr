@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/utils/currency_formatter.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
 
 class AddSessionScreen extends ConsumerStatefulWidget {
@@ -184,9 +185,10 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
     }
 
     final profitLoss = _profitLoss;
+    final pt = context.poker;
     final profitColor = profitLoss >= 0
-        ? Colors.green.shade400
-        : Colors.red.shade400;
+        ? pt.profit
+        : pt.loss;
 
     return Scaffold(
       appBar: AppBar(

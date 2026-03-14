@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -9,6 +10,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final pt = context.poker;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +22,7 @@ class SettingsScreen extends ConsumerWidget {
           // About section
           _SectionHeader(title: 'General'),
           ListTile(
-            leading: Icon(Icons.info_outline, color: colorScheme.primary),
+            leading: Icon(Icons.info_outline, color: pt.goldPrimary),
             title: const Text('About'),
             subtitle: const Text('Poker Trainer v1.0.0'),
             onTap: () {
@@ -31,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
                 applicationIcon: Icon(
                   Icons.casino,
                   size: 48,
-                  color: colorScheme.primary,
+                  color: pt.goldPrimary,
                 ),
                 children: [
                   const Text(
@@ -43,12 +45,12 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.dark_mode, color: colorScheme.primary),
+            leading: Icon(Icons.dark_mode, color: pt.goldPrimary),
             title: const Text('Theme'),
             subtitle: const Text('Dark'),
             trailing: Icon(
               Icons.check_circle,
-              color: colorScheme.primary,
+              color: pt.goldPrimary,
               size: 20,
             ),
           ),
@@ -56,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           // Data section
           _SectionHeader(title: 'Data'),
           ListTile(
-            leading: Icon(Icons.file_upload_outlined, color: colorScheme.primary),
+            leading: Icon(Icons.file_upload_outlined, color: pt.goldPrimary),
             title: const Text('Export Data'),
             subtitle: const Text('Export sessions and hands'),
             onTap: () {
@@ -72,15 +74,15 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            leading: Icon(Icons.delete_forever, color: pt.loss),
             title: Text(
               'Clear All Data',
-              style: textTheme.bodyLarge?.copyWith(color: Colors.red),
+              style: textTheme.bodyLarge?.copyWith(color: pt.loss),
             ),
             subtitle: Text(
               'Delete all sessions and hands permanently',
               style: textTheme.bodySmall?.copyWith(
-                color: Colors.red.withValues(alpha: 0.7),
+                color: pt.loss.withValues(alpha: 0.7),
               ),
             ),
             onTap: () => _showClearDataDialog(context, ref),
@@ -95,20 +97,20 @@ class SettingsScreen extends ConsumerWidget {
                   Icon(
                     Icons.casino,
                     size: 32,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    color: pt.goldDark,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Poker Trainer',
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      color: pt.textMuted,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Version 1.0.0',
                     style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      color: pt.textMuted.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -121,12 +123,12 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showClearDataDialog(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final pt = context.poker;
 
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 36),
+        icon: Icon(Icons.warning_amber_rounded, color: pt.loss, size: 36),
         title: const Text('Clear All Data?'),
         content: const Text(
           'This will permanently delete all your poker sessions and saved '
@@ -137,12 +139,12 @@ class SettingsScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               'Cancel',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+              style: TextStyle(color: pt.textMuted),
             ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: pt.loss,
               minimumSize: const Size(0, 40),
             ),
             onPressed: () async {
@@ -182,14 +184,14 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final pt = context.poker;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: colorScheme.primary,
+              color: pt.goldPrimary,
               fontWeight: FontWeight.w600,
             ),
       ),

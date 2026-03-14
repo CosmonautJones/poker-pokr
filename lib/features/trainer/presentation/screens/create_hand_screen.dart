@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/hole_card_selector.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/stack_picker.dart';
@@ -392,7 +393,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
             Text(
               'Tap cards to pick, long-press to clear',
               style: TextStyle(
-                color: Colors.grey.shade300,
+                color: context.poker.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -443,8 +444,8 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                               '${i + 1}',
                               style: TextStyle(
                                 color: i == setup.dealerIndex
-                                    ? Colors.amber
-                                    : Colors.grey,
+                                    ? context.poker.dealerChip
+                                    : context.poker.borderSubtle,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -464,7 +465,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                                     ? const Tooltip(
                                         message: 'Dealer',
                                         child: Icon(Icons.circle,
-                                            color: Colors.amber, size: 12),
+                                            color: context.poker.dealerChip, size: 12),
                                       )
                                     : null,
                               ),
@@ -493,12 +494,12 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                                     icon: Icon(
                                       Icons.tune,
                                       size: 16,
-                                      color: Colors.grey.shade500,
+                                      color: context.poker.textMuted,
                                     ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(
-                                      minWidth: 24,
-                                      minHeight: 24,
+                                      minWidth: 48,
+                                      minHeight: 48,
                                     ),
                                     onPressed: () => _openStackPicker(i),
                                     tooltip: 'Pick stack amount',
@@ -557,6 +558,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                     label: const Text('Save Setup'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 52),
+                      side: BorderSide(color: context.poker.goldPrimary),
                     ),
                   ),
                 ),
@@ -568,6 +570,8 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                     label: const Text('Start Hand'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 52),
+                      backgroundColor: context.poker.goldPrimary,
+                      foregroundColor: Colors.black,
                     ),
                   ),
                 ),

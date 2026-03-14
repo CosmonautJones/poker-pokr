@@ -1,48 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/core/utils/responsive.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: Responsive.hPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 24),
-              // Hero header
+              // Hero header with gold accent
               Row(
                 children: [
-                  Icon(
-                    Icons.casino,
-                    size: 32,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      'Poker Trainer',
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [pt.goldPrimary, pt.goldDark],
                       ),
-                      overflow: TextOverflow.ellipsis,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.casino,
+                      size: 28,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: ShaderMask(
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          colors: [pt.goldLight, pt.goldPrimary, pt.goldLight],
+                        ).createShader(bounds);
+                      },
+                      child: Text(
+                        'Poker Trainer',
+                        style: textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],
-              ),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms)
+                  .slideY(begin: -0.05, duration: 400.ms, curve: Curves.easeOut),
               const SizedBox(height: 6),
               Text(
                 'Sharpen your game',
                 style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: pt.textMuted,
                 ),
               ),
               const SizedBox(height: 24),
@@ -55,9 +78,17 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.menu_book_rounded,
                         title: 'Bookkeeper',
                         subtitle: 'Track your poker sessions and profits',
-                        accentColor: colorScheme.primary,
+                        accentColor: pt.goldPrimary,
                         onTap: () => context.go('/bookkeeper'),
-                      ),
+                      )
+                          .animate()
+                          .fadeIn(duration: 350.ms, delay: 100.ms)
+                          .slideY(
+                            begin: 0.05,
+                            duration: 350.ms,
+                            delay: 100.ms,
+                            curve: Curves.easeOut,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -65,9 +96,17 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.school_rounded,
                         title: 'Trainer',
                         subtitle: 'Practice hands and study decisions',
-                        accentColor: colorScheme.tertiary,
+                        accentColor: pt.profit,
                         onTap: () => context.go('/trainer'),
-                      ),
+                      )
+                          .animate()
+                          .fadeIn(duration: 350.ms, delay: 200.ms)
+                          .slideY(
+                            begin: 0.05,
+                            duration: 350.ms,
+                            delay: 200.ms,
+                            curve: Curves.easeOut,
+                          ),
                     ),
                   ],
                 ),
@@ -98,7 +137,7 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
@@ -106,9 +145,9 @@ class _FeatureCard extends StatelessWidget {
       elevation: 4,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: accentColor.withValues(alpha: 0.3),
+          color: pt.borderSubtle.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -122,8 +161,8 @@ class _FeatureCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                accentColor.withValues(alpha: 0.12),
-                colorScheme.surface,
+                accentColor.withValues(alpha: 0.08),
+                pt.surfaceDim,
               ],
             ),
           ),
@@ -139,14 +178,14 @@ class _FeatureCard extends StatelessWidget {
                       title,
                       style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       subtitle,
                       style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: pt.textMuted,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -174,13 +213,22 @@ class _FeatureCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.15),
+                  gradient: LinearGradient(
+                    colors: [accentColor, accentColor.withValues(alpha: 0.7)],
+                  ),
                   borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
                 child: Icon(
                   icon,
                   size: 30,
-                  color: accentColor,
+                  color: Colors.white,
                 ),
               ),
             ],

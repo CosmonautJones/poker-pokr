@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -25,7 +26,7 @@ class EmptyState extends StatelessWidget {
             Icon(
               icon,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: context.poker.goldDark,
             ),
             const SizedBox(height: 16),
             Text(title, style: Theme.of(context).textTheme.titleLarge),
@@ -33,7 +34,9 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.poker.textMuted,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],

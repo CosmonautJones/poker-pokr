@@ -129,13 +129,16 @@ class _CardSlot extends StatelessWidget {
 
   Widget _buildFace(BuildContext context, PokerCard card) {
     final pt = context.poker;
+    final scale = MediaQuery.sizeOf(context).width / 375;
+    final w = (40.0 * scale).clamp(34.0, 44.0);
+    final h = (56.0 * scale).clamp(48.0, 60.0);
     final suitColor = (card.suit == Suit.hearts || card.suit == Suit.diamonds)
         ? pt.suitRed
         : pt.suitBlack;
 
     return Container(
-      width: 40,
-      height: 56,
+      width: w,
+      height: h,
       decoration: BoxDecoration(
         color: pt.cardFace,
         borderRadius: BorderRadius.circular(6),
@@ -174,9 +177,12 @@ class _CardSlot extends StatelessWidget {
 
   Widget _buildEmpty(BuildContext context) {
     final pt = context.poker;
+    final scale = MediaQuery.sizeOf(context).width / 375;
+    final w = (40.0 * scale).clamp(34.0, 44.0);
+    final h = (56.0 * scale).clamp(48.0, 60.0);
     return Container(
-      width: 40,
-      height: 56,
+      width: w,
+      height: h,
       decoration: BoxDecoration(
         color: pt.cardPlaceholder,
         borderRadius: BorderRadius.circular(6),
@@ -208,8 +214,8 @@ class _RandomButton extends StatelessWidget {
       child: Tooltip(
         message: 'Random hand',
         child: Container(
-          width: 36,
-          height: 36,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: pt.borderSubtle,
             borderRadius: BorderRadius.circular(6),

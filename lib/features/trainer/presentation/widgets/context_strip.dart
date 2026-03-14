@@ -286,7 +286,7 @@ class _GlossaryTooltipOverlayState extends State<_GlossaryTooltipOverlay>
   Widget build(BuildContext context) {
     final pt = context.poker;
     final screenWidth = MediaQuery.of(context).size.width;
-    const tooltipWidth = 260.0;
+    final tooltipWidth = (screenWidth * 0.7).clamp(220.0, 300.0);
 
     // Position above the chip, centered horizontally.
     final centerX = widget.anchorOffset.dx + widget.anchorSize.width / 2;

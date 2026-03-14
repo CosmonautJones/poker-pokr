@@ -7,6 +7,7 @@ import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/action_bar.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/coaching_banner.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/equity_display.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/poker/models/street.dart';
@@ -141,6 +142,8 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
               ],
             ),
           ),
+          // Equity display
+          if (!replayState.isComplete) EquityDisplay(gameState: gs),
           // Coaching banner
           if (!replayState.isComplete) CoachingBanner(tip: currentTip),
           // Action bar
