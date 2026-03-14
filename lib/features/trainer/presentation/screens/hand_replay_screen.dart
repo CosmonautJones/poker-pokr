@@ -10,6 +10,7 @@ import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/action_bar.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/auto_play_controls.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/context_strip.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/equity_display.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/mid_hand_edit_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
@@ -525,6 +526,9 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               ],
             ),
           ),
+          // Equity display (hidden during auto-play and when hand is complete)
+          if (!replayState.isComplete && !isAutoPlaying)
+            EquityDisplay(gameState: gs),
           // Educational context strip (hidden during auto-play)
           if (!replayState.isComplete && !isAutoPlaying)
             ContextStrip(context_: replayState.educationalContext),
