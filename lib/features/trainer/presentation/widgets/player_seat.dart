@@ -97,8 +97,13 @@ class _PlayerSeatState extends State<PlayerSeat>
       }
     }
 
-    // Winner ring + sparkle particles.
+    // Winner ring + sparkle particles — stop sweep/pulse to reduce load.
     if (widget.isWinner && animate) {
+      _sweepController.stop();
+      _sweepController.value = 0;
+      _pulseController.stop();
+      _pulseController.value = 1.0;
+
       _winnerController ??= AnimationController(
         duration: PokerAnimations.kWinnerRing,
         vsync: this,
@@ -208,12 +213,14 @@ class _PlayerSeatState extends State<PlayerSeat>
                     ),
                   // Winner ring effect
                   if (widget.isWinner && _winnerController != null)
-                    _WinnerRingEffect(
-                      controller: _winnerController!,
-                      color: pt.winnerGlow,
-                      minWidth: minW,
-                      maxWidth: maxW,
-                      borderRadius: borderRadius,
+                    RepaintBoundary(
+                      child: _WinnerRingEffect(
+                        controller: _winnerController!,
+                        color: pt.winnerGlow,
+                        minWidth: minW,
+                        maxWidth: maxW,
+                        borderRadius: borderRadius,
+                      ),
                     ),
                   // Rotating sweep indicator for current player
                   if (widget.isCurrentPlayer)
@@ -235,9 +242,11 @@ class _PlayerSeatState extends State<PlayerSeat>
                         },
                       ),
                     ),
-                  // Glass seat container
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
+                  // Glass seat container — RepaintBoundary isolates
+                  // shadow repaints from content.
+                  RepaintBoundary(
+                    child: AnimatedBuilder(
+                      animation: _pulseAnimation,
                     builder: (context, child) {
                       return Container(
                         constraints:
@@ -367,6 +376,7 @@ class _PlayerSeatState extends State<PlayerSeat>
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ],
               ),
@@ -517,7 +527,10 @@ class _PlayerSeatState extends State<PlayerSeat>
   }
 }
 
-/// Rotating sweep indicator painted as a ring around the seat.
+/// Rotating sweep indicator painted as a travelling segment along the seat border.
+///
+/// Uses path metrics to extract a segment of the rounded rect path,
+/// avoiding expensive SweepGradient shader compilation every frame.
 class _SweepIndicatorPainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -533,28 +546,37 @@ class _SweepIndicatorPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
-
-    final sweepAngle = math.pi * 2;
-    final startAngle = progress * sweepAngle - math.pi / 2;
-
-    final paint = Paint()
-      ..shader = SweepGradient(
-        startAngle: startAngle,
-        endAngle: startAngle + sweepAngle,
-        colors: [
-          color.withValues(alpha: 0.0),
-          color.withValues(alpha: 0.6),
-          color.withValues(alpha: 0.9),
-          color.withValues(alpha: 0.6),
-          color.withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 0.2, 0.35, 0.5, 0.7],
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
     final path = Path()..addRRect(rrect);
-    canvas.drawPath(path, paint);
+
+    // Subtle always-visible base border
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Rotating highlight segment (~30% of perimeter)
+    final metrics = path.computeMetrics().first;
+    final total = metrics.length;
+    final segLen = total * 0.3;
+    final start = (progress * total) % total;
+    final end = start + segLen;
+
+    final highlight = Paint()
+      ..color = color.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    // Draw the segment (handle wrap-around)
+    if (end <= total) {
+      canvas.drawPath(metrics.extractPath(start, end), highlight);
+    } else {
+      canvas.drawPath(metrics.extractPath(start, total), highlight);
+      canvas.drawPath(metrics.extractPath(0, end - total), highlight);
+    }
   }
 
   @override

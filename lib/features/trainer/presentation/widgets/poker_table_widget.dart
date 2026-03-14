@@ -54,9 +54,11 @@ class PokerTableWidget extends StatelessWidget {
         final potWidth = (160 * scale).clamp(120.0, 180.0);
 
         // Compute seat positions around an ellipse.
+        // Inset the radii by half the seat width so edge seats stay on screen.
+        final seatInset = seatWidth / 2 + 4;
         final seats = _computeSeatPositions(
           gameState.playerCount,
-          tableWidth * 0.44,
+          (tableWidth / 2) - seatInset,
           tableHeight * 0.40,
           centerX,
           centerY,
