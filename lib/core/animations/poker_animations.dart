@@ -8,7 +8,7 @@ abstract final class PokerAnimations {
   static const kButtonPress = Duration(milliseconds: 80);
   static const kButtonRelease = Duration(milliseconds: 200);
   static const kGlowPulse = Duration(milliseconds: 2000);
-  static const kTurnSweep = Duration(milliseconds: 2000);
+  static const kTurnSweep = Duration(milliseconds: 1500);
   static const kWinnerRing = Duration(milliseconds: 800);
   static const kWinnerSparkle = Duration(milliseconds: 1500);
   static const kPotFlash = Duration(milliseconds: 300);
