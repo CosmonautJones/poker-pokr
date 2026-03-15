@@ -126,8 +126,8 @@ class _ActionBarState extends State<ActionBar>
     if (legal.canAllIn) buttonCount++;
     final compact = buttonCount > 3;
     final gap = compact ? 6.0 : 8.0;
-    final fontSize = compact ? 13.0 : 14.0;
-    const btnHeight = 48.0;
+    final fontSize = compact ? 12.0 : 13.0;
+    const btnHeight = 42.0;
 
     // Build button list with stagger index for animation
     int staggerIndex = 0;
@@ -135,9 +135,9 @@ class _ActionBarState extends State<ActionBar>
     return Container(
       padding: EdgeInsets.fromLTRB(
         compact ? 8 : 12,
-        10,
+        6,
         compact ? 8 : 12,
-        8,
+        4,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -293,7 +293,7 @@ class _ActionBarState extends State<ActionBar>
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border(
@@ -307,7 +307,7 @@ class _ActionBarState extends State<ActionBar>
             children: [
               // Amount display with gold shimmer
               Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: ShaderMask(
                   shaderCallback: (bounds) {
                     return LinearGradient(
@@ -317,7 +317,7 @@ class _ActionBarState extends State<ActionBar>
                   child: Text(
                     '${_isRaise ? "Raise to" : "Bet"}: ${_formatChips(_betAmount)}',
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: 0.3,
@@ -429,7 +429,7 @@ class _ActionBarState extends State<ActionBar>
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               // Confirm / Cancel
               Row(
                 children: [
@@ -439,7 +439,7 @@ class _ActionBarState extends State<ActionBar>
                       child: OutlinedButton(
                         onPressed: _closeBetSlider,
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 44),
+                          minimumSize: const Size(0, 38),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -456,8 +456,8 @@ class _ActionBarState extends State<ActionBar>
                         label:
                             '${_isRaise ? "Raise to" : "Bet"} ${_formatChips(_betAmount)}',
                         color: pt.actionBet,
-                        height: 44,
-                        fontSize: 14,
+                        height: 38,
+                        fontSize: 13,
                         onPressed: _confirmBet,
                       ),
                     ),

@@ -37,21 +37,23 @@ class PokerTableWidget extends StatelessWidget {
 
         // Table dimensions: an oval that fills most of the space.
         final tableWidth = width * 0.92;
-        final tableHeight = height * 0.85;
+        final tableHeight = height * 0.92;
         final centerX = width / 2;
         final centerY = height / 2;
 
         // Scale seats down for crowded tables.
-        final seatScale = gameState.playerCount <= 6
+        final seatScale = gameState.playerCount <= 4
             ? 1.0
-            : gameState.playerCount <= 8
-                ? 0.85
-                : 0.75;
+            : gameState.playerCount <= 6
+                ? 0.88
+                : gameState.playerCount <= 8
+                    ? 0.78
+                    : 0.70;
 
         // Responsive sizes.
-        final seatWidth = (90 * scale * seatScale).clamp(60.0, 100.0);
-        final communityWidth = (240 * scale).clamp(180.0, 260.0);
-        final potWidth = (160 * scale).clamp(120.0, 180.0);
+        final seatWidth = (90 * scale * seatScale).clamp(56.0, 96.0);
+        final communityWidth = (220 * scale).clamp(160.0, 240.0);
+        final potWidth = (140 * scale).clamp(100.0, 160.0);
 
         // Compute seat positions around an ellipse.
         // Inset the radii by half the seat width so edge seats stay on screen.
@@ -100,7 +102,7 @@ class PokerTableWidget extends StatelessWidget {
                 child: Center(
                   child: CommunityCardsWidget(
                     cards: gameState.communityCards,
-                    scale: scale,
+                    scale: scale * (seatScale < 1.0 ? 0.95 : 1.0),
                   ),
                 ),
               ),
@@ -108,7 +110,7 @@ class PokerTableWidget extends StatelessWidget {
             // Pot display
             Positioned(
               left: centerX - potWidth / 2,
-              top: centerY + 16 * scale,
+              top: centerY + 10 * scale,
               child: SizedBox(
                 width: potWidth,
                 child: Center(
@@ -124,7 +126,7 @@ class PokerTableWidget extends StatelessWidget {
             for (int i = 0; i < gameState.playerCount; i++)
               Positioned(
                 left: seats[i].dx - seatWidth / 2,
-                top: seats[i].dy - 36 * scale,
+                top: seats[i].dy - 30 * scale * seatScale,
                 child: GestureDetector(
                   onLongPress: onPlayerLongPress != null
                       ? () => onPlayerLongPress!(i)
