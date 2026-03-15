@@ -20,6 +20,7 @@ import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.da
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
+import 'package:poker_trainer/poker/models/street.dart';
 
 class HandReplayScreen extends ConsumerStatefulWidget {
   final int handId;
@@ -520,6 +521,9 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                         gameState: gs,
                         onBack: () => context.go('/trainer'),
                         onSave: _saveHand,
+                        onDealAgain: _isNewHand
+                            ? () => notifier.dealAgain()
+                            : null,
                       ),
                     ),
                   ),
@@ -574,11 +578,13 @@ class _HandCompleteOverlay extends StatefulWidget {
   final GameState gameState;
   final VoidCallback onBack;
   final VoidCallback onSave;
+  final VoidCallback? onDealAgain;
 
   const _HandCompleteOverlay({
     required this.gameState,
     required this.onBack,
     required this.onSave,
+    this.onDealAgain,
   });
 
   @override
@@ -591,8 +597,13 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  late AnimationController _confettiController;
-  late AnimationController _spotlightController;
+  AnimationController? _confettiController;
+  AnimationController? _spotlightController;
+
+  /// True when the hand reached showdown (multiple active players at river+).
+  bool get _isShowdown =>
+      widget.gameState.street == Street.showdown &&
+      widget.gameState.activePlayers.length > 1;
 
   @override
   void initState() {
@@ -610,15 +621,18 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
           parent: _entranceController, curve: Curves.easeOutBack),
     );
 
-    _confettiController = AnimationController(
-      duration: const Duration(milliseconds: 2400),
-      vsync: this,
-    )..repeat();
+    // Only create particle effects for showdown hands
+    if (_isShowdown) {
+      _confettiController = AnimationController(
+        duration: const Duration(milliseconds: 2400),
+        vsync: this,
+      )..repeat();
 
-    _spotlightController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
+      _spotlightController = AnimationController(
+        duration: const Duration(milliseconds: 2000),
+        vsync: this,
+      )..repeat(reverse: true);
+    }
 
     _entranceController.forward();
   }
@@ -626,8 +640,8 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
   @override
   void dispose() {
     _entranceController.dispose();
-    _confettiController.dispose();
-    _spotlightController.dispose();
+    _confettiController?.dispose();
+    _spotlightController?.dispose();
     super.dispose();
   }
 
@@ -645,48 +659,50 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Gold spotlight glow behind card
-              AnimatedBuilder(
-                animation: _spotlightController,
-                builder: (context, _) {
-                  final pulse =
-                      0.06 + _spotlightController.value * 0.06;
-                  return Container(
-                    width: 280,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: RadialGradient(
-                        colors: [
-                          pt.winnerGlow.withValues(alpha: pulse),
-                          Colors.transparent,
-                        ],
-                        radius: 0.8,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Confetti particles
-              Positioned.fill(
-                child: AnimatedBuilder(
-                  animation: _confettiController,
+              // Gold spotlight glow behind card (showdown only)
+              if (_spotlightController != null)
+                AnimatedBuilder(
+                  animation: _spotlightController!,
                   builder: (context, _) {
-                    return CustomPaint(
-                      painter: _ConfettiPainter(
-                        progress: _confettiController.value,
-                        colors: [
-                          pt.goldPrimary,
-                          pt.goldLight,
-                          pt.goldDark,
-                          Colors.white70,
-                          pt.chipRed,
-                        ],
+                    final pulse =
+                        0.06 + _spotlightController!.value * 0.06;
+                    return Container(
+                      width: 280,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: RadialGradient(
+                          colors: [
+                            pt.winnerGlow.withValues(alpha: pulse),
+                            Colors.transparent,
+                          ],
+                          radius: 0.8,
+                        ),
                       ),
                     );
                   },
                 ),
-              ),
+              // Confetti particles (showdown only)
+              if (_confettiController != null)
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _confettiController!,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _ConfettiPainter(
+                          progress: _confettiController!.value,
+                          colors: [
+                            pt.goldPrimary,
+                            pt.goldLight,
+                            pt.goldDark,
+                            Colors.white70,
+                            pt.chipRed,
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               // Overlay card
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -779,13 +795,27 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                           ),
                           child: const Text('Back'),
                         ),
-                        const SizedBox(width: 12),
-                        FilledButton.icon(
+                        if (widget.onDealAgain != null) ...[
+                          const SizedBox(width: 8),
+                          FilledButton.icon(
+                            onPressed: widget.onDealAgain,
+                            icon: const Icon(Icons.refresh_rounded,
+                                size: 16),
+                            label: const Text('Deal Again'),
+                            style: FilledButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
                           onPressed: widget.onSave,
                           icon:
                               const Icon(Icons.save_rounded, size: 16),
                           label: const Text('Save'),
-                          style: FilledButton.styleFrom(
+                          style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
