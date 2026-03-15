@@ -239,6 +239,31 @@ class HandReplayNotifier
     state = _buildState(newState);
   }
 
+  /// Re-deal with the same setup but fresh random cards. Resets all branches.
+  void dealAgain() {
+    final setup = arg;
+
+    var initialState = GameEngine.createInitialState(
+      playerCount: setup.playerCount,
+      smallBlind: setup.smallBlind,
+      bigBlind: setup.bigBlind,
+      ante: setup.ante,
+      dealerIndex: setup.dealerIndex,
+      names: setup.playerNames,
+      stacks: setup.stacks,
+      holeCards: null, // fresh random deal
+      gameType: setup.gameType,
+      straddle: setup.straddleAmount,
+    );
+
+    _branches.clear();
+    _branchInfos.clear();
+    _branches.add(StateHistory<GameState>(initialState));
+    _branchInfos.add(const BranchInfo(label: 'Line A', forkAtActionIndex: 0));
+    _activeBranchIndex = 0;
+    state = _buildState(initialState);
+  }
+
   /// Returns all game states in the active branch's history (for saving).
   List<GameState> get allStates => _history.states;
 

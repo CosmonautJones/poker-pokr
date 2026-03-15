@@ -6,11 +6,14 @@ import 'package:poker_trainer/features/trainer/providers/equity_provider.dart';
 import 'package:poker_trainer/poker/engine/equity_calculator.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 
+/// Whether the equity display labels are collapsed (just bar, no names/%).
+final _equityCollapsedProvider = StateProvider<bool>((ref) => false);
+
 /// Compact equity bar showing win percentages for all active players.
 ///
 /// Sits between the table and the context strip. Shows a segmented
 /// horizontal bar with each player's equity as a proportional section,
-/// plus labels.
+/// plus labels. Tap to collapse labels and save vertical space.
 class EquityDisplay extends ConsumerWidget {
   final GameState gameState;
 
@@ -71,7 +74,7 @@ class _LoadingIndicator extends StatelessWidget {
   }
 }
 
-class _EquityBar extends StatelessWidget {
+class _EquityBar extends ConsumerWidget {
   final EquityResult result;
   final GameState gameState;
 
@@ -95,8 +98,9 @@ class _EquityBar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final pt = context.poker;
+    final collapsed = ref.watch(_equityCollapsedProvider);
 
     // Sort equities by player index for consistent display.
     final equities = List<PlayerEquity>.from(result.playerEquities)
@@ -104,57 +108,69 @@ class _EquityBar extends StatelessWidget {
 
     if (equities.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: pt.surfaceOverlay,
-        border: Border(
-          top: BorderSide(
-            color: pt.borderSubtle.withValues(alpha: 0.3),
-            width: 0.5,
-          ),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Player labels with percentages
-          Row(
-            children: [
-              for (int i = 0; i < equities.length; i++) ...[
-                if (i > 0) const SizedBox(width: 8),
-                _PlayerEquityLabel(
-                  name: gameState.players[equities[i].playerIndex].name,
-                  equity: equities[i],
-                  color: _colorForPlayer(equities[i].playerIndex),
-                  isLeading: equities[i].equity ==
-                      equities.map((e) => e.equity).reduce(
-                          (a, b) => a > b ? a : b),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 4),
-          // Segmented equity bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: SizedBox(
-              height: 6,
-              child: Row(
-                children: [
-                  for (int i = 0; i < equities.length; i++)
-                    Expanded(
-                      flex: (equities[i].equity * 1000).round().clamp(1, 1000),
-                      child: Container(
-                        color: _colorForPlayer(equities[i].playerIndex),
-                      ),
-                    ),
-                ],
-              ),
+    return GestureDetector(
+      onTap: () {
+        ref.read(_equityCollapsedProvider.notifier).state = !collapsed;
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: pt.surfaceOverlay,
+          border: Border(
+            top: BorderSide(
+              color: pt.borderSubtle.withValues(alpha: 0.3),
+              width: 0.5,
             ),
           ),
-        ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Player labels with percentages (collapsible)
+            AnimatedCrossFade(
+              firstChild: Row(
+                children: [
+                  for (int i = 0; i < equities.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    _PlayerEquityLabel(
+                      name: gameState.players[equities[i].playerIndex].name,
+                      equity: equities[i],
+                      color: _colorForPlayer(equities[i].playerIndex),
+                      isLeading: equities[i].equity ==
+                          equities.map((e) => e.equity).reduce(
+                              (a, b) => a > b ? a : b),
+                    ),
+                  ],
+                ],
+              ),
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: collapsed
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
+            ),
+            if (!collapsed) const SizedBox(height: 4),
+            // Segmented equity bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: SizedBox(
+                height: 6,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < equities.length; i++)
+                      Expanded(
+                        flex: (equities[i].equity * 1000).round().clamp(1, 1000),
+                        child: Container(
+                          color: _colorForPlayer(equities[i].playerIndex),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     )
         .animate()

@@ -42,8 +42,8 @@ class _HandListScreenState extends ConsumerState<HandListScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Saved'),
-            Tab(text: 'Hands'),
+            Tab(text: 'Setups'),
+            Tab(text: 'History'),
             Tab(text: 'Lessons'),
           ],
         ),
