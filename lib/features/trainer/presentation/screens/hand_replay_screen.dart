@@ -798,7 +798,7 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                         if (widget.onDealAgain != null) ...[
                           const SizedBox(width: 8),
                           FilledButton.icon(
-                            onPressed: widget.onDealAgain,
+                            onPressed: widget.onDealAgain!,
                             icon: const Icon(Icons.refresh_rounded,
                                 size: 16),
                             label: const Text('Deal Again'),

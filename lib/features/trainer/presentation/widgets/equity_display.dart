@@ -218,9 +218,9 @@ class _PlayerEquityLabel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 9.5,
                 color: Colors.white.withValues(alpha: 0.6),
-                overflow: TextOverflow.ellipsis,
               ),
               maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 3),
