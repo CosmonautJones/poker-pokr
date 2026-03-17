@@ -502,6 +502,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           // Table area
           Expanded(
             child: Stack(
+              clipBehavior: Clip.none,
               children: [
                 PokerTableWidget(
                   gameState: gs,

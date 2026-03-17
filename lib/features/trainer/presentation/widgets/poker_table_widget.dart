@@ -61,7 +61,7 @@ class PokerTableWidget extends StatelessWidget {
         final seats = _computeSeatPositions(
           gameState.playerCount,
           (tableWidth / 2) - seatInset,
-          tableHeight * 0.40,
+          tableHeight * 0.37,
           centerX,
           centerY,
         );
@@ -87,7 +87,7 @@ class PokerTableWidget extends StatelessWidget {
             // Street indicator (top center of table) — metallic badge
             Positioned(
               left: centerX - 50,
-              top: (height - tableHeight) / 2 + 12,
+              top: (height - tableHeight) / 2 + tableHeight * 0.04,
               child: _AnimatedStreetBadge(
                 street: gameState.street,
                 scale: scale,
