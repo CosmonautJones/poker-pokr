@@ -54,19 +54,26 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  ShaderMask(
-                    shaderCallback: (bounds) {
-                      return LinearGradient(
-                        colors: [pt.goldLight, pt.goldPrimary, pt.goldLight],
-                      ).createShader(bounds);
-                    },
-                    child: Text(
-                      'TableSense',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Table',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Sense',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: pt.goldPrimary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -118,6 +125,7 @@ class HomeScreen extends ConsumerWidget {
                     child: _QuickLink(
                       icon: Icons.add_circle_rounded,
                       label: 'New Hand',
+                      color: pt.accent,
                       onTap: () => context.go('/trainer/create'),
                     ),
                   ),
@@ -126,6 +134,7 @@ class HomeScreen extends ConsumerWidget {
                     child: _QuickLink(
                       icon: Icons.school_rounded,
                       label: 'Lessons',
+                      color: pt.seatActiveBorder,
                       onTap: () => context.go('/trainer'),
                     ),
                   ),
@@ -134,6 +143,7 @@ class HomeScreen extends ConsumerWidget {
                     child: _QuickLink(
                       icon: Icons.note_add_rounded,
                       label: 'Log Session',
+                      color: pt.goldPrimary,
                       onTap: () => context.go('/bookkeeper/add'),
                     ),
                   ),
@@ -212,9 +222,11 @@ class _QuickDealCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                pt.goldPrimary.withValues(alpha: 0.12),
+                pt.feltCenter.withValues(alpha: 0.5),
+                pt.goldPrimary.withValues(alpha: 0.10),
                 pt.surfaceDim,
               ],
+              stops: const [0.0, 0.5, 1.0],
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -245,14 +257,14 @@ class _QuickDealCard extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [pt.goldPrimary, pt.goldDark],
+                    colors: [pt.profit, pt.feltCenter],
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: pt.goldPrimary.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      spreadRadius: 1,
+                      color: pt.profit.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
@@ -261,7 +273,16 @@ class _QuickDealCard extends StatelessWidget {
                   size: 28,
                   color: Colors.white,
                 ),
-              ),
+              )
+                  .animate(
+                    onPlay: (c) => c.repeat(reverse: true),
+                  )
+                  .scaleXY(
+                    begin: 1.0,
+                    end: 1.06,
+                    duration: 1800.ms,
+                    curve: Curves.easeInOut,
+                  ),
             ],
           ),
         ),
@@ -423,11 +444,13 @@ class _EmptySessionCard extends StatelessWidget {
 class _QuickLink extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
 
   const _QuickLink({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
   });
 
@@ -443,23 +466,34 @@ class _QuickLink extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: pt.borderSubtle.withValues(alpha: 0.2),
+          color: color.withValues(alpha: 0.15),
           width: 1,
         ),
       ),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
+        splashColor: color.withValues(alpha: 0.1),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                color.withValues(alpha: 0.06),
+                Colors.transparent,
+              ],
+            ),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 22, color: pt.goldPrimary),
+              Icon(icon, size: 22, color: color),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
