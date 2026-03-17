@@ -135,9 +135,9 @@ class _ActionBarState extends State<ActionBar>
     return Container(
       padding: EdgeInsets.fromLTRB(
         compact ? 8 : 12,
-        6,
-        compact ? 8 : 12,
         4,
+        compact ? 8 : 12,
+        2,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
