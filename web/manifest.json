@@ -1,11 +1,11 @@
 {
-    "name": "poker_trainer",
-    "short_name": "poker_trainer",
+    "name": "TableSense",
+    "short_name": "TableSense",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Poker session tracking and hand replay trainer.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -408,7 +408,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                         notifier.dealRandomHoleCards(i);
                       }
                     },
-                    icon: const Icon(Icons.casino, size: 16),
+                    icon: const Icon(Icons.shuffle_rounded, size: 16),
                     label: const Text('Deal All'),
                   ),
                 ),
