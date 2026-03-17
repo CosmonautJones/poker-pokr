@@ -37,7 +37,7 @@ class PokerTableWidget extends StatelessWidget {
 
         // Table dimensions: an oval that fills most of the space.
         final tableWidth = width * 0.92;
-        final tableHeight = height * 0.92;
+        final tableHeight = height * 0.88;
         final centerX = width / 2;
         final centerY = height / 2;
 

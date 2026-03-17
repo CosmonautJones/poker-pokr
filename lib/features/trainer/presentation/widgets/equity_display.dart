@@ -123,7 +123,7 @@ class _EquityBar extends ConsumerWidget {
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -150,7 +150,7 @@ class _EquityBar extends ConsumerWidget {
                   : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 200),
             ),
-            if (!collapsed) const SizedBox(height: 4),
+            if (!collapsed) const SizedBox(height: 2),
             // Segmented equity bar
             ClipRRect(
               borderRadius: BorderRadius.circular(3),

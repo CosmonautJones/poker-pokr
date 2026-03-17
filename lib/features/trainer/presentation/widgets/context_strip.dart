@@ -33,7 +33,7 @@ class ContextStrip extends StatelessWidget {
               color: pt.borderSubtle.withValues(alpha: 0.3), width: 0.5),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,10 +78,10 @@ class ContextStrip extends StatelessWidget {
           ),
           // Row 2: Last action or street summary - single line
           if (ctx.streetSummary != null) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             _StreetSummaryRow(summary: ctx.streetSummary!),
           ] else if (ctx.lastAction != null) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             _ActionExplanationRow(explanation: ctx.lastAction!),
           ],
         ],
