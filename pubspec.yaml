@@ -1,5 +1,5 @@
 name: poker_trainer
-description: "Poker Trainer - Session tracking and hand replay"
+description: "TableSense - Session tracking and hand replay"
 publish_to: 'none'
 version: 1.0.0+1
 

@@ -24,14 +24,14 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.info_outline, color: pt.goldPrimary),
             title: const Text('About'),
-            subtitle: const Text('Poker Trainer v1.0.0'),
+            subtitle: const Text('TableSense v1.0.0'),
             onTap: () {
               showAboutDialog(
                 context: context,
-                applicationName: 'Poker Trainer',
+                applicationName: 'TableSense',
                 applicationVersion: '1.0.0',
                 applicationIcon: Icon(
-                  Icons.casino,
+                  Icons.insights,
                   size: 48,
                   color: pt.goldPrimary,
                 ),
@@ -95,13 +95,13 @@ class SettingsScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   Icon(
-                    Icons.casino,
+                    Icons.insights,
                     size: 32,
                     color: pt.goldDark,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Poker Trainer',
+                    'TableSense',
                     style: textTheme.bodyMedium?.copyWith(
                       color: pt.textMuted,
                     ),

@@ -115,7 +115,7 @@ class PokerTrainerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Poker Trainer',
+      title: 'TableSense',
       theme: appTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

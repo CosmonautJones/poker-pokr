@@ -221,7 +221,7 @@ class _RandomButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
-            Icons.casino,
+            Icons.shuffle_rounded,
             color: pt.accent,
             size: 18,
           ),
