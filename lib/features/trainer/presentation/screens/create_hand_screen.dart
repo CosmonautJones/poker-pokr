@@ -462,7 +462,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 10),
                                 suffixIcon: i == setup.dealerIndex
-                                    ? const Tooltip(
+                                    ? Tooltip(
                                         message: 'Dealer',
                                         child: Icon(Icons.circle,
                                             color: context.poker.dealerChip, size: 12),
