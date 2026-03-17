@@ -72,7 +72,6 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
           });
         } else if (mounted) {
           setState(() {
-            _error = 'Session not found.';
             _isLoading = false;
           });
         }
