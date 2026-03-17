@@ -9,6 +9,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Poker Trainer'), findsOneWidget);
+    expect(find.text('TableSense'), findsOneWidget);
   });
 }
