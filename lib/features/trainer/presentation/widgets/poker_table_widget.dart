@@ -35,9 +35,10 @@ class PokerTableWidget extends StatelessWidget {
         // Scale factor for small screens (baseline: 360px wide).
         final scale = (width / 360).clamp(0.7, 1.3);
 
-        // Table dimensions: an oval that fills most of the space.
-        final tableWidth = width * 0.92;
-        final tableHeight = height * 0.88;
+        // Table dimensions — slightly smaller than the full area to leave
+        // breathing room for seats that straddle the rail.
+        final tableWidth = width * 0.88;
+        final tableHeight = height * 0.82;
         final centerX = width / 2;
         final centerY = height / 2;
 
@@ -55,13 +56,14 @@ class PokerTableWidget extends StatelessWidget {
         final communityWidth = (220 * scale).clamp(160.0, 240.0);
         final potWidth = (140 * scale).clamp(100.0, 160.0);
 
-        // Compute seat positions around an ellipse.
-        // Inset the radii by half the seat width so edge seats stay on screen.
-        final seatInset = seatWidth / 2 + 4;
+        // Seat positions: an ellipse whose radii match the table edge so
+        // that seat centres sit right on the gold rail.  This gives the
+        // classic poker-table look — hole cards peek outward, name/stack
+        // sit inside, and nothing overlaps the community area.
         final seats = _computeSeatPositions(
           gameState.playerCount,
-          (tableWidth / 2) - seatInset,
-          tableHeight * 0.37,
+          tableWidth / 2,
+          tableHeight / 2,
           centerX,
           centerY,
         );
@@ -126,7 +128,10 @@ class PokerTableWidget extends StatelessWidget {
             for (int i = 0; i < gameState.playerCount; i++)
               Positioned(
                 left: seats[i].dx - seatWidth / 2,
-                top: seats[i].dy - 30 * scale * seatScale,
+                // Vertically centre the seat widget on its computed position.
+                // The seat column height ≈ cards (28) + container (50) + bet (18)
+                // ≈ 96 * scale * seatScale; half of that is the anchor offset.
+                top: seats[i].dy - 48 * scale * seatScale,
                 child: GestureDetector(
                   onLongPress: onPlayerLongPress != null
                       ? () => onPlayerLongPress!(i)
