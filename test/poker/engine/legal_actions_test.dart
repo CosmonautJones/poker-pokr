@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
+import 'package:poker_trainer/poker/models/game_type.dart';
 import 'package:poker_trainer/poker/models/street.dart';
 import 'package:poker_trainer/poker/engine/game_engine.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
@@ -311,6 +312,82 @@ void main() {
         final legal = LegalActionSet.compute(state);
         expect(legal.betRange, isNotNull);
         expect(legal.betRange!.min, 2); // BB = 2
+      });
+    });
+
+    group('pot-limit (Omaha) all-in restriction', () {
+      test('cannot go all-in when stack exceeds pot-limit max (opening)', () {
+        // Omaha 3-player, pot is small relative to stacks.
+        // Pot after blinds = SB(1) + BB(2) = 3.
+        // Pot-limit max opening bet = pot = 3.
+        // Player stack = 200 >> 3, so all-in should be blocked.
+        final state = GameEngine.createInitialState(
+          playerCount: 3,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          deckSeed: 42,
+          gameType: GameType.omaha,
+        );
+        final legal = LegalActionSet.compute(state);
+        // UTG faces BB of 2. Pot = 3. Pot-limit raise max = 2 + (3 + 2) = 7.
+        // Stack = 200 >> 7, so all-in is blocked.
+        expect(legal.canAllIn, false);
+        expect(legal.allInAmount, isNull);
+      });
+
+      test('can go all-in when stack fits within pot-limit max', () {
+        // Omaha with a small stack that fits within pot-limit.
+        final state = GameEngine.createInitialState(
+          playerCount: 3,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          stacks: [5, 200, 200],
+          deckSeed: 42,
+          gameType: GameType.omaha,
+        );
+        // UTG (index 0) has 5 chips. Faces BB of 2.
+        // Pot = 3. Pot-limit raise max = 2 + (3 + 2) = 7.
+        // Stack = 5 <= 7, so all-in is allowed.
+        expect(state.currentPlayerIndex, 0);
+        final legal = LegalActionSet.compute(state);
+        expect(legal.canAllIn, true);
+        expect(legal.allInAmount, 5);
+      });
+
+      test('Hold\'em all-in is always available regardless of pot', () {
+        final state = GameEngine.createInitialState(
+          playerCount: 3,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          deckSeed: 42,
+          gameType: GameType.texasHoldem,
+        );
+        final legal = LegalActionSet.compute(state);
+        // No-limit: all-in always available.
+        expect(legal.canAllIn, true);
+        expect(legal.allInAmount, 200);
+      });
+
+      test('Omaha all-in allowed when stack equals pot-limit max', () {
+        // Stack exactly equals pot-limit max action.
+        // Pot after blinds = 3. UTG faces BB(2).
+        // Pot-limit raise max chips = (2 + (3 + 2)) - 0 = 7.
+        final state = GameEngine.createInitialState(
+          playerCount: 3,
+          smallBlind: 1,
+          bigBlind: 2,
+          dealerIndex: 0,
+          stacks: [7, 200, 200],
+          deckSeed: 42,
+          gameType: GameType.omaha,
+        );
+        expect(state.currentPlayerIndex, 0);
+        final legal = LegalActionSet.compute(state);
+        expect(legal.canAllIn, true);
+        expect(legal.allInAmount, 7);
       });
     });
 
