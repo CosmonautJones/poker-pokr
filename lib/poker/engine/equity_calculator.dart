@@ -136,8 +136,11 @@ class EquityCalculator {
     final rng = seed != null ? Random(seed) : Random();
 
     // Win/tie counters per active player.
+    // Tie values are weighted by 2/N (where N = number of tied players) so
+    // that the equity formula `winRate + tieRate / 2` yields the correct
+    // pot share for multi-way ties.
     final wins = <int, int>{};
-    final ties = <int, int>{};
+    final ties = <int, double>{};
     for (final p in activePlayers) {
       wins[p.index] = 0;
       ties[p.index] = 0;
@@ -178,8 +181,9 @@ class EquityCalculator {
       if (winnerIndices.length == 1) {
         wins[winnerIndices[0]] = wins[winnerIndices[0]]! + 1;
       } else {
+        final weight = 2.0 / winnerIndices.length;
         for (final idx in winnerIndices) {
-          ties[idx] = ties[idx]! + 1;
+          ties[idx] = ties[idx]! + weight;
         }
       }
     }
@@ -235,7 +239,7 @@ class EquityCalculator {
       equities.add(PlayerEquity(
         playerIndex: p.index,
         winRate: isWinner && !isTie ? 1.0 : 0.0,
-        tieRate: isWinner && isTie ? 1.0 : 0.0,
+        tieRate: isWinner && isTie ? 2.0 / winnerIndices.length : 0.0,
         simulations: 1,
       ));
     }

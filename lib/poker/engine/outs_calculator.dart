@@ -143,13 +143,7 @@ class OutsCalculator {
     bool hasOESD = false;
     bool hasGutshot = false;
 
-    // Scan for sequences and gaps.
-    for (int target = 1; target <= 14; target++) {
-      // Check 5-card windows that include `target` as the missing card.
-      // A straight needs 5 consecutive ranks. If we have 4 of 5, it's a draw.
-    }
-
-    // Simpler approach: check all possible 5-card straight windows.
+    // Check all possible 5-card straight windows (1-5 through 10-14).
     for (int low = 1; low <= 10; low++) {
       final window = List.generate(5, (i) => low + i);
       final have = window.where((r) => ranks.contains(r)).length;

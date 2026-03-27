@@ -140,6 +140,39 @@ void main() {
       expect(result[0]!.equity, closeTo(0.5, 0.01));
     });
 
+    test('three-way tie on complete board — equities sum to 1.0', () {
+      // Three players all play the board straight (AKQJT).
+      final players = [
+        player(0, 'P1', [c(Rank.two, Suit.clubs), c(Rank.three, Suit.clubs)]),
+        player(1, 'P2', [c(Rank.two, Suit.diamonds), c(Rank.three, Suit.diamonds)]),
+        player(2, 'P3', [c(Rank.two, Suit.hearts), c(Rank.three, Suit.hearts)]),
+      ];
+
+      final community = [
+        c(Rank.ace, Suit.spades),
+        c(Rank.king, Suit.hearts),
+        c(Rank.queen, Suit.spades),
+        c(Rank.jack, Suit.clubs),
+        c(Rank.ten, Suit.diamonds),
+      ];
+
+      final result = EquityCalculator.calculate(
+        players: players,
+        communityCards: community,
+        gameType: GameType.texasHoldem,
+      );
+
+      // Each player should get ~33.3% equity.
+      expect(result.playerEquities.length, 3);
+      for (final eq in result.playerEquities) {
+        expect(eq.equity, closeTo(1.0 / 3, 0.01));
+      }
+      final total = result.playerEquities
+          .map((e) => e.equity)
+          .reduce((a, b) => a + b);
+      expect(total, closeTo(1.0, 0.01));
+    });
+
     test('flop equity — partial board', () {
       final players = [
         player(0, 'Hero', [c(Rank.ace, Suit.spades), c(Rank.ace, Suit.hearts)]),

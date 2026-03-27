@@ -38,39 +38,48 @@ PokerCard _card(String s) {
 
 void main() {
   group('OutsCalculator', () {
-    test('flush draw on flop has 9 outs', () {
-      // Hole: Ah Kh, Board: 2h 7h 9c -> 4 hearts, need 1 more = 9 outs
+    test('flush draw on flop counts all improving cards', () {
+      // Hole: Ah Kh, Board: 2h 7h 9c -> 4 hearts, need 1 more.
+      // 9 remaining hearts complete the flush.
+      // 3 remaining Aces and 3 remaining Kings pair the hole cards.
+      // Total outs: 9 (flush) + 6 (pair) = 15.
+      // But cards that do both (Ah/Kh already in hand) are not double-counted,
+      // and we must check which pairs actually IMPROVE the hand (they do — pair
+      // beats high card). So outs = 15.
       final result = OutsCalculator.calculate(
         holeCards: [_card('Ah'), _card('Kh')],
         communityCards: [_card('2h'), _card('7h'), _card('9c')],
         gameType: GameType.texasHoldem,
       );
-      // 9 hearts remain in the deck (13 - 4 used).
-      // But we also get outs from pairing A or K, so outs >= 9.
-      // The flush draw alone accounts for 9 cards.
-      expect(result.outs, greaterThanOrEqualTo(9));
+      // 9 flush outs + 6 pair outs = 15
+      expect(result.outs, 15);
       expect(result.drawTypes, contains('flush draw'));
     });
 
-    test('open-ended straight draw has at least 8 outs', () {
-      // Hole: 8c 9d, Board: 7h Ts 2c -> need 6 or J for straight = 8 outs
+    test('open-ended straight draw counts correctly', () {
+      // Hole: 8c 9d, Board: 7h Ts 2c -> need 6 or J for straight.
+      // 4 sixes + 4 jacks = 8 straight outs.
+      // Additionally: pairing 8 or 9 improves high card to a pair = 6 more outs.
+      // Total = 14.
       final result = OutsCalculator.calculate(
         holeCards: [_card('8c'), _card('9d')],
         communityCards: [_card('7h'), _card('Ts'), _card('2c')],
         gameType: GameType.texasHoldem,
       );
-      expect(result.outs, greaterThanOrEqualTo(8));
+      expect(result.outs, 14);
       expect(result.drawTypes, contains('open-ended straight draw'));
     });
 
-    test('gutshot straight draw has at least 4 outs', () {
-      // Hole: 8c 9d, Board: 6h Ts 2c -> need 7 for straight = 4 outs (gutshot)
+    test('gutshot straight draw counts correctly', () {
+      // Hole: 8c 9d, Board: 6h Ts 2c -> need 7 for straight = 4 outs.
+      // Also pairing 8 or 9 improves the hand = 6 more outs.
+      // Total = 10.
       final result = OutsCalculator.calculate(
         holeCards: [_card('8c'), _card('9d')],
         communityCards: [_card('6h'), _card('Ts'), _card('2c')],
         gameType: GameType.texasHoldem,
       );
-      expect(result.outs, greaterThanOrEqualTo(4));
+      expect(result.outs, 10);
       expect(result.drawTypes, contains('gutshot straight draw'));
     });
 
@@ -129,15 +138,32 @@ void main() {
     });
 
     test('made hand still counts improving outs', () {
-      // Hole: Ks Kd, Board: Kh 5c 9s -> trips, can improve to quads/full house
+      // Hole: Ks Kd, Board: Kh 5c 9s -> trips, can improve to quads/full house.
+      // 1 remaining King = quads.
+      // 3 remaining fives + 3 remaining nines = 6 cards for full house.
+      // Total improving outs = 7.
       final result = OutsCalculator.calculate(
         holeCards: [_card('Ks'), _card('Kd')],
         communityCards: [_card('Kh'), _card('5c'), _card('9s')],
         gameType: GameType.texasHoldem,
       );
-      // At least 1 out (last King for quads), plus cards that pair the board
-      // for a full house.
+      expect(result.outs, 7);
+    });
+
+    test('Omaha outs use exactly 2 hole + 3 community rule', () {
+      // Omaha: 4 hole cards, must use exactly 2.
+      // Hole: Ah Kh Qs Jd, Board: 2h 7h 9c
+      // Flush draw using Ah+Kh with 2h 7h = 4 hearts, need 1 more.
+      // But in Omaha, best hand must use exactly 2 hole cards, so the
+      // evaluation is different from Hold'em.
+      final result = OutsCalculator.calculate(
+        holeCards: [_card('Ah'), _card('Kh'), _card('Qs'), _card('Jd')],
+        communityCards: [_card('2h'), _card('7h'), _card('9c')],
+        gameType: GameType.omaha,
+      );
+      // Should have outs (flush draw is present with Ah+Kh combo).
       expect(result.outs, greaterThan(0));
+      expect(result.drawTypes, contains('flush draw'));
     });
   });
 }
