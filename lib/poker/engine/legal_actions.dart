@@ -122,9 +122,28 @@ class LegalActionSet {
     }
 
     // --- All-in ---
-    // Always available if the player has chips.
-    final bool canAllIn = stack > 0;
-    final double? allInAmount = canAllIn ? stack : null;
+    // Always available if the player has chips (No-Limit).
+    // In Pot-Limit, only if the player's stack fits within the pot-limit max.
+    var canAllIn = stack > 0;
+    double? allInAmount = canAllIn ? stack : null;
+
+    if (canAllIn && state.gameType == GameType.omaha) {
+      // Calculate pot-limit max action in chips the player can put in.
+      double potLimitMax;
+      if (!facingBet) {
+        // Opening bet: max = pot size.
+        potLimitMax = state.pot;
+      } else {
+        // Facing bet: max raise-to = tableBet + (pot + toCall).
+        potLimitMax = tableBet + state.pot + toCall;
+      }
+      final maxChips = potLimitMax - playerBet;
+      // Only allow all-in if stack fits within the pot-limit cap.
+      if (maxChips > 0 && stack > maxChips) {
+        canAllIn = false;
+        allInAmount = null;
+      }
+    }
 
     return LegalActionSet(
       canFold: canFold,

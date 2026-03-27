@@ -17,6 +17,7 @@ class ActionBar extends StatefulWidget {
   final double currentPot;
   final OnAction onAction;
   final GameType gameType;
+  final VoidCallback? onAutoPlay;
 
   const ActionBar({
     super.key,
@@ -25,6 +26,7 @@ class ActionBar extends StatefulWidget {
     required this.currentPot,
     required this.onAction,
     this.gameType = GameType.texasHoldem,
+    this.onAutoPlay,
   });
 
   @override
@@ -149,6 +151,29 @@ class _ActionBarState extends State<ActionBar>
         top: false,
         child: Row(
           children: [
+            if (widget.onAutoPlay != null)
+              Padding(
+                padding: EdgeInsets.only(right: gap),
+                child: SizedBox(
+                  width: 36,
+                  height: btnHeight,
+                  child: IconButton(
+                    onPressed: widget.onAutoPlay,
+                    icon: const Icon(Icons.smart_toy_outlined, size: 18),
+                    tooltip: 'Auto Play',
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                          pt.accent.withValues(alpha: 0.15),
+                      foregroundColor: pt.accent,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
             if (legal.canFold)
               Expanded(
                 child: Padding(
