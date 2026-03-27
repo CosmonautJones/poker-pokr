@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerWidget {
           // About section
           _SectionHeader(title: 'General'),
           ListTile(
-            leading: Icon(Icons.info_outline, color: pt.goldPrimary),
+            leading: Icon(Icons.info_rounded, color: pt.goldPrimary),
             title: const Text('About'),
             subtitle: const Text('TableSense v1.0.0'),
             onTap: () {
@@ -31,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
                 applicationName: 'TableSense',
                 applicationVersion: '1.0.0',
                 applicationIcon: Icon(
-                  Icons.insights,
+                  Icons.insights_rounded,
                   size: 48,
                   color: pt.goldPrimary,
                 ),
@@ -45,11 +45,11 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.dark_mode, color: pt.goldPrimary),
+            leading: Icon(Icons.dark_mode_rounded, color: pt.goldPrimary),
             title: const Text('Theme'),
             subtitle: const Text('Dark'),
             trailing: Icon(
-              Icons.check_circle,
+              Icons.check_circle_rounded,
               color: pt.goldPrimary,
               size: 20,
             ),
@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           // Data section
           _SectionHeader(title: 'Data'),
           ListTile(
-            leading: Icon(Icons.file_upload_outlined, color: pt.goldPrimary),
+            leading: Icon(Icons.file_upload_rounded, color: pt.goldPrimary),
             title: const Text('Export Data'),
             subtitle: const Text('Export sessions and hands'),
             onTap: () {
@@ -74,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.delete_forever, color: pt.loss),
+            leading: Icon(Icons.delete_forever_rounded, color: pt.loss),
             title: Text(
               'Clear All Data',
               style: textTheme.bodyLarge?.copyWith(color: pt.loss),
@@ -95,7 +95,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   Icon(
-                    Icons.insights,
+                    Icons.insights_rounded,
                     size: 32,
                     color: pt.goldDark,
                   ),

@@ -28,7 +28,7 @@ class LessonDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(lesson.title),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go('/trainer'),
         ),
       ),
@@ -197,7 +197,7 @@ class _ScenarioCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Icon(Icons.play_arrow, color: pt.profit, size: 22),
+                  Icon(Icons.play_arrow_rounded, color: pt.profit, size: 22),
                 ],
               ),
             ],

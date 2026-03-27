@@ -27,7 +27,7 @@ class ReportsScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.error_outline,
+                  Icons.error_outline_rounded,
                   size: 48,
                   color: Theme.of(context).colorScheme.error,
                 ),
@@ -112,24 +112,24 @@ class _ReportsBody extends StatelessWidget {
             StatsSummaryCard(
               title: 'Total Profit',
               value: CurrencyFormatter.formatSigned(stats.totalProfit),
-              icon: Icons.attach_money,
+              icon: Icons.attach_money_rounded,
               valueColor: totalProfitColor,
             ),
             StatsSummaryCard(
               title: 'Hourly Rate',
               value: '${CurrencyFormatter.formatSigned(stats.hourlyRate)}/hr',
-              icon: Icons.access_time,
+              icon: Icons.access_time_rounded,
               valueColor: stats.hourlyRate >= 0 ? pt.profit : pt.loss,
             ),
             StatsSummaryCard(
               title: 'Sessions',
               value: stats.sessionCount.toString(),
-              icon: Icons.casino_outlined,
+              icon: Icons.casino_rounded,
             ),
             StatsSummaryCard(
               title: 'Win Rate',
               value: '${stats.winRate.toStringAsFixed(1)}%',
-              icon: Icons.percent,
+              icon: Icons.percent_rounded,
               valueColor: stats.winRate >= 50 ? pt.profit : pt.accent,
             ),
           ],
@@ -167,7 +167,7 @@ class _ReportsBody extends StatelessWidget {
           child: StatsSummaryCard(
             title: 'Total Hours Played',
             value: '${stats.totalHoursPlayed.toStringAsFixed(1)}h',
-            icon: Icons.timer_outlined,
+            icon: Icons.timer_rounded,
           ),
         ),
         const SizedBox(height: 12),

@@ -370,7 +370,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
+              Icon(Icons.error_outline_rounded,
                   size: 48,
                   color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
@@ -403,19 +403,19 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go('/trainer'),
         ),
         actions: [
           // Undo / Redo compact group
           IconButton(
-            icon: const Icon(Icons.undo, size: 20),
+            icon: const Icon(Icons.undo_rounded, size: 20),
             onPressed: replayState.canUndo ? () => notifier.undo() : null,
             tooltip: 'Undo',
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            icon: const Icon(Icons.redo, size: 20),
+            icon: const Icon(Icons.redo_rounded, size: 20),
             onPressed: replayState.canRedo ? () => notifier.redo() : null,
             tooltip: 'Redo',
             visualDensity: VisualDensity.compact,
@@ -430,7 +430,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
             ),
           // Overflow menu for secondary actions
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 20),
+            icon: const Icon(Icons.more_vert_rounded, size: 20),
             tooltip: 'More',
             onSelected: (value) {
               switch (value) {
@@ -470,7 +470,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               const PopupMenuItem(
                 value: 'history',
                 child: ListTile(
-                  leading: Icon(Icons.history, size: 20),
+                  leading: Icon(Icons.history_rounded, size: 20),
                   title: Text('Action History'),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -479,7 +479,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
               const PopupMenuItem(
                 value: 'save_setup',
                 child: ListTile(
-                  leading: Icon(Icons.bookmark_add, size: 20),
+                  leading: Icon(Icons.bookmark_add_rounded, size: 20),
                   title: Text('Save as Setup'),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -992,7 +992,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, size: 20),
+                icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: widget.onClose,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(
@@ -1057,7 +1057,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                                 horizontal: 16, vertical: 2),
                             child: Row(
                               children: [
-                                Icon(Icons.call_split,
+                                Icon(Icons.call_split_rounded,
                                     size: 12, color: pt.accent),
                                 const SizedBox(width: 4),
                                 Text(
@@ -1117,7 +1117,7 @@ class _ActionHistoryPanelState extends State<_ActionHistoryPanel> {
                                       message:
                                           'Fork here \u2014 try a different line',
                                       child: Icon(
-                                        Icons.call_split,
+                                        Icons.call_split_rounded,
                                         size: 18,
                                         color: pt.accent,
                                       ),

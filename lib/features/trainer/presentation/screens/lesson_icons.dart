@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 /// This lookup replaces dynamic `IconData(codePoint, ...)` calls with
 /// pre-defined const values so the web build can tree-shake unused icons.
 const _iconMap = <int, IconData>{
-  0xe87d: Icons.trending_up,
-  0xe8e8: Icons.shield,
+  0xe87d: Icons.trending_up_rounded,
+  0xe8e8: Icons.shield_rounded,
 };
 
 /// Returns a const [IconData] for the given [codePoint], falling back to
-/// [Icons.school] for unknown values.
-IconData lessonIcon(int codePoint) => _iconMap[codePoint] ?? Icons.school;
+/// [Icons.school_rounded] for unknown values.
+IconData lessonIcon(int codePoint) => _iconMap[codePoint] ?? Icons.school_rounded;

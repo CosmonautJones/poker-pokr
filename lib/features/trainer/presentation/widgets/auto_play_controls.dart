@@ -115,7 +115,7 @@ class _SpeedChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.speed, size: 14, color: pt.textMuted),
+            Icon(Icons.speed_rounded, size: 14, color: pt.textMuted),
             const SizedBox(width: 4),
             Text(
               currentSpeed.label,
@@ -130,7 +130,7 @@ class _SpeedChip extends StatelessWidget {
           child: Row(
             children: [
               if (speed == currentSpeed)
-                Icon(Icons.check, size: 16, color: pt.accent)
+                Icon(Icons.check_rounded, size: 16, color: pt.accent)
               else
                 const SizedBox(width: 16),
               const SizedBox(width: 8),

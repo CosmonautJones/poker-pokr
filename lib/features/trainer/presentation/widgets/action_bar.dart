@@ -159,7 +159,7 @@ class _ActionBarState extends State<ActionBar>
                   height: btnHeight,
                   child: IconButton(
                     onPressed: widget.onAutoPlay,
-                    icon: const Icon(Icons.smart_toy_outlined, size: 18),
+                    icon: const Icon(Icons.smart_toy_rounded, size: 18),
                     tooltip: 'Auto Play',
                     style: IconButton.styleFrom(
                       backgroundColor:

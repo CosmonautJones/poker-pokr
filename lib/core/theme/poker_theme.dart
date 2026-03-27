@@ -90,6 +90,14 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
   final Color borderSubtle;
   final Color textMuted;
 
+  // ── Equity player colors ──
+  final List<Color> equityPlayerColors;
+
+  // ── Outs status feedback ──
+  final Color statusCorrect;
+  final Color statusClose;
+  final Color statusWrong;
+
   const PokerTheme({
     required this.feltCenter,
     required this.feltEdge,
@@ -150,6 +158,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     required this.surfaceDim,
     required this.borderSubtle,
     required this.textMuted,
+    required this.equityPlayerColors,
+    required this.statusCorrect,
+    required this.statusClose,
+    required this.statusWrong,
   });
 
   /// Default dark theme values — premium EA-Sports-inspired palette.
@@ -226,6 +238,23 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     surfaceDim: Color(0xFF121212),
     borderSubtle: Color(0xFF424242),
     textMuted: Color(0xB3FFFFFF),
+    // Equity player colors
+    equityPlayerColors: [
+      Color(0xFF4FC3F7), // light blue
+      Color(0xFFEF5350), // red
+      Color(0xFF66BB6A), // green
+      Color(0xFFFFCA28), // amber
+      Color(0xFFAB47BC), // purple
+      Color(0xFFFF7043), // deep orange
+      Color(0xFF26C6DA), // cyan
+      Color(0xFF8D6E63), // brown
+      Color(0xFFEC407A), // pink
+      Color(0xFF78909C), // blue grey
+    ],
+    // Outs status
+    statusCorrect: Color(0xFF66BB6A),
+    statusClose: Color(0xFFFFCA28),
+    statusWrong: Color(0xFFEF5350),
   );
 
   /// Convenience accessor.
@@ -294,6 +323,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
     Color? surfaceDim,
     Color? borderSubtle,
     Color? textMuted,
+    List<Color>? equityPlayerColors,
+    Color? statusCorrect,
+    Color? statusClose,
+    Color? statusWrong,
   }) {
     return PokerTheme(
       feltCenter: feltCenter ?? this.feltCenter,
@@ -355,6 +388,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       surfaceDim: surfaceDim ?? this.surfaceDim,
       borderSubtle: borderSubtle ?? this.borderSubtle,
       textMuted: textMuted ?? this.textMuted,
+      equityPlayerColors: equityPlayerColors ?? this.equityPlayerColors,
+      statusCorrect: statusCorrect ?? this.statusCorrect,
+      statusClose: statusClose ?? this.statusClose,
+      statusWrong: statusWrong ?? this.statusWrong,
     );
   }
 
@@ -421,6 +458,10 @@ class PokerTheme extends ThemeExtension<PokerTheme> {
       surfaceDim: Color.lerp(surfaceDim, other.surfaceDim, t)!,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      equityPlayerColors: t < 0.5 ? equityPlayerColors : other.equityPlayerColors,
+      statusCorrect: Color.lerp(statusCorrect, other.statusCorrect, t)!,
+      statusClose: Color.lerp(statusClose, other.statusClose, t)!,
+      statusWrong: Color.lerp(statusWrong, other.statusWrong, t)!,
     );
   }
 }

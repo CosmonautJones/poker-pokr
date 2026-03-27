@@ -153,7 +153,7 @@ class _CoachingBannerState extends State<CoachingBanner>
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
                   child: Icon(
-                    Icons.expand_more,
+                    Icons.expand_more_rounded,
                     color: pt.textMuted,
                     size: 18,
                   ),

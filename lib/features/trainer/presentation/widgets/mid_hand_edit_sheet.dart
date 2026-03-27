@@ -111,7 +111,7 @@ class _MidHandEditSheetState extends State<MidHandEditSheet>
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, size: 20),
+                icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -195,7 +195,7 @@ class _HoleCardsTab extends StatelessWidget {
               color: pt.textMuted,
             ),
           ),
-          trailing: Icon(Icons.edit, size: 18, color: pt.accent),
+          trailing: Icon(Icons.edit_rounded, size: 18, color: pt.accent),
           onTap: () => _editPlayerCards(context, index, player.holeCards, unavailable),
         );
       },
@@ -383,7 +383,7 @@ class _CommunityCardSlot extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Icon(Icons.edit, size: 10, color: pt.accent.withValues(alpha: 0.6)),
+            Icon(Icons.edit_rounded, size: 10, color: pt.accent.withValues(alpha: 0.6)),
           ],
         ),
       ),

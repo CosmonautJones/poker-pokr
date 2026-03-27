@@ -80,21 +80,9 @@ class _EquityBar extends ConsumerWidget {
 
   const _EquityBar({required this.result, required this.gameState});
 
-  static const _playerColors = [
-    Color(0xFF4FC3F7), // light blue
-    Color(0xFFEF5350), // red
-    Color(0xFF66BB6A), // green
-    Color(0xFFFFCA28), // amber
-    Color(0xFFAB47BC), // purple
-    Color(0xFFFF7043), // deep orange
-    Color(0xFF26C6DA), // cyan
-    Color(0xFF8D6E63), // brown
-    Color(0xFFEC407A), // pink
-    Color(0xFF78909C), // blue grey
-  ];
-
-  Color _colorForPlayer(int index) {
-    return _playerColors[index % _playerColors.length];
+  Color _colorForPlayer(BuildContext context, int index) {
+    final colors = context.poker.equityPlayerColors;
+    return colors[index % colors.length];
   }
 
   @override
@@ -136,7 +124,7 @@ class _EquityBar extends ConsumerWidget {
                     _PlayerEquityLabel(
                       name: gameState.players[equities[i].playerIndex].name,
                       equity: equities[i],
-                      color: _colorForPlayer(equities[i].playerIndex),
+                      color: _colorForPlayer(context, equities[i].playerIndex),
                       isLeading: equities[i].equity ==
                           equities.map((e) => e.equity).reduce(
                               (a, b) => a > b ? a : b),
@@ -162,7 +150,7 @@ class _EquityBar extends ConsumerWidget {
                       Expanded(
                         flex: (equities[i].equity * 1000).round().clamp(1, 1000),
                         child: Container(
-                          color: _colorForPlayer(equities[i].playerIndex),
+                          color: _colorForPlayer(context, equities[i].playerIndex),
                         ),
                       ),
                   ],

@@ -190,7 +190,7 @@ class _CardSlot extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          Icons.add,
+          Icons.add_rounded,
           color: pt.borderSubtle,
           size: 18,
         ),
