@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 
@@ -7,6 +9,23 @@ final appTheme = ThemeData(
   fontFamily: 'Inter',
   colorSchemeSeed: const Color(0xFF2E7D32), // poker green
   extensions: const [PokerTheme.dark],
+  textTheme: const TextTheme(
+    displayLarge: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    displayMedium: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    displaySmall: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    headlineLarge: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    headlineMedium: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    headlineSmall: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    titleLarge: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    titleMedium: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    titleSmall: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    bodyLarge: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    bodyMedium: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    bodySmall: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    labelLarge: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    labelMedium: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    labelSmall: TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+  ),
   cardTheme: CardThemeData(
     elevation: 2,
     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

@@ -420,7 +420,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                         notifier.clearPlayerHoleCards(i);
                       }
                     },
-                    icon: const Icon(Icons.clear, size: 16),
+                    icon: const Icon(Icons.clear_rounded, size: 16),
                     label: const Text('Clear All'),
                   ),
                 ),
@@ -464,7 +464,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                                 suffixIcon: i == setup.dealerIndex
                                     ? Tooltip(
                                         message: 'Dealer',
-                                        child: Icon(Icons.circle,
+                                        child: Icon(Icons.circle_rounded,
                                             color: context.poker.dealerChip, size: 12),
                                       )
                                     : null,
@@ -492,7 +492,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                                       horizontal: 12, vertical: 10),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      Icons.tune,
+                                      Icons.tune_rounded,
                                       size: 16,
                                       color: context.poker.textMuted,
                                     ),
@@ -554,7 +554,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _onSaveSetup,
-                    icon: const Icon(Icons.bookmark_add),
+                    icon: const Icon(Icons.bookmark_add_rounded),
                     label: const Text('Save Setup'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 52),
@@ -566,7 +566,7 @@ class _CreateHandScreenState extends ConsumerState<CreateHandScreen> {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: _onStartHand,
-                    icon: const Icon(Icons.play_arrow),
+                    icon: const Icon(Icons.play_arrow_rounded),
                     label: const Text('Start Hand'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 52),

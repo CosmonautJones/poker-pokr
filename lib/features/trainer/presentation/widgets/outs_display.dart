@@ -91,7 +91,7 @@ class _OutsDisplayState extends State<OutsDisplay> {
                         onPressed: guess > 0
                             ? () => setSheetState(() => guess--)
                             : null,
-                        icon: const Icon(Icons.remove_circle_outline),
+                        icon: const Icon(Icons.remove_circle_outline_rounded),
                         iconSize: 32,
                       ),
                       const SizedBox(width: 16),
@@ -108,7 +108,7 @@ class _OutsDisplayState extends State<OutsDisplay> {
                         onPressed: guess < 47
                             ? () => setSheetState(() => guess++)
                             : null,
-                        icon: const Icon(Icons.add_circle_outline),
+                        icon: const Icon(Icons.add_circle_outline_rounded),
                         iconSize: 32,
                       ),
                     ],
@@ -185,7 +185,7 @@ class _OutsDisplayState extends State<OutsDisplay> {
             Row(
               children: [
                 Icon(
-                  Icons.casino_outlined,
+                  Icons.casino_rounded,
                   size: 14,
                   color: pt.accent.withValues(alpha: 0.7),
                 ),
@@ -202,8 +202,8 @@ class _OutsDisplayState extends State<OutsDisplay> {
                 const SizedBox(width: 4),
                 Icon(
                   _expanded
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
                   size: 14,
                   color: pt.textMuted.withValues(alpha: 0.5),
                 ),
@@ -256,11 +256,11 @@ class _PlayerOutsRow extends StatelessWidget {
     if (!hasGuessed) {
       statusColor = pt.textMuted.withValues(alpha: 0.5);
     } else if (isCorrect) {
-      statusColor = const Color(0xFF66BB6A); // green
+      statusColor = pt.statusCorrect;
     } else if (isClose) {
-      statusColor = const Color(0xFFFFCA28); // amber
+      statusColor = pt.statusClose;
     } else {
-      statusColor = const Color(0xFFEF5350); // red
+      statusColor = pt.statusWrong;
     }
 
     return GestureDetector(
@@ -326,10 +326,10 @@ class _PlayerOutsRow extends StatelessWidget {
               const SizedBox(width: 6),
               Icon(
                 isCorrect
-                    ? Icons.check_circle
+                    ? Icons.check_circle_rounded
                     : isClose
-                        ? Icons.remove_circle
-                        : Icons.cancel,
+                        ? Icons.remove_circle_rounded
+                        : Icons.cancel_rounded,
                 size: 14,
                 color: statusColor,
               ),

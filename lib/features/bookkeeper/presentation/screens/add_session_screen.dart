@@ -203,7 +203,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.check),
+                  icon: const Icon(Icons.check_rounded),
                   tooltip: 'Save',
                   onPressed: _save,
                 ),
@@ -263,7 +263,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
               decoration: const InputDecoration(
                 labelText: 'Location',
                 hintText: 'e.g. Bellagio, Home Game',
-                prefixIcon: Icon(Icons.location_on_outlined),
+                prefixIcon: Icon(Icons.location_on_rounded),
               ),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
@@ -281,7 +281,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
               decoration: const InputDecoration(
                 labelText: 'Stakes',
                 hintText: 'e.g. 1/2, 2/5',
-                prefixIcon: Icon(Icons.monetization_on_outlined),
+                prefixIcon: Icon(Icons.monetization_on_rounded),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -387,7 +387,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
               controller: _hoursController,
               decoration: const InputDecoration(
                 labelText: 'Hours Played',
-                prefixIcon: Icon(Icons.access_time),
+                prefixIcon: Icon(Icons.access_time_rounded),
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -414,7 +414,7 @@ class _AddSessionScreenState extends ConsumerState<AddSessionScreen> {
               controller: _notesController,
               decoration: const InputDecoration(
                 labelText: 'Notes (optional)',
-                prefixIcon: Icon(Icons.notes),
+                prefixIcon: Icon(Icons.notes_rounded),
                 alignLabelWithHint: true,
               ),
               maxLines: 4,
@@ -461,7 +461,7 @@ class _DatePickerTile extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              Icons.calendar_today,
+              Icons.calendar_today_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 16),
@@ -483,7 +483,7 @@ class _DatePickerTile extends StatelessWidget {
             ),
             const Spacer(),
             Icon(
-              Icons.edit_outlined,
+              Icons.edit_rounded,
               size: 20,
               color: theme.colorScheme.onSurfaceVariant,
             ),

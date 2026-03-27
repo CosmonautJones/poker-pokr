@@ -33,7 +33,7 @@ class SessionListScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.error_outline,
+                  Icons.error_outline_rounded,
                   size: 48,
                   color: Theme.of(context).colorScheme.error,
                 ),
@@ -55,12 +55,12 @@ class SessionListScreen extends ConsumerWidget {
         data: (sessions) {
           if (sessions.isEmpty) {
             return EmptyState(
-              icon: Icons.casino_outlined,
+              icon: Icons.casino_rounded,
               title: 'No sessions yet',
               subtitle: 'Tap the + button to log your first poker session.',
               action: FilledButton.icon(
                 onPressed: () => context.push('/bookkeeper/add'),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add_rounded),
                 label: const Text('Add Session'),
               ),
             );
@@ -86,7 +86,7 @@ class SessionListScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    Icons.delete_outline,
+                    Icons.delete_rounded,
                     color: context.poker.loss,
                   ),
                 ),
@@ -143,7 +143,7 @@ class SessionListScreen extends ConsumerWidget {
         tooltip: 'Add Session',
         backgroundColor: context.poker.goldPrimary,
         foregroundColor: Colors.black,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }

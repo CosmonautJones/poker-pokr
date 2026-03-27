@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
-                      Icons.insights,
+                      Icons.insights_rounded,
                       size: 22,
                       color: Colors.white,
                     ),
@@ -414,7 +414,7 @@ class _EmptySessionCard extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                Icons.note_add_outlined,
+                Icons.note_add_rounded,
                 size: 20,
                 color: pt.goldPrimary,
               ),

@@ -63,7 +63,7 @@ class _HandListScreenState extends ConsumerState<HandListScreen>
           if (_tabController.index == 2) return const SizedBox.shrink();
           return FloatingActionButton(
             onPressed: () => context.go('/trainer/create'),
-            child: const Icon(Icons.add),
+            child: const Icon(Icons.add_rounded),
           );
         },
       ),
@@ -84,7 +84,7 @@ class _SavedSetupsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: context.poker.loss),
+            Icon(Icons.error_outline_rounded, size: 48, color: context.poker.loss),
             const SizedBox(height: 16),
             Text(
               'Failed to load saved setups',
@@ -106,7 +106,7 @@ class _SavedSetupsTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.bookmark_border,
+                  Icons.bookmark_border_rounded,
                   size: 64,
                   color: context.poker.borderSubtle,
                 ),
@@ -166,7 +166,7 @@ class _SavedSetupTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         color: pt.loss.withValues(alpha: 0.2),
-        child: Icon(Icons.delete, color: pt.loss),
+        child: Icon(Icons.delete_rounded, color: pt.loss),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
@@ -204,11 +204,11 @@ class _SavedSetupTile extends ConsumerWidget {
       },
       child: Card(
         child: ListTile(
-          leading: Icon(Icons.bookmark, size: 24, color: pt.goldPrimary),
+          leading: Icon(Icons.bookmark_rounded, size: 24, color: pt.goldPrimary),
           title: Text(title),
           subtitle: Text(subtitle),
           trailing: IconButton(
-            icon: Icon(Icons.play_arrow, color: pt.profit),
+            icon: Icon(Icons.play_arrow_rounded, color: pt.profit),
             tooltip: 'Practice',
             onPressed: () => _practiceSetup(context, ref),
           ),
@@ -236,7 +236,7 @@ class _HandsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: context.poker.loss),
+            Icon(Icons.error_outline_rounded, size: 48, color: context.poker.loss),
             const SizedBox(height: 16),
             Text(
               'Failed to load hands',
@@ -258,7 +258,7 @@ class _HandsTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.style_outlined,
+                  Icons.style_rounded,
                   size: 64,
                   color: context.poker.borderSubtle,
                 ),
@@ -315,7 +315,7 @@ class _HandListTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         color: pt.loss.withValues(alpha: 0.2),
-        child: Icon(Icons.delete, color: pt.loss),
+        child: Icon(Icons.delete_rounded, color: pt.loss),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(

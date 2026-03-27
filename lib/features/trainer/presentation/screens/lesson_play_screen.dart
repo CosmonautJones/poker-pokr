@@ -101,18 +101,18 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go('/trainer/lesson/${widget.lessonId}'),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.undo, size: 20),
+            icon: const Icon(Icons.undo_rounded, size: 20),
             onPressed: replayState.canUndo ? () => notifier.undo() : null,
             tooltip: 'Undo',
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            icon: const Icon(Icons.redo, size: 20),
+            icon: const Icon(Icons.redo_rounded, size: 20),
             onPressed: replayState.canRedo ? () => notifier.redo() : null,
             tooltip: 'Redo',
             visualDensity: VisualDensity.compact,
@@ -241,7 +241,7 @@ class _LessonCompleteOverlay extends StatelessWidget {
                 const SizedBox(width: 12),
                 FilledButton.icon(
                   onPressed: onNext,
-                  icon: const Icon(Icons.skip_next, size: 16),
+                  icon: const Icon(Icons.skip_next_rounded, size: 16),
                   label: const Text('Next'),
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(

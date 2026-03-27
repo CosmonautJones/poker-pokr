@@ -96,7 +96,7 @@ class _LessonCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_rounded,
                 color: pt.textMuted,
               ),
             ],
