@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -36,6 +38,14 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   HandSetup? _setup;
   bool _isLoading = true;
   String? _error;
+
+  /// Tracks whether we've already awarded XP for the current completed hand,
+  /// so rebuilds and undo/redo cycles don't double-credit.
+  bool _awardedCompletionXp = false;
+
+  /// Viewer / hero seat for XP "won" detection. The free-play table puts the
+  /// user at seat 0 (see `PokerTableWidget` bottom seat convention).
+  static const int _heroSeat = 0;
 
   /// Whether this is a new hand (handId == 0) or a saved hand.
   bool get _isNewHand => widget.handId == 0;
@@ -393,6 +403,23 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     final hasBranches = replayState.branches.length > 1;
     final autoPlay = ref.watch(autoPlayProvider(setup));
     final isAutoPlaying = autoPlay.isRunning;
+
+    // One-shot: award progression XP + celebratory haptic when the hand
+    // transitions to complete. Re-enables if the user undoes out of
+    // completion so a subsequent finish still registers.
+    if (replayState.isComplete && !_awardedCompletionXp) {
+      _awardedCompletionXp = true;
+      final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(userStatsProvider.notifier)
+            .recordHandPlayed(playerWon: heroWon);
+        ref.read(hapticServiceProvider).success();
+      });
+    } else if (!replayState.isComplete && _awardedCompletionXp) {
+      _awardedCompletionXp = false;
+    }
 
     return Scaffold(
       appBar: AppBar(

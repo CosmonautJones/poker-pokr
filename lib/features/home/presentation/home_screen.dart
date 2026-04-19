@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
+import 'package:poker_trainer/core/progression/user_stats.dart';
+import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/core/utils/responsive.dart';
@@ -17,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   void _quickDeal(BuildContext context, WidgetRef ref) {
+    ref.read(hapticServiceProvider).medium();
     final setup = HandSetup.defaults(playerCount: 6);
     ref.read(activeHandSetupProvider.notifier).state = setup;
     context.go('/trainer/replay/0');
@@ -87,6 +91,14 @@ class HomeScreen extends ConsumerWidget {
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 50.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 50.ms),
+
+              const SizedBox(height: 14),
+
+              // Progression card: streak + XP + level
+              const _ProgressionCard()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 100.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
 
               const SizedBox(height: 14),
 
@@ -701,6 +713,187 @@ class _TipOfTheDay extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Home-screen card summarizing progression: daily streak, level, XP bar.
+///
+/// Hides itself until the player has taken at least one action so first-run
+/// isn't cluttered. Tapping the card has no destination yet — reserved for a
+/// future dedicated progression screen.
+class _ProgressionCard extends ConsumerWidget {
+  const _ProgressionCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(userStatsProvider);
+
+    // First-run: keep the UI clean until the player has earned anything.
+    if (stats.totalXp == 0 && stats.streakDays == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final level = stats.level;
+    final progress = stats.levelProgress;
+    final streakActive = _isStreakActive(stats);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: pt.goldPrimary.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              pt.goldPrimary.withValues(alpha: 0.08),
+              Colors.transparent,
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _StreakBadge(
+                  days: stats.streakDays,
+                  active: streakActive,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        streakActive
+                            ? '${stats.streakDays}-day streak'
+                            : 'Play today to restart streak',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        stats.bestStreakDays > stats.streakDays
+                            ? 'Best: ${stats.bestStreakDays} days'
+                            : '${stats.handsPlayed} hands \u2022 '
+                                '${stats.lessonsCompleted} lessons',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: pt.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [pt.goldDark, pt.goldPrimary],
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'LVL $level',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  '${stats.xpIntoLevel} / ${stats.xpNeededForNextLevel} XP',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: pt.textMuted,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${stats.totalXp} XP total',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: pt.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static bool _isStreakActive(UserStats stats) {
+    if (stats.lastPlayedDay == null) return false;
+    final today = Progression.dayKey(DateTime.now());
+    final last = Progression.dayKey(stats.lastPlayedDay!);
+    return today.difference(last).inDays <= 1;
+  }
+}
+
+class _StreakBadge extends StatelessWidget {
+  final int days;
+  final bool active;
+
+  const _StreakBadge({required this.days, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+    final color = active ? pt.allInGlow : pt.textMuted;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: active ? 0.35 : 0.15),
+            Colors.transparent,
+          ],
+        ),
+        border: Border.all(
+          color: color.withValues(alpha: active ? 0.7 : 0.3),
+          width: 1.5,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.local_fire_department_rounded,
+        size: 22,
+        color: color,
       ),
     );
   }

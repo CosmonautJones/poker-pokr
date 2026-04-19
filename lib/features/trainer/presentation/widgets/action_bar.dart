@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
+import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/models/action.dart';
@@ -11,7 +13,7 @@ typedef OnAction = void Function(PokerAction action);
 
 /// Bottom bar showing legal actions with premium 3D-embossed buttons
 /// and a polished bet slider interface.
-class ActionBar extends StatefulWidget {
+class ActionBar extends ConsumerStatefulWidget {
   final int currentPlayerIndex;
   final LegalActionSet legalActions;
   final double currentPot;
@@ -30,11 +32,12 @@ class ActionBar extends StatefulWidget {
   });
 
   @override
-  State<ActionBar> createState() => _ActionBarState();
+  ConsumerState<ActionBar> createState() => _ActionBarState();
 }
 
-class _ActionBarState extends State<ActionBar>
+class _ActionBarState extends ConsumerState<ActionBar>
     with SingleTickerProviderStateMixin {
+  HapticService get _haptics => ref.read(hapticServiceProvider);
   bool _showBetSlider = false;
   double _betAmount = 0;
   double _minBet = 0;
@@ -96,6 +99,7 @@ class _ActionBarState extends State<ActionBar>
   }
 
   void _confirmBet() {
+    _haptics.medium();
     final type = _isRaise ? ActionType.raise : ActionType.bet;
     widget.onAction(PokerAction(
       playerIndex: widget.currentPlayerIndex,
@@ -185,6 +189,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      _haptics.selection();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.fold,
@@ -204,6 +209,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      _haptics.light();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.check,
@@ -223,6 +229,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      _haptics.light();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.call,
@@ -242,7 +249,10 @@ class _ActionBarState extends State<ActionBar>
                     height: btnHeight,
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
-                    onPressed: () => _openBetSlider(isRaise: false),
+                    onPressed: () {
+                      _haptics.selection();
+                      _openBetSlider(isRaise: false);
+                    },
                   ),
                 ),
               ),
@@ -256,7 +266,10 @@ class _ActionBarState extends State<ActionBar>
                     height: btnHeight,
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
-                    onPressed: () => _openBetSlider(isRaise: true),
+                    onPressed: () {
+                      _haptics.selection();
+                      _openBetSlider(isRaise: true);
+                    },
                   ),
                 ),
               ),
@@ -274,6 +287,7 @@ class _ActionBarState extends State<ActionBar>
                     isAllIn: true,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      _haptics.heavy();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.allIn,
