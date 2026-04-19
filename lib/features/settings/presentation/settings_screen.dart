@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -8,9 +10,10 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final pt = context.poker;
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+    final stats = ref.watch(userStatsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -19,6 +22,55 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           const SizedBox(height: 8),
+          // Feel
+          _SectionHeader(title: 'Feel'),
+          SwitchListTile(
+            secondary: Icon(Icons.vibration_rounded, color: pt.goldPrimary),
+            title: const Text('Haptic feedback'),
+            subtitle: const Text(
+              'Vibrations on taps, wins, and lesson progress',
+            ),
+            value: hapticsEnabled,
+            onChanged: (v) async {
+              await ref.read(hapticsEnabledProvider.notifier).set(v);
+              if (v) {
+                // Preview the new setting right away for immediate feedback.
+                ref.read(hapticServiceProvider).medium();
+              }
+            },
+          ),
+          const Divider(indent: 16, endIndent: 16, height: 32),
+          // Progression
+          _SectionHeader(title: 'Progression'),
+          ListTile(
+            leading: Icon(Icons.star_rounded, color: pt.goldPrimary),
+            title: const Text('Lifetime XP'),
+            subtitle: Text(
+              '${stats.totalXp} XP \u2022 Level ${stats.level} \u2022 '
+              '${stats.handsPlayed} hands \u2022 '
+              '${stats.lessonsCompleted} lessons',
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.local_fire_department_rounded,
+              color: pt.allInGlow,
+            ),
+            title: const Text('Current streak'),
+            subtitle: Text(
+              stats.streakDays == 0
+                  ? 'No streak yet'
+                  : '${stats.streakDays} days '
+                      '(best ${stats.bestStreakDays})',
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),
+            title: const Text('Reset progression'),
+            subtitle: const Text('Clears streak, XP, and level'),
+            onTap: () => _showResetProgressionDialog(context, ref),
+          ),
+          const Divider(indent: 16, endIndent: 16, height: 32),
           // About section
           _SectionHeader(title: 'General'),
           ListTile(
@@ -116,6 +168,36 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showResetProgressionDialog(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, color: pt.accent, size: 36),
+        title: const Text('Reset progression?'),
+        content: const Text(
+          'This clears your streak, XP, and level. Saved hands and '
+          'sessions are not affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text('Cancel', style: TextStyle(color: pt.textMuted)),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(userStatsProvider.notifier).resetAll();
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: const Text('Reset'),
           ),
         ],
       ),

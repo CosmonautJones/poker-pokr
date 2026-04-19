@@ -25,6 +25,8 @@ dependencies:
   uuid: ^4.5.1
   # Animations
   flutter_animate: ^4.5.2
+  # Key-value persistence (progression streak, XP, haptics pref)
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
