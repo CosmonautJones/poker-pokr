@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/core/animations/poker_animations.dart';
+import 'package:poker_trainer/core/haptics/haptics.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/poker/engine/legal_actions.dart';
 import 'package:poker_trainer/poker/models/action.dart';
@@ -11,7 +13,7 @@ typedef OnAction = void Function(PokerAction action);
 
 /// Bottom bar showing legal actions with premium 3D-embossed buttons
 /// and a polished bet slider interface.
-class ActionBar extends StatefulWidget {
+class ActionBar extends ConsumerStatefulWidget {
   final int currentPlayerIndex;
   final LegalActionSet legalActions;
   final double currentPot;
@@ -30,10 +32,10 @@ class ActionBar extends StatefulWidget {
   });
 
   @override
-  State<ActionBar> createState() => _ActionBarState();
+  ConsumerState<ActionBar> createState() => _ActionBarState();
 }
 
-class _ActionBarState extends State<ActionBar>
+class _ActionBarState extends ConsumerState<ActionBar>
     with SingleTickerProviderStateMixin {
   bool _showBetSlider = false;
   double _betAmount = 0;
@@ -75,6 +77,7 @@ class _ActionBarState extends State<ActionBar>
         isRaise ? widget.legalActions.raiseRange : widget.legalActions.betRange;
     if (range == null) return;
 
+    ref.read(hapticsProvider).tap();
     setState(() {
       _showBetSlider = true;
       _isRaise = isRaise;
@@ -96,6 +99,7 @@ class _ActionBarState extends State<ActionBar>
   }
 
   void _confirmBet() {
+    ref.read(hapticsProvider).medium();
     final type = _isRaise ? ActionType.raise : ActionType.bet;
     widget.onAction(PokerAction(
       playerIndex: widget.currentPlayerIndex,
@@ -185,6 +189,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      ref.read(hapticsProvider).light();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.fold,
@@ -204,6 +209,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      ref.read(hapticsProvider).tap();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.check,
@@ -223,6 +229,7 @@ class _ActionBarState extends State<ActionBar>
                     fontSize: fontSize,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      ref.read(hapticsProvider).tap();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.call,
@@ -274,6 +281,7 @@ class _ActionBarState extends State<ActionBar>
                     isAllIn: true,
                     staggerIndex: staggerIndex++,
                     onPressed: () {
+                      ref.read(hapticsProvider).heavy();
                       widget.onAction(PokerAction(
                         playerIndex: playerIdx,
                         type: ActionType.allIn,
@@ -379,8 +387,12 @@ class _ActionBarState extends State<ActionBar>
                             ? _sliderDivisions(_minBet, _maxBet)
                             : 1,
                         onChanged: (v) {
+                          final rounded = _roundBet(v);
+                          if ((rounded - _betAmount).abs() > 0.001) {
+                            ref.read(hapticsProvider).tap();
+                          }
                           setState(() {
-                            _betAmount = _roundBet(v);
+                            _betAmount = rounded;
                           });
                         },
                       ),
@@ -411,6 +423,7 @@ class _ActionBarState extends State<ActionBar>
                                           .abs() <
                                       0.01,
                               onPressed: () {
+                                ref.read(hapticsProvider).tap();
                                 setState(() {
                                   _betAmount = _roundBet(presets[idx].$2);
                                 });
@@ -444,6 +457,7 @@ class _ActionBarState extends State<ActionBar>
                               ? null
                               : pt.actionAllIn,
                           onPressed: () {
+                            ref.read(hapticsProvider).tap();
                             setState(() {
                               _betAmount = _maxBet;
                             });

@@ -1,5 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/haptics/haptics.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/core/utils/motion.dart';
 import 'package:poker_trainer/poker/engine/outs_calculator.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
@@ -8,16 +13,16 @@ import 'package:poker_trainer/poker/models/street.dart';
 ///
 /// Shows each non-folded player's hand. The user taps to guess the number of
 /// outs, then the widget reveals the correct answer with color feedback.
-class OutsDisplay extends StatefulWidget {
+class OutsDisplay extends ConsumerStatefulWidget {
   final GameState gameState;
 
   const OutsDisplay({super.key, required this.gameState});
 
   @override
-  State<OutsDisplay> createState() => _OutsDisplayState();
+  ConsumerState<OutsDisplay> createState() => _OutsDisplayState();
 }
 
-class _OutsDisplayState extends State<OutsDisplay> {
+class _OutsDisplayState extends ConsumerState<OutsDisplay> {
   /// Per-player guess state. null = not guessed yet.
   final Map<int, int?> _guesses = {};
 
@@ -141,9 +146,14 @@ class _OutsDisplayState extends State<OutsDisplay> {
       },
     ).then((result) {
       if (result != null && mounted) {
+        final haptics = ref.read(hapticsProvider);
+        haptics.tap();
         setState(() {
           _guesses[playerIndex] = result as int;
         });
+        if (result == _getResult(playerIndex).outs) {
+          haptics.light();
+        }
       }
     });
   }
@@ -229,7 +239,7 @@ class _OutsDisplayState extends State<OutsDisplay> {
   }
 }
 
-class _PlayerOutsRow extends StatelessWidget {
+class _PlayerOutsRow extends StatefulWidget {
   final String playerName;
   final int playerIndex;
   final int? guess;
@@ -245,12 +255,41 @@ class _PlayerOutsRow extends StatelessWidget {
   });
 
   @override
+  State<_PlayerOutsRow> createState() => _PlayerOutsRowState();
+}
+
+class _PlayerOutsRowState extends State<_PlayerOutsRow> {
+  /// Incremented each time we enter the "revealed" state so
+  /// flutter_animate replays the one-shot reveal animation.
+  int _revealKey = 0;
+  bool _wasRevealed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _wasRevealed = widget.guess != null;
+  }
+
+  @override
+  void didUpdateWidget(_PlayerOutsRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final isRevealedNow = widget.guess != null;
+    if (!_wasRevealed && isRevealedNow) {
+      _revealKey++;
+    }
+    _wasRevealed = isRevealedNow;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pt = context.poker;
+    final guess = widget.guess;
+    final result = widget.result;
     final hasGuessed = guess != null;
-    final isCorrect = hasGuessed && result != null && guess == result!.outs;
-    final isClose =
-        hasGuessed && result != null && (guess! - result!.outs).abs() <= 2;
+    final isCorrect = guess != null && result != null && guess == result.outs;
+    final isClose = guess != null &&
+        result != null &&
+        (guess - result.outs).abs() <= 2;
 
     Color statusColor;
     if (!hasGuessed) {
@@ -263,8 +302,10 @@ class _PlayerOutsRow extends StatelessWidget {
       statusColor = pt.statusWrong;
     }
 
-    return GestureDetector(
-      onTap: onTap,
+    final animate = Motion.shouldAnimate(context);
+
+    final row = GestureDetector(
+      onTap: widget.onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
@@ -274,7 +315,7 @@ class _PlayerOutsRow extends StatelessWidget {
             SizedBox(
               width: 70,
               child: Text(
-                playerName,
+                widget.playerName,
                 style: TextStyle(
                   fontSize: 11,
                   color: pt.textMuted,
@@ -336,10 +377,10 @@ class _PlayerOutsRow extends StatelessWidget {
             ],
             const Spacer(),
             // Draw types (shown after guessing)
-            if (hasGuessed && result != null && result!.drawTypes.isNotEmpty)
+            if (hasGuessed && result != null && result.drawTypes.isNotEmpty)
               Flexible(
                 child: Text(
-                  result!.drawTypes.join(', '),
+                  result.drawTypes.join(', '),
                   style: TextStyle(
                     fontSize: 9,
                     color: pt.textMuted.withValues(alpha: 0.6),
@@ -353,6 +394,52 @@ class _PlayerOutsRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (!hasGuessed || !animate || _revealKey == 0) return row;
+
+    // One-shot reveal: scale bounce + tinted flash layered over the row.
+    final flashColor = isCorrect
+        ? pt.statusCorrect
+        : isClose
+            ? pt.statusClose
+            : pt.statusWrong;
+
+    return Stack(
+      children: [
+        TweenAnimationBuilder<double>(
+          key: ValueKey('scale-$_revealKey'),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          builder: (context, t, child) {
+            // Sine bounce: 1.0 → 1.08 (at t=0.5) → 1.0, approximates elasticOut's
+            // overshoot without oscillation jitter.
+            final scale = 1.0 + 0.08 * math.sin(t * math.pi);
+            return Transform.scale(scale: scale, child: child);
+          },
+          child: row,
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey('flash-$_revealKey'),
+              tween: Tween(begin: 0.4, end: 0.0),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOut,
+              builder: (context, value, _) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  decoration: BoxDecoration(
+                    color: flashColor.withValues(alpha: value),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/haptics/haptics.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
@@ -387,6 +388,16 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     }
 
     final setup = _setup!;
+    ref.listen<HandReplayState>(
+      handReplayProvider(setup),
+      (prev, next) {
+        // Fire on every false→true transition; redo-after-undo intentionally
+        // re-fires since the user is stepping back into a showdown.
+        if (prev?.isComplete != true && next.isComplete) {
+          ref.read(hapticsProvider).success();
+        }
+      },
+    );
     final replayState = ref.watch(handReplayProvider(setup));
     final notifier = ref.read(handReplayProvider(setup).notifier);
     final gs = replayState.gameState;

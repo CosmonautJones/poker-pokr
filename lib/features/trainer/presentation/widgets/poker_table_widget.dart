@@ -124,6 +124,26 @@ class PokerTableWidget extends StatelessWidget {
                 ),
               ),
             ),
+            // Floating "+$pot" win pop-up just above the pot on hand complete.
+            if (gameState.isHandComplete &&
+                (gameState.winnerIndices?.isNotEmpty ?? false))
+              Positioned(
+                left: centerX - potWidth / 2,
+                top: centerY + 10 * scale - 36,
+                child: SizedBox(
+                  width: potWidth,
+                  child: Center(
+                    child: _WinPopup(
+                      key: ValueKey(
+                        'win-${gameState.pot}-${(gameState.winnerIndices ?? const <int>[]).join(",")}',
+                      ),
+                      amount: gameState.pot,
+                      isSplit: (gameState.winnerIndices?.length ?? 0) > 1,
+                      scale: scale,
+                    ),
+                  ),
+                ),
+              ),
             // Player seats
             for (int i = 0; i < gameState.playerCount; i++)
               Positioned(
@@ -453,5 +473,97 @@ class _AnimatedStreetBadge extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.15),
           ),
     );
+  }
+}
+
+/// Transient "+$pot" (or "Split +$pot") pop-up floating above the pot
+/// when a hand completes. Plays exactly once per keyed lifetime — after the
+/// fade-out completes, the widget renders nothing, so unrelated rebuilds of
+/// the parent (equity ticks, auto-play changes) do not replay it.
+class _WinPopup extends StatefulWidget {
+  final double amount;
+  final bool isSplit;
+  final double scale;
+
+  const _WinPopup({
+    super.key,
+    required this.amount,
+    required this.isSplit,
+    required this.scale,
+  });
+
+  @override
+  State<_WinPopup> createState() => _WinPopupState();
+}
+
+class _WinPopupState extends State<_WinPopup> {
+  bool _finished = false;
+
+  String _formatAmount(double v) {
+    if (v == v.roundToDouble() && v < 10000) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_finished) return const SizedBox.shrink();
+
+    final pt = context.poker;
+    final animate = Motion.shouldAnimate(context);
+    final label =
+        '${widget.isSplit ? "Split " : ""}+\$${_formatAmount(widget.amount)}';
+
+    final text = Text(
+      label,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: (16 * widget.scale).clamp(14.0, 20.0),
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.5,
+        shadows: [
+          Shadow(
+            color: pt.goldPrimary.withValues(alpha: 0.9),
+            blurRadius: 12,
+          ),
+          const Shadow(
+            color: Colors.black54,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+
+    final gradientText = ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: [pt.goldLight, Colors.white, pt.goldLight],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(bounds),
+      child: text,
+    );
+
+    void onDone(_) {
+      if (mounted) setState(() => _finished = true);
+    }
+
+    if (!animate) {
+      return gradientText
+          .animate(onComplete: onDone)
+          .fadeIn(duration: const Duration(milliseconds: 100))
+          .then(delay: const Duration(milliseconds: 1400))
+          .fadeOut(duration: const Duration(milliseconds: 300));
+    }
+
+    return gradientText
+        .animate(onComplete: onDone)
+        .fadeIn(duration: const Duration(milliseconds: 600))
+        .moveY(
+          begin: 40,
+          end: 0,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+        )
+        .then(delay: const Duration(milliseconds: 1200))
+        .fadeOut(duration: const Duration(milliseconds: 400));
   }
 }

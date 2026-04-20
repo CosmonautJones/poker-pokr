@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/haptics/haptics.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
+import 'package:poker_trainer/core/settings/preferences.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -53,6 +55,24 @@ class SettingsScreen extends ConsumerWidget {
               color: pt.goldPrimary,
               size: 20,
             ),
+          ),
+          const Divider(indent: 16, endIndent: 16, height: 32),
+          // Feedback section
+          _SectionHeader(title: 'Feedback'),
+          SwitchListTile(
+            secondary:
+                Icon(Icons.vibration_rounded, color: pt.goldPrimary),
+            title: const Text('Haptic Feedback'),
+            subtitle: const Text('Vibration on taps and wins'),
+            value: ref.watch(hapticsEnabledProvider),
+            onChanged: (value) {
+              ref.read(preferencesProvider.notifier).setHapticsEnabled(value);
+              if (value) {
+                // setHapticsEnabled updates provider state synchronously
+                // before awaiting persistence, so this tick is enabled.
+                ref.read(hapticsProvider).tap();
+              }
+            },
           ),
           const Divider(indent: 16, endIndent: 16, height: 32),
           // Data section
