@@ -11,6 +11,8 @@ import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
+import 'package:poker_trainer/features/progression/presentation/progression_screen.dart';
+import 'package:poker_trainer/features/progression/presentation/widgets/achievement_unlock_overlay.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -28,6 +30,12 @@ final router = GoRouter(
             GoRoute(
               path: '/home',
               builder: (context, state) => const HomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'progression',
+                  builder: (context, state) => const ProgressionScreen(),
+                ),
+              ],
             ),
           ],
         ),
@@ -119,6 +127,9 @@ class PokerTrainerApp extends StatelessWidget {
       theme: appTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => AchievementUnlockOverlay(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

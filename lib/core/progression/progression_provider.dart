@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievement.dart';
+import 'achievements_catalog.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -22,6 +24,23 @@ final userStatsProvider =
 /// Haptics preference toggle. Writes through to SharedPreferences.
 final hapticsEnabledProvider =
     NotifierProvider<HapticsPrefNotifier, bool>(HapticsPrefNotifier.new);
+
+/// Derived: unlocked-but-not-yet-seen achievements, in catalog order. The
+/// unlock overlay listens to this; dismissing a toast marks its id as seen
+/// (via [UserStatsNotifier.markAchievementsSeen]) which shrinks this list.
+///
+/// Empty list = nothing to celebrate right now.
+final pendingAchievementsProvider = Provider<List<Achievement>>((ref) {
+  final stats = ref.watch(userStatsProvider);
+  final pending = <Achievement>[];
+  for (final a in achievementCatalog) {
+    if (stats.unlockedAchievementIds.contains(a.id) &&
+        !stats.seenAchievementIds.contains(a.id)) {
+      pending.add(a);
+    }
+  }
+  return pending;
+});
 
 class UserStatsNotifier extends Notifier<UserStats> {
   @override
@@ -72,6 +91,20 @@ class UserStatsNotifier extends Notifier<UserStats> {
     await _service.saveStats(state);
   }
 
+  /// Mark [ids] as seen so the same achievement never pops a toast twice,
+  /// even across app restarts. Called by the unlock-toast overlay after
+  /// dismissal.
+  Future<void> markAchievementsSeen(Iterable<String> ids) async {
+    final set = ids.toSet();
+    if (set.isEmpty) return;
+    final merged = {...state.seenAchievementIds, ...set};
+    // Short-circuit when nothing actually changed.
+    if (merged.length == state.seenAchievementIds.length) return;
+    final updated = state.copyWith(seenAchievementIds: merged);
+    state = updated;
+    await _service.saveStats(updated);
+  }
+
   Future<void> _apply({
     required UserStats prev,
     required StreakResult streak,
@@ -83,7 +116,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
         ? streak.newStreakDays
         : prev.bestStreakDays;
 
-    final updated = prev.copyWith(
+    final interim = prev.copyWith(
       streakDays: streak.newStreakDays,
       lastPlayedDay: streak.newLastPlayedDay,
       totalXp: prev.totalXp + xpDelta,
@@ -91,6 +124,22 @@ class UserStatsNotifier extends Notifier<UserStats> {
       lessonsCompleted: prev.lessonsCompleted + lessonsDelta,
       bestStreakDays: nextBest,
     );
+
+    // Evaluate achievements against the fresh snapshot. Anything newly
+    // satisfied is merged into `unlockedAchievementIds`. The corresponding
+    // [pendingAchievementsProvider] derivation will surface them to the
+    // overlay via `unlocked - seen`.
+    final newIds =
+        detectNewlyUnlocked(interim, interim.unlockedAchievementIds);
+    final updated = newIds.isEmpty
+        ? interim
+        : interim.copyWith(
+            unlockedAchievementIds: {
+              ...interim.unlockedAchievementIds,
+              ...newIds,
+            },
+          );
+
     state = updated;
     await _service.saveStats(updated);
   }

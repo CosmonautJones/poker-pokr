@@ -120,6 +120,32 @@ void main() {
       expect(decoded!.streakDays, 0);
       expect(decoded.totalXp, 0);
       expect(decoded.lastPlayedDay, isNull);
+      expect(decoded.unlockedAchievementIds, isEmpty);
+      expect(decoded.seenAchievementIds, isEmpty);
+    });
+
+    test('encode / decode preserves achievement sets', () {
+      final stats = UserStats(
+        streakDays: 2,
+        lastPlayedDay: DateTime(2026, 4, 20),
+        totalXp: 120,
+        handsPlayed: 7,
+        lessonsCompleted: 1,
+        bestStreakDays: 2,
+        unlockedAchievementIds: const {'first_hand', 'hands_5'},
+        seenAchievementIds: const {'first_hand'},
+      );
+      final decoded = UserStats.tryDecode(stats.encode())!;
+      expect(decoded.unlockedAchievementIds, {'first_hand', 'hands_5'});
+      expect(decoded.seenAchievementIds, {'first_hand'});
+    });
+
+    test('tryDecode ignores non-string entries in achievement arrays', () {
+      const raw =
+          '{"unlockedAchievementIds":["ok",3,null,"also"],"seenAchievementIds":"not-a-list"}';
+      final decoded = UserStats.tryDecode(raw)!;
+      expect(decoded.unlockedAchievementIds, {'ok', 'also'});
+      expect(decoded.seenAchievementIds, isEmpty);
     });
   });
 

@@ -721,8 +721,8 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Tapping the card navigates to the dedicated Progression
+/// screen with the streak calendar and achievements grid.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -752,18 +752,24 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              pt.goldPrimary.withValues(alpha: 0.08),
-              Colors.transparent,
-            ],
+      child: InkWell(
+        onTap: () {
+          ref.read(hapticServiceProvider).selection();
+          context.go('/home/progression');
+        },
+        splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -819,6 +825,12 @@ class _ProgressionCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: pt.textMuted,
+                  size: 20,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -851,6 +863,7 @@ class _ProgressionCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
