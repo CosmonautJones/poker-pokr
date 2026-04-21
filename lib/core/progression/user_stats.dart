@@ -28,6 +28,15 @@ class UserStats {
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// IDs of achievements the player has unlocked. Immutable set; rebuilt
+  /// on every stat change by the progression notifier.
+  final Set<String> unlockedAchievementIds;
+
+  /// Subset of [unlockedAchievementIds] the player has already seen in the
+  /// unlock toast. Anything in [unlockedAchievementIds] but NOT in here is
+  /// still pending a celebration.
+  final Set<String> seenAchievementIds;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
@@ -35,6 +44,8 @@ class UserStats {
     required this.handsPlayed,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    this.unlockedAchievementIds = const {},
+    this.seenAchievementIds = const {},
   });
 
   /// Fresh stats for a brand-new install.
@@ -44,7 +55,9 @@ class UserStats {
         totalXp = 0,
         handsPlayed = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        unlockedAchievementIds = const {},
+        seenAchievementIds = const {};
 
   UserStats copyWith({
     int? streakDays,
@@ -54,6 +67,8 @@ class UserStats {
     int? handsPlayed,
     int? lessonsCompleted,
     int? bestStreakDays,
+    Set<String>? unlockedAchievementIds,
+    Set<String>? seenAchievementIds,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -64,6 +79,9 @@ class UserStats {
       handsPlayed: handsPlayed ?? this.handsPlayed,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      unlockedAchievementIds:
+          unlockedAchievementIds ?? this.unlockedAchievementIds,
+      seenAchievementIds: seenAchievementIds ?? this.seenAchievementIds,
     );
   }
 
@@ -91,6 +109,9 @@ class UserStats {
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        // Sorted so on-disk JSON is stable — cleaner diffs, no churn on saves.
+        'unlockedAchievementIds': (unlockedAchievementIds.toList())..sort(),
+        'seenAchievementIds': (seenAchievementIds.toList())..sort(),
       };
 
   String encode() => jsonEncode(toJson());
@@ -108,10 +129,20 @@ class UserStats {
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        unlockedAchievementIds:
+            _decodeStringSet(map['unlockedAchievementIds']),
+        seenAchievementIds: _decodeStringSet(map['seenAchievementIds']),
       );
     } catch (_) {
       return null;
     }
+  }
+
+  static Set<String> _decodeStringSet(dynamic raw) {
+    if (raw is List) {
+      return raw.whereType<String>().toSet();
+    }
+    return const <String>{};
   }
 }
 

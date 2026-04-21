@@ -721,8 +721,8 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Tapping the card navigates to the dedicated Progression
+/// screen with the streak calendar and achievements grid.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -740,6 +740,7 @@ class _ProgressionCard extends ConsumerWidget {
     final level = stats.level;
     final progress = stats.levelProgress;
     final streakActive = _isStreakActive(stats);
+    final streakHeadline = _streakHeadline(stats);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -752,18 +753,24 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              pt.goldPrimary.withValues(alpha: 0.08),
-              Colors.transparent,
-            ],
+      child: InkWell(
+        onTap: () {
+          ref.read(hapticServiceProvider).selection();
+          context.go('/home/progression');
+        },
+        splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -780,9 +787,7 @@ class _ProgressionCard extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        streakActive
-                            ? '${stats.streakDays}-day streak'
-                            : 'Play today to restart streak',
+                        streakHeadline,
                         style: textTheme.labelMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -819,6 +824,12 @@ class _ProgressionCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: pt.textMuted,
+                  size: 20,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -852,6 +863,7 @@ class _ProgressionCard extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -860,6 +872,22 @@ class _ProgressionCard extends ConsumerWidget {
     final today = Progression.dayKey(DateTime.now());
     final last = Progression.dayKey(stats.lastPlayedDay!);
     return today.difference(last).inDays <= 1;
+  }
+
+  /// Copy the headline to the player's actual state rather than always
+  /// saying "restart streak" when a streak is broken — different prompts
+  /// for "keep it alive today", "broken, start over", and "cold start".
+  static String _streakHeadline(UserStats stats) {
+    final days = stats.streakDays;
+    if (stats.lastPlayedDay == null || days == 0) {
+      return 'Start a daily streak';
+    }
+    final today = Progression.dayKey(DateTime.now());
+    final last = Progression.dayKey(stats.lastPlayedDay!);
+    final gap = today.difference(last).inDays;
+    if (gap == 0) return '$days-day streak';
+    if (gap == 1) return 'Play today to keep your $days-day streak';
+    return 'Streak reset — play to start again';
   }
 }
 
