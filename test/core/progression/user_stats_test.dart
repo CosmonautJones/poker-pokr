@@ -140,6 +140,16 @@ void main() {
       expect(decoded.seenAchievementIds, {'first_hand'});
     });
 
+    test('encode sorts achievement id arrays for stable diffs', () {
+      final stats = const UserStats.empty().copyWith(
+        unlockedAchievementIds: {'zulu', 'alpha', 'mike'},
+        seenAchievementIds: {'whiskey', 'bravo'},
+      );
+      final map = stats.toJson();
+      expect(map['unlockedAchievementIds'], ['alpha', 'mike', 'zulu']);
+      expect(map['seenAchievementIds'], ['bravo', 'whiskey']);
+    });
+
     test('tryDecode ignores non-string entries in achievement arrays', () {
       const raw =
           '{"unlockedAchievementIds":["ok",3,null,"also"],"seenAchievementIds":"not-a-list"}';

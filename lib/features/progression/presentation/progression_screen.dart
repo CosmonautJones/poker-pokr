@@ -13,11 +13,21 @@ import 'widgets/streak_calendar.dart';
 /// Full-page progression dashboard: level header, XP ring, streak calendar,
 /// stat tiles, and the achievements grid. Reached via the home-screen
 /// progression card and the Settings → Progression section.
-class ProgressionScreen extends ConsumerWidget {
+class ProgressionScreen extends ConsumerStatefulWidget {
   const ProgressionScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProgressionScreen> createState() => _ProgressionScreenState();
+}
+
+class _ProgressionScreenState extends ConsumerState<ProgressionScreen> {
+  // Entry animations should only play on first mount. Subsequent rebuilds
+  // (XP gains, achievement unlocks while viewing) must not re-trigger the
+  // fade/slide — it reads as a flicker.
+  bool _didAnimateEntry = false;
+
+  @override
+  Widget build(BuildContext context) {
     final pt = context.poker;
     final stats = ref.watch(userStatsProvider);
 
@@ -28,6 +38,14 @@ class ProgressionScreen extends ConsumerWidget {
         .where((a) => !stats.unlockedAchievementIds.contains(a.id))
         .toList(growable: false);
 
+    final animate = !_didAnimateEntry;
+    // After this frame, subsequent rebuilds skip the entry animation.
+    if (animate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _didAnimateEntry = true;
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Progression'),
@@ -35,20 +53,11 @@ class ProgressionScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          _LevelHeader(stats: stats)
-              .animate()
-              .fadeIn(duration: 300.ms)
-              .slideY(begin: 0.04, duration: 300.ms),
+          _maybeAnimate(_LevelHeader(stats: stats), animate, 0),
           const SizedBox(height: 16),
-          StreakCalendar(stats: stats)
-              .animate()
-              .fadeIn(duration: 300.ms, delay: 80.ms)
-              .slideY(begin: 0.04, duration: 300.ms, delay: 80.ms),
+          _maybeAnimate(StreakCalendar(stats: stats), animate, 80),
           const SizedBox(height: 16),
-          _StatsGrid(stats: stats)
-              .animate()
-              .fadeIn(duration: 300.ms, delay: 140.ms)
-              .slideY(begin: 0.04, duration: 300.ms, delay: 140.ms),
+          _maybeAnimate(_StatsGrid(stats: stats), animate, 140),
           const SizedBox(height: 20),
           _AchievementsSectionHeader(
             unlocked: unlockedDefs.length,
@@ -72,6 +81,18 @@ class ProgressionScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _maybeAnimate(Widget child, bool animate, int delayMs) {
+    if (!animate) return child;
+    return child
+        .animate()
+        .fadeIn(duration: 300.ms, delay: Duration(milliseconds: delayMs))
+        .slideY(
+          begin: 0.04,
+          duration: 300.ms,
+          delay: Duration(milliseconds: delayMs),
+        );
   }
 }
 

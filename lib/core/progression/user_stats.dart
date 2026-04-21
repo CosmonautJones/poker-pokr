@@ -109,8 +109,9 @@ class UserStats {
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
-        'unlockedAchievementIds': unlockedAchievementIds.toList(),
-        'seenAchievementIds': seenAchievementIds.toList(),
+        // Sorted so on-disk JSON is stable — cleaner diffs, no churn on saves.
+        'unlockedAchievementIds': (unlockedAchievementIds.toList())..sort(),
+        'seenAchievementIds': (seenAchievementIds.toList())..sort(),
       };
 
   String encode() => jsonEncode(toJson());

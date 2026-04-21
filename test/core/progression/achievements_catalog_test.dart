@@ -36,6 +36,21 @@ void main() {
     });
   });
 
+  group('Achievement equality', () {
+    test('equality is by id', () {
+      final a = achievementById('first_hand')!;
+      final b = achievementById('first_hand')!;
+      expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('different ids are not equal', () {
+      final a = achievementById('first_hand')!;
+      final b = achievementById('first_lesson')!;
+      expect(a, isNot(equals(b)));
+    });
+  });
+
   group('detectNewlyUnlocked', () {
     test('first hand unlocks first_hand only', () {
       const stats = UserStats(

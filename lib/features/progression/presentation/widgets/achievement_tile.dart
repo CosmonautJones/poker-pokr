@@ -19,12 +19,13 @@ class AchievementTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pt = context.poker;
-    final color = _rarityColor(pt, achievement.rarity);
+    final color = achievement.rarity.color(pt);
     final borderAlpha = unlocked ? 0.55 : 0.18;
     final bgAlpha = unlocked ? 0.10 : 0.04;
 
     return Semantics(
       button: true,
+      hint: 'Opens achievement details.',
       label: unlocked
           ? '${achievement.title}, ${achievement.rarity.label} achievement, '
               'unlocked. ${achievement.description}.'
@@ -128,15 +129,6 @@ class AchievementTile extends ConsumerWidget {
       ),
     );
   }
-}
-
-Color _rarityColor(PokerTheme pt, AchievementRarity rarity) {
-  return switch (rarity) {
-    AchievementRarity.common => pt.textMuted,
-    AchievementRarity.rare => pt.seatActiveBorder,
-    AchievementRarity.epic => pt.straddlePrimary,
-    AchievementRarity.legendary => pt.goldPrimary,
-  };
 }
 
 void _showDetailSheet(

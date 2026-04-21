@@ -50,8 +50,10 @@ class _AchievementUnlockOverlayState
             left: 12,
             right: 12,
             top: MediaQuery.of(context).padding.top + 12,
-            child: SafeArea(
-              bottom: false,
+            child: Semantics(
+              liveRegion: true,
+              label: 'Achievement unlocked: ${_current!.title}. '
+                  '${_current!.rarity.label}. ${_current!.description}.',
               child: GestureDetector(
                 onTap: _dismiss,
                 child: _UnlockCard(
@@ -127,7 +129,7 @@ class _UnlockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
-    final color = _rarityColor(pt, achievement.rarity);
+    final color = achievement.rarity.color(pt);
 
     final card = Material(
       color: Colors.transparent,
@@ -262,11 +264,3 @@ class _UnlockCard extends StatelessWidget {
   }
 }
 
-Color _rarityColor(PokerTheme pt, AchievementRarity rarity) {
-  return switch (rarity) {
-    AchievementRarity.common => pt.seatActiveBorder,
-    AchievementRarity.rare => pt.accent,
-    AchievementRarity.epic => pt.straddlePrimary,
-    AchievementRarity.legendary => pt.goldPrimary,
-  };
-}

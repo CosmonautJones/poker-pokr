@@ -740,6 +740,7 @@ class _ProgressionCard extends ConsumerWidget {
     final level = stats.level;
     final progress = stats.levelProgress;
     final streakActive = _isStreakActive(stats);
+    final streakHeadline = _streakHeadline(stats);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -786,9 +787,7 @@ class _ProgressionCard extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        streakActive
-                            ? '${stats.streakDays}-day streak'
-                            : 'Play today to restart streak',
+                        streakHeadline,
                         style: textTheme.labelMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -873,6 +872,22 @@ class _ProgressionCard extends ConsumerWidget {
     final today = Progression.dayKey(DateTime.now());
     final last = Progression.dayKey(stats.lastPlayedDay!);
     return today.difference(last).inDays <= 1;
+  }
+
+  /// Copy the headline to the player's actual state rather than always
+  /// saying "restart streak" when a streak is broken — different prompts
+  /// for "keep it alive today", "broken, start over", and "cold start".
+  static String _streakHeadline(UserStats stats) {
+    final days = stats.streakDays;
+    if (stats.lastPlayedDay == null || days == 0) {
+      return 'Start a daily streak';
+    }
+    final today = Progression.dayKey(DateTime.now());
+    final last = Progression.dayKey(stats.lastPlayedDay!);
+    final gap = today.difference(last).inDays;
+    if (gap == 0) return '$days-day streak';
+    if (gap == 1) return 'Play today to keep your $days-day streak';
+    return 'Streak reset — play to start again';
   }
 }
 
