@@ -106,6 +106,33 @@ void main() {
       expect(decoded.handsPlayed, 18);
       expect(decoded.lessonsCompleted, 3);
       expect(decoded.bestStreakDays, 7);
+      // Default empty map survives roundtrip.
+      expect(decoded.unlockedAchievements, isEmpty);
+    });
+
+    test('encode / decode preserves unlockedAchievements map', () {
+      final stats = UserStats(
+        streakDays: 1,
+        lastPlayedDay: DateTime(2026, 4, 19),
+        totalXp: 60,
+        handsPlayed: 1,
+        lessonsCompleted: 0,
+        bestStreakDays: 1,
+        unlockedAchievements: {
+          'grind_first_hand': DateTime.utc(2026, 4, 19, 10, 0),
+          'streak_days_3': DateTime.utc(2026, 4, 21, 10, 0),
+        },
+      );
+      final decoded = UserStats.tryDecode(stats.encode())!;
+      expect(decoded.unlockedAchievements.length, 2);
+      expect(
+        decoded.unlockedAchievements['grind_first_hand'],
+        DateTime.utc(2026, 4, 19, 10, 0),
+      );
+      expect(
+        decoded.unlockedAchievements['streak_days_3'],
+        DateTime.utc(2026, 4, 21, 10, 0),
+      );
     });
 
     test('tryDecode returns null for garbage and empty', () {
@@ -120,6 +147,20 @@ void main() {
       expect(decoded!.streakDays, 0);
       expect(decoded.totalXp, 0);
       expect(decoded.lastPlayedDay, isNull);
+      expect(decoded.unlockedAchievements, isEmpty);
+    });
+
+    test('tryDecode ignores malformed unlock entries', () {
+      // Payload that simulates a corrupt write: mixed valid + invalid rows.
+      const raw = '{"unlockedAchievements": {'
+          '"grind_first_hand": "2026-04-19T10:00:00.000Z",'
+          '"bad_date": "not a date",'
+          '"numeric_value": 123'
+          '}}';
+      final decoded = UserStats.tryDecode(raw);
+      expect(decoded, isNotNull);
+      // Only the well-formed entry survives.
+      expect(decoded!.unlockedAchievements.keys, ['grind_first_hand']);
     });
   });
 

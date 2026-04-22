@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievement.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -63,6 +65,16 @@ class SettingsScreen extends ConsumerWidget {
                   : '${stats.streakDays} days '
                       '(best ${stats.bestStreakDays})',
             ),
+          ),
+          ListTile(
+            leading: Icon(Icons.emoji_events_rounded, color: pt.goldPrimary),
+            title: const Text('Achievements'),
+            subtitle: Text(
+              '${stats.unlockedAchievements.length} of '
+              '${AchievementCatalog.totalCount} unlocked',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.go('/home/achievements'),
           ),
           ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),

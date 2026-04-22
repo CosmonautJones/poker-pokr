@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievement_unlock_overlay.dart';
 
 class AppScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -9,7 +10,19 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: Stack(
+        children: [
+          navigationShell,
+          // Floating unlock toast. Sits above tab content and ignores pointer
+          // events except on the toast itself so it never blocks the UI.
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AchievementUnlockOverlay(),
+          ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(

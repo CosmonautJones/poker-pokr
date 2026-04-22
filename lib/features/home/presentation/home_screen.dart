@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievement.dart';
+import 'package:poker_trainer/core/progression/achievement_visuals.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -99,6 +101,14 @@ class HomeScreen extends ConsumerWidget {
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
+
+              const SizedBox(height: 14),
+
+              // Trophy case: newest unlocked icons + tap to see all.
+              const _TrophyCaseCard()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 120.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 120.ms),
 
               const SizedBox(height: 14),
 
@@ -895,6 +905,142 @@ class _StreakBadge extends StatelessWidget {
         size: 22,
         color: color,
       ),
+    );
+  }
+}
+
+/// Home-screen summary card for achievements.
+///
+/// Stays compact: three most-recent trophies as circular icons, then a
+/// "X / N" counter. Before the first unlock shows a nudge instead of
+/// silent emptiness.
+class _TrophyCaseCard extends ConsumerWidget {
+  const _TrophyCaseCard();
+
+  static const _iconCount = 3;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(userStatsProvider);
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final totalCount = AchievementCatalog.totalCount;
+    final unlockedCount = stats.unlockedAchievements.length;
+
+    // Pull recent unlocks sorted newest first, clipped to the display count.
+    final recent = stats.unlockedAchievements.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final recentIds =
+        recent.take(_iconCount).map((e) => e.key).toList(growable: false);
+    final recentAchievements = recentIds
+        .map(AchievementCatalog.byId)
+        .whereType<Achievement>()
+        .toList(growable: false);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: pt.goldPrimary.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => context.go('/home/achievements'),
+        splashColor: pt.goldPrimary.withValues(alpha: 0.15),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.emoji_events_rounded,
+                size: 22,
+                color: pt.goldPrimary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Trophy Case',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      unlockedCount == 0
+                          ? 'Play or study to unlock trophies'
+                          : '$unlockedCount of $totalCount unlocked',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: pt.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (recentAchievements.isNotEmpty) ...[
+                for (final a in recentAchievements) ...[
+                  _TrophyDot(achievement: a),
+                  const SizedBox(width: 4),
+                ],
+              ],
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 16,
+                color: pt.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrophyDot extends StatelessWidget {
+  final Achievement achievement;
+
+  const _TrophyDot({required this.achievement});
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+    final color = achievement.tier.displayColor(pt);
+    return Container(
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.35),
+            Colors.transparent,
+          ],
+        ),
+        border: Border.all(
+          color: color.withValues(alpha: 0.75),
+          width: 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Icon(achievement.icon, size: 14, color: color),
     );
   }
 }

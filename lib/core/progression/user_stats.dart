@@ -28,6 +28,11 @@ class UserStats {
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Map of achievement id → unlock timestamp (UTC). Read-only snapshot; use
+  /// [copyWith] / the evaluator to mutate. Catalog lookup is the caller's
+  /// responsibility — ids no longer in the catalog should be ignored.
+  final Map<String, DateTime> unlockedAchievements;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
@@ -35,6 +40,7 @@ class UserStats {
     required this.handsPlayed,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    this.unlockedAchievements = const {},
   });
 
   /// Fresh stats for a brand-new install.
@@ -44,7 +50,8 @@ class UserStats {
         totalXp = 0,
         handsPlayed = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        unlockedAchievements = const {};
 
   UserStats copyWith({
     int? streakDays,
@@ -54,6 +61,7 @@ class UserStats {
     int? handsPlayed,
     int? lessonsCompleted,
     int? bestStreakDays,
+    Map<String, DateTime>? unlockedAchievements,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -64,6 +72,8 @@ class UserStats {
       handsPlayed: handsPlayed ?? this.handsPlayed,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      unlockedAchievements:
+          unlockedAchievements ?? this.unlockedAchievements,
     );
   }
 
@@ -91,6 +101,10 @@ class UserStats {
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        'unlockedAchievements': {
+          for (final e in unlockedAchievements.entries)
+            e.key: e.value.toIso8601String(),
+        },
       };
 
   String encode() => jsonEncode(toJson());
@@ -99,6 +113,16 @@ class UserStats {
     if (raw == null || raw.isEmpty) return null;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
+      final rawUnlocks = map['unlockedAchievements'];
+      final unlocks = <String, DateTime>{};
+      if (rawUnlocks is Map) {
+        rawUnlocks.forEach((k, v) {
+          if (k is String && v is String) {
+            final parsed = DateTime.tryParse(v);
+            if (parsed != null) unlocks[k] = parsed;
+          }
+        });
+      }
       return UserStats(
         streakDays: (map['streakDays'] as num?)?.toInt() ?? 0,
         lastPlayedDay: map['lastPlayedDay'] is String
@@ -108,6 +132,7 @@ class UserStats {
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        unlockedAchievements: unlocks,
       );
     } catch (_) {
       return null;
