@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -100,7 +102,10 @@ class HomeScreen extends ConsumerWidget {
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
 
-              const SizedBox(height: 14),
+              const _AchievementsTile()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 125.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 125.ms),
 
               // Last session card
               sessionsAsync.when(
@@ -860,6 +865,125 @@ class _ProgressionCard extends ConsumerWidget {
     final today = Progression.dayKey(DateTime.now());
     final last = Progression.dayKey(stats.lastPlayedDay!);
     return today.difference(last).inDays <= 1;
+  }
+}
+
+class _AchievementsTile extends ConsumerWidget {
+  const _AchievementsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(achievementsProvider);
+    if (progress.unlockedCount == 0) return const SizedBox.shrink();
+
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final all = AchievementsCatalog.all;
+    final latestId = _latestUnlockedId(progress);
+    final latest = latestId == null ? null : AchievementsCatalog.byId(latestId);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        elevation: 2,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: pt.goldPrimary.withValues(alpha: 0.30),
+            width: 1,
+          ),
+        ),
+        child: InkWell(
+          onTap: () => context.push('/achievements'),
+          splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  pt.goldPrimary.withValues(alpha: 0.08),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        pt.goldPrimary.withValues(alpha: 0.25),
+                        Colors.transparent,
+                      ],
+                    ),
+                    border: Border.all(
+                      color: pt.goldPrimary.withValues(alpha: 0.7),
+                      width: 1.5,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    latest != null
+                        ? IconData(latest.iconCodePoint,
+                            fontFamily: 'MaterialIcons')
+                        : Icons.emoji_events_rounded,
+                    color: pt.goldPrimary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Achievements',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${progress.unlockedCount} / ${all.length} unlocked'
+                        '${latest != null ? " • ${latest.title}" : ""}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: pt.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: pt.textMuted),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String? _latestUnlockedId(AchievementProgress progress) {
+    if (progress.unlockedAt.isEmpty) return null;
+    String? bestId;
+    DateTime? bestDt;
+    progress.unlockedAt.forEach((id, dt) {
+      if (bestDt == null || dt.isAfter(bestDt!)) {
+        bestDt = dt;
+        bestId = id;
+      }
+    });
+    return bestId;
   }
 }
 
