@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 
 final sessionsStreamProvider = StreamProvider.autoDispose<List<Session>>((ref) {
@@ -10,6 +12,13 @@ final addSessionProvider = Provider((ref) {
   return (SessionsCompanion entry) async {
     try {
       await ref.read(sessionsDaoProvider).insertSession(entry);
+      final profitDollars =
+          entry.profitLoss.present ? entry.profitLoss.value : 0.0;
+      final cents = (profitDollars * 100).round();
+      await ref.read(achievementsProvider.notifier).evaluate(
+            stats: ref.read(userStatsProvider),
+            sessionProfitCents: cents,
+          );
     } catch (e, st) {
       Error.throwWithStackTrace(
           Exception('Failed to add session: $e'), st);

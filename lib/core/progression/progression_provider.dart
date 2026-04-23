@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievements_provider.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -93,6 +94,9 @@ class UserStatsNotifier extends Notifier<UserStats> {
     );
     state = updated;
     await _service.saveStats(updated);
+    await ref
+        .read(achievementsProvider.notifier)
+        .evaluate(stats: updated);
   }
 }
 
