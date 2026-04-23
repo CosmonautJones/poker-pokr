@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -159,7 +160,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () async {
               await ref.read(onboardingSeenProvider.notifier).setSeen(false);
               if (context.mounted) {
-                context.push('/onboarding');
+                context.go('/onboarding');
               }
             },
           ),
@@ -310,6 +311,7 @@ class SettingsScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               await ref.read(userStatsProvider.notifier).resetAll();
+              await ref.read(achievementsProvider.notifier).reset();
               if (dialogContext.mounted) {
                 Navigator.of(dialogContext).pop();
               }

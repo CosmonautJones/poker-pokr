@@ -230,10 +230,11 @@ abstract final class AchievementsCatalog {
     consider('lessons_5', stats.lessonsCompleted >= 5);
     consider('sharp_mind', stats.lessonsCompleted >= 3);
 
-    final totalLessons = lessonsCatalog.length;
+    final totalScenarios =
+        lessonsCatalog.fold<int>(0, (acc, l) => acc + l.scenarios.length);
     consider(
       'lessons_all',
-      totalLessons > 0 && stats.lessonsCompleted >= totalLessons,
+      totalScenarios > 0 && stats.lessonsCompleted >= totalScenarios,
     );
 
     consider('level_5', stats.level >= 5);

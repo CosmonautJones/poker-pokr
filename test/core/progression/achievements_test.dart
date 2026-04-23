@@ -76,17 +76,18 @@ void main() {
       expect(ids.contains('streak_30'), isFalse);
     });
 
-    test('lessons_all requires matching catalog length', () {
-      final total = lessonsCatalog.length;
+    test('lessons_all fires only once every scenario is complete', () {
+      final totalScenarios =
+          lessonsCatalog.fold<int>(0, (acc, l) => acc + l.scenarios.length);
       final shy = AchievementsCatalog.evaluate(
-        stats: _statsWith(lessonsCompleted: total - 1),
+        stats: _statsWith(lessonsCompleted: totalScenarios - 1),
         current: const AchievementProgress.empty(),
         now: DateTime(2026, 4, 23),
       );
       expect(shy.map((a) => a.id).contains('lessons_all'), isFalse);
 
       final hit = AchievementsCatalog.evaluate(
-        stats: _statsWith(lessonsCompleted: total),
+        stats: _statsWith(lessonsCompleted: totalScenarios),
         current: const AchievementProgress.empty(),
         now: DateTime(2026, 4, 23),
       );
