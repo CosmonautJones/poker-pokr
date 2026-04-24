@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
@@ -7,14 +9,15 @@ import 'package:poker_trainer/features/trainer/presentation/screens/lesson_icons
 import 'package:poker_trainer/poker/models/game_type.dart';
 
 /// Shows lesson introduction and list of scenarios to play.
-class LessonDetailScreen extends StatelessWidget {
+class LessonDetailScreen extends ConsumerWidget {
   final String lessonId;
 
   const LessonDetailScreen({super.key, required this.lessonId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final pt = context.poker;
+    final stats = ref.watch(userStatsProvider);
     final lesson = lessonsCatalog.where((l) => l.id == lessonId).firstOrNull;
 
     if (lesson == null) {
@@ -95,6 +98,7 @@ class LessonDetailScreen extends StatelessWidget {
             _ScenarioCard(
               scenario: lesson.scenarios[i],
               index: i,
+              completed: stats.hasCompletedScenario(lessonId, i),
               onPlay: () {
                 context.go('/trainer/lesson/$lessonId/play/$i');
               },
@@ -108,11 +112,13 @@ class LessonDetailScreen extends StatelessWidget {
 class _ScenarioCard extends StatelessWidget {
   final LessonScenario scenario;
   final int index;
+  final bool completed;
   final VoidCallback onPlay;
 
   const _ScenarioCard({
     required this.scenario,
     required this.index,
+    required this.completed,
     required this.onPlay,
   });
 
@@ -125,6 +131,12 @@ class _ScenarioCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: completed
+            ? BorderSide(
+                color: pt.profit.withValues(alpha: 0.45),
+                width: 1.2,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -133,23 +145,37 @@ class _ScenarioCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Scenario number badge
+              // Scenario number badge (check when completed)
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: pt.feltCenter,
+                  color: completed
+                      ? pt.profit.withValues(alpha: 0.2)
+                      : pt.feltCenter,
                   borderRadius: BorderRadius.circular(10),
+                  border: completed
+                      ? Border.all(
+                          color: pt.profit.withValues(alpha: 0.6),
+                          width: 1.2,
+                        )
+                      : null,
                 ),
                 child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: completed
+                      ? Icon(
+                          Icons.check_rounded,
+                          size: 20,
+                          color: pt.profit,
+                        )
+                      : Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -197,7 +223,13 @@ class _ScenarioCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Icon(Icons.play_arrow_rounded, color: pt.profit, size: 22),
+                  Icon(
+                    completed
+                        ? Icons.replay_rounded
+                        : Icons.play_arrow_rounded,
+                    color: completed ? pt.textMuted : pt.profit,
+                    size: 22,
+                  ),
                 ],
               ),
             ],

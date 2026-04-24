@@ -138,6 +138,16 @@ class LessonScenario {
   }
 }
 
+/// Difficulty tier for a [Lesson]. Drives badges + sort order in the list.
+enum LessonDifficulty {
+  beginner('Beginner'),
+  intermediate('Intermediate'),
+  advanced('Advanced');
+
+  final String label;
+  const LessonDifficulty(this.label);
+}
+
 /// A lesson containing one or more interactive scenarios on a topic.
 class Lesson {
   /// Unique identifier.
@@ -155,6 +165,9 @@ class Lesson {
   /// Icon codepoint (Material Icons).
   final int iconCodePoint;
 
+  /// Suggested skill tier; defaults to beginner for legacy lessons.
+  final LessonDifficulty difficulty;
+
   /// Scenarios the user can play through.
   final List<LessonScenario> scenarios;
 
@@ -165,5 +178,6 @@ class Lesson {
     required this.introduction,
     required this.iconCodePoint,
     required this.scenarios,
+    this.difficulty = LessonDifficulty.beginner,
   });
 }

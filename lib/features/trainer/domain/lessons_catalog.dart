@@ -33,6 +33,7 @@ final _drawingHandsLesson = Lesson(
       'most common draw types, how to count outs, and when the price is '
       'right to chase.',
   iconCodePoint: 0xe87d, // Icons.trending_up
+  difficulty: LessonDifficulty.beginner,
   scenarios: [
     _flushDrawScenario,
     _oesdScenario,
@@ -332,6 +333,7 @@ final _handProtectionLesson = Lesson(
       'chase their draws. If you check and let them see free cards, you '
       'give away equity. This lesson teaches when and how much to bet.',
   iconCodePoint: 0xe8e8, // Icons.shield
+  difficulty: LessonDifficulty.intermediate,
   scenarios: [
     _protectSetScenario,
     _protectTopPairScenario,

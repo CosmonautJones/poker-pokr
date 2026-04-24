@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements_catalog.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/core/utils/responsive.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievement_icons.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/reports_provider.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -127,6 +129,14 @@ class HomeScreen extends ConsumerWidget {
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
               ),
+
+              const SizedBox(height: 14),
+
+              // Achievements peek: collection progress + latest unlock preview
+              const _AchievementsPeek()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 200.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 200.ms),
 
               const SizedBox(height: 14),
 
@@ -894,6 +904,149 @@ class _StreakBadge extends StatelessWidget {
         Icons.local_fire_department_rounded,
         size: 22,
         color: color,
+      ),
+    );
+  }
+}
+
+/// Compact home-screen card showing total achievements unlocked plus an
+/// icon preview. Tapping navigates to the gallery.
+class _AchievementsPeek extends ConsumerWidget {
+  const _AchievementsPeek();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(userStatsProvider);
+    final unlockedIds = stats.unlockedAchievementIds;
+    final total = achievementsCatalog.length;
+    final unlocked = unlockedIds.length;
+
+    // Preview icons: up to 4 of the most recently (by catalog order) unlocked.
+    // Fall back to locked silhouettes for a brand-new install.
+    final previewAchievements = achievementsCatalog
+        .where((a) => unlockedIds.contains(a.id))
+        .take(4)
+        .toList();
+    final placeholdersNeeded = 4 - previewAchievements.length;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: pt.goldPrimary.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => context.go('/settings/achievements'),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.06),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.emoji_events_rounded,
+                      size: 16, color: pt.goldPrimary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Achievements',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.goldPrimary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$unlocked / $total',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 16, color: pt.textMuted),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  for (final a in previewAchievements) ...[
+                    _AchievementChip(
+                      iconData: achievementIcon(a.iconCodePoint),
+                      unlocked: true,
+                      color: pt.goldPrimary,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  for (int i = 0; i < placeholdersNeeded; i++) ...[
+                    _AchievementChip(
+                      iconData: Icons.lock_rounded,
+                      unlocked: false,
+                      color: pt.textMuted,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AchievementChip extends StatelessWidget {
+  final IconData iconData;
+  final bool unlocked;
+  final Color color;
+
+  const _AchievementChip({
+    required this.iconData,
+    required this.unlocked,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: unlocked ? 0.45 : 0.1),
+            color.withValues(alpha: 0.05),
+          ],
+        ),
+        border: Border.all(
+          color: color.withValues(alpha: unlocked ? 0.7 : 0.3),
+          width: 1,
+        ),
+      ),
+      child: Icon(
+        iconData,
+        size: 18,
+        color: unlocked ? Colors.white : color.withValues(alpha: 0.6),
       ),
     );
   }
