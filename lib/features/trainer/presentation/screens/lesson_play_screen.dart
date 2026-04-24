@@ -104,7 +104,10 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
       _awardedCompletionXp = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(userStatsProvider.notifier).recordLessonComplete();
+        ref.read(userStatsProvider.notifier).recordLessonComplete(
+              lessonId: widget.lessonId,
+              scenarioIndex: widget.scenarioIndex,
+            );
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {

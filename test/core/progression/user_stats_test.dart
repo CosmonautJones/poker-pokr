@@ -96,16 +96,23 @@ void main() {
         lastPlayedDay: DateTime(2026, 4, 19),
         totalXp: 325,
         handsPlayed: 18,
+        handsWon: 6,
         lessonsCompleted: 3,
         bestStreakDays: 7,
+        completedScenarioIds: const {'drawing_hands:0', 'drawing_hands:2'},
+        unlockedAchievementIds: const {'first_hand', 'streak_three'},
       );
       final decoded = UserStats.tryDecode(stats.encode())!;
       expect(decoded.streakDays, 4);
       expect(decoded.lastPlayedDay, DateTime(2026, 4, 19));
       expect(decoded.totalXp, 325);
       expect(decoded.handsPlayed, 18);
+      expect(decoded.handsWon, 6);
       expect(decoded.lessonsCompleted, 3);
       expect(decoded.bestStreakDays, 7);
+      expect(decoded.completedScenarioIds,
+          {'drawing_hands:0', 'drawing_hands:2'});
+      expect(decoded.unlockedAchievementIds, {'first_hand', 'streak_three'});
     });
 
     test('tryDecode returns null for garbage and empty', () {
@@ -120,6 +127,56 @@ void main() {
       expect(decoded!.streakDays, 0);
       expect(decoded.totalXp, 0);
       expect(decoded.lastPlayedDay, isNull);
+      expect(decoded.handsWon, 0);
+      expect(decoded.completedScenarioIds, isEmpty);
+      expect(decoded.unlockedAchievementIds, isEmpty);
+    });
+
+    test('tryDecode gracefully handles non-list scenario/achievement fields',
+        () {
+      final raw = '{"completedScenarioIds":42,'
+          '"unlockedAchievementIds":"bogus"}';
+      final decoded = UserStats.tryDecode(raw);
+      expect(decoded, isNotNull);
+      expect(decoded!.completedScenarioIds, isEmpty);
+      expect(decoded.unlockedAchievementIds, isEmpty);
+    });
+
+    test('old-schema payload without new fields still decodes', () {
+      // Simulates state written by a previous app version that didn't
+      // know about handsWon / completedScenarioIds / achievements.
+      const raw = '{"streakDays":3,"totalXp":150,"handsPlayed":12,'
+          '"lessonsCompleted":1,"bestStreakDays":3,'
+          '"lastPlayedDay":"2026-04-19T00:00:00.000"}';
+      final decoded = UserStats.tryDecode(raw)!;
+      expect(decoded.streakDays, 3);
+      expect(decoded.handsPlayed, 12);
+      expect(decoded.handsWon, 0);
+      expect(decoded.completedScenarioIds, isEmpty);
+      expect(decoded.unlockedAchievementIds, isEmpty);
+    });
+  });
+
+  group('UserStats scenario helpers', () {
+    test('scenarioId is deterministic', () {
+      expect(UserStats.scenarioId('drawing_hands', 0), 'drawing_hands:0');
+      expect(UserStats.scenarioId('hand_protection', 2), 'hand_protection:2');
+    });
+
+    test('hasCompletedScenario / completedScenarioCount respect lesson id',
+        () {
+      final stats = const UserStats.empty().copyWith(
+        completedScenarioIds: const {
+          'drawing_hands:0',
+          'drawing_hands:2',
+          'hand_protection:0',
+        },
+      );
+      expect(stats.hasCompletedScenario('drawing_hands', 0), isTrue);
+      expect(stats.hasCompletedScenario('drawing_hands', 1), isFalse);
+      expect(stats.completedScenarioCount('drawing_hands'), 2);
+      expect(stats.completedScenarioCount('hand_protection'), 1);
+      expect(stats.completedScenarioCount('missing'), 0);
     });
   });
 

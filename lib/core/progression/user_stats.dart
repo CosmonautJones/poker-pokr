@@ -22,19 +22,34 @@ class UserStats {
   /// Hands completed (any replay that reached isComplete).
   final int handsPlayed;
 
+  /// Hands in which the viewer's player finished among the winners.
+  final int handsWon;
+
   /// Lesson scenarios completed.
   final int lessonsCompleted;
 
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Set of scenario ids the player has completed at least once.
+  ///
+  /// Ids are normalized as `"<lessonId>:<scenarioIndex>"`. Use
+  /// [scenarioId] to build them consistently.
+  final Set<String> completedScenarioIds;
+
+  /// Set of achievement ids the player has unlocked.
+  final Set<String> unlockedAchievementIds;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
     required this.totalXp,
     required this.handsPlayed,
+    required this.handsWon,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    required this.completedScenarioIds,
+    required this.unlockedAchievementIds,
   });
 
   /// Fresh stats for a brand-new install.
@@ -43,8 +58,11 @@ class UserStats {
         lastPlayedDay = null,
         totalXp = 0,
         handsPlayed = 0,
+        handsWon = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        completedScenarioIds = const <String>{},
+        unlockedAchievementIds = const <String>{};
 
   UserStats copyWith({
     int? streakDays,
@@ -52,8 +70,11 @@ class UserStats {
     bool clearLastPlayedDay = false,
     int? totalXp,
     int? handsPlayed,
+    int? handsWon,
     int? lessonsCompleted,
     int? bestStreakDays,
+    Set<String>? completedScenarioIds,
+    Set<String>? unlockedAchievementIds,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -62,9 +83,28 @@ class UserStats {
           : (lastPlayedDay ?? this.lastPlayedDay),
       totalXp: totalXp ?? this.totalXp,
       handsPlayed: handsPlayed ?? this.handsPlayed,
+      handsWon: handsWon ?? this.handsWon,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      completedScenarioIds:
+          completedScenarioIds ?? this.completedScenarioIds,
+      unlockedAchievementIds:
+          unlockedAchievementIds ?? this.unlockedAchievementIds,
     );
+  }
+
+  /// Build a canonical scenario id from a lesson id + scenario index.
+  static String scenarioId(String lessonId, int scenarioIndex) =>
+      '$lessonId:$scenarioIndex';
+
+  /// True if the player has completed the given scenario at least once.
+  bool hasCompletedScenario(String lessonId, int scenarioIndex) =>
+      completedScenarioIds.contains(scenarioId(lessonId, scenarioIndex));
+
+  /// Count of completed scenarios for a lesson.
+  int completedScenarioCount(String lessonId) {
+    final prefix = '$lessonId:';
+    return completedScenarioIds.where((id) => id.startsWith(prefix)).length;
   }
 
   /// Current level derived from [totalXp] via [Progression.levelForXp].
@@ -89,8 +129,11 @@ class UserStats {
         'lastPlayedDay': lastPlayedDay?.toIso8601String(),
         'totalXp': totalXp,
         'handsPlayed': handsPlayed,
+        'handsWon': handsWon,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        'completedScenarioIds': completedScenarioIds.toList(),
+        'unlockedAchievementIds': unlockedAchievementIds.toList(),
       };
 
   String encode() => jsonEncode(toJson());
@@ -106,12 +149,25 @@ class UserStats {
             : null,
         totalXp: (map['totalXp'] as num?)?.toInt() ?? 0,
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        completedScenarioIds: _decodeStringSet(map['completedScenarioIds']),
+        unlockedAchievementIds:
+            _decodeStringSet(map['unlockedAchievementIds']),
       );
     } catch (_) {
       return null;
     }
+  }
+
+  static Set<String> _decodeStringSet(Object? raw) {
+    if (raw is! List) return const <String>{};
+    final out = <String>{};
+    for (final v in raw) {
+      if (v is String && v.isNotEmpty) out.add(v);
+    }
+    return out;
   }
 }
 

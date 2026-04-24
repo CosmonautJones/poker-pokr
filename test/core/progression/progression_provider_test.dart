@@ -116,6 +116,46 @@ void main() {
       );
     });
 
+    test('recordLessonComplete records scenario completion id', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      await container.read(userStatsProvider.notifier).recordLessonComplete(
+            lessonId: 'drawing_hands',
+            scenarioIndex: 1,
+            now: DateTime(2026, 4, 19),
+          );
+      final stats = container.read(userStatsProvider);
+      expect(stats.completedScenarioIds, contains('drawing_hands:1'));
+      expect(stats.hasCompletedScenario('drawing_hands', 1), isTrue);
+      expect(stats.hasCompletedScenario('drawing_hands', 0), isFalse);
+    });
+
+    test('recordHandPlayed increments handsWon only when playerWon',
+        () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(
+        playerWon: false,
+        now: DateTime(2026, 4, 19),
+      );
+      await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19, 20),
+      );
+      final stats = container.read(userStatsProvider);
+      expect(stats.handsPlayed, 2);
+      expect(stats.handsWon, 1);
+    });
+
     test('stats persist across rebuilds via service', () async {
       final service = await _freshService();
       final container1 = ProviderContainer(overrides: [
@@ -154,6 +194,55 @@ void main() {
       expect(stats.streakDays, 0);
       expect(stats.handsPlayed, 0);
       expect(stats.lastPlayedDay, isNull);
+    });
+
+    test('unlocks are persisted into UserStats.unlockedAchievementIds',
+        () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      await container.read(userStatsProvider.notifier).recordHandPlayed(
+            playerWon: true,
+            now: DateTime(2026, 4, 19),
+          );
+      final stats = container.read(userStatsProvider);
+      expect(stats.unlockedAchievementIds, contains('first_hand'));
+      expect(stats.unlockedAchievementIds, contains('first_win'));
+    });
+
+    test('unlockStream emits each newly-unlocked achievement once',
+        () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      final received = <String>[];
+      final sub = notifier.unlockStream.listen((a) => received.add(a.id));
+      addTearDown(sub.cancel);
+
+      await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19),
+      );
+      // Give the async broadcast a tick to deliver.
+      await Future<void>.delayed(Duration.zero);
+      expect(received, contains('first_hand'));
+      expect(received, contains('first_win'));
+
+      // A second win should NOT re-emit either.
+      final beforeCount = received.length;
+      await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19, 20),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(received.length, beforeCount);
     });
 
     test('gap in days resets streak to 1', () async {

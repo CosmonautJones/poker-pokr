@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements_catalog.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -65,9 +67,25 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           ListTile(
+            leading: Icon(Icons.emoji_events_rounded, color: pt.goldPrimary),
+            title: const Text('Achievements'),
+            subtitle: Text(
+              '${stats.unlockedAchievementIds.length} / '
+              '${achievementsCatalog.length} unlocked',
+            ),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: pt.textMuted,
+              size: 20,
+            ),
+            onTap: () => context.go('/settings/achievements'),
+          ),
+          ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),
             title: const Text('Reset progression'),
-            subtitle: const Text('Clears streak, XP, and level'),
+            subtitle: const Text(
+              'Clears streak, XP, level, and achievements',
+            ),
             onTap: () => _showResetProgressionDialog(context, ref),
           ),
           const Divider(indent: 16, endIndent: 16, height: 32),

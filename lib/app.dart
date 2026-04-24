@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/theme/app_theme.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievement_toast.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievements_screen.dart';
 import 'package:poker_trainer/shared/widgets/app_scaffold.dart';
 import 'package:poker_trainer/features/home/presentation/home_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/session_list_screen.dart';
@@ -101,6 +103,12 @@ final router = GoRouter(
             GoRoute(
               path: '/settings',
               builder: (context, state) => const SettingsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'achievements',
+                  builder: (context, state) => const AchievementsScreen(),
+                ),
+              ],
             ),
           ],
         ),
@@ -119,6 +127,9 @@ class PokerTrainerApp extends StatelessWidget {
       theme: appTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => AchievementToastHost(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
