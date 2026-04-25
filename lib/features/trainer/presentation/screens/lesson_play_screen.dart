@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
+import 'package:poker_trainer/core/progression/scenario_mastery.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -38,6 +39,11 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
   HandSetup? _setup;
   LessonScenario? _scenario;
   bool _awardedCompletionXp = false;
+
+  /// Sticky for the lifetime of this attempt: once the player taps undo,
+  /// the run no longer counts as "clean" for star-tier purposes. Reset
+  /// only when the player navigates to a fresh scenario.
+  bool _undoUsedThisAttempt = false;
 
   @override
   void initState() {
@@ -102,9 +108,14 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
     // Award XP + success haptic exactly once per completed scenario.
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
+      final key = scenarioKeyFor(widget.lessonId, widget.scenarioIndex);
+      final undoUsed = _undoUsedThisAttempt;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(userStatsProvider.notifier).recordLessonComplete();
+        ref.read(userStatsProvider.notifier).recordLessonComplete(
+              scenarioKey: key,
+              undoUsed: undoUsed,
+            );
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
@@ -124,13 +135,25 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.undo_rounded, size: 20),
-            onPressed: replayState.canUndo ? () => notifier.undo() : null,
+            onPressed: replayState.canUndo
+                ? () {
+                    _undoUsedThisAttempt = true;
+                    notifier.undo();
+                  }
+                : null,
             tooltip: 'Undo',
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             icon: const Icon(Icons.redo_rounded, size: 20),
-            onPressed: replayState.canRedo ? () => notifier.redo() : null,
+            onPressed: replayState.canRedo
+                ? () {
+                    // Redo replays a previously-undone action so the run
+                    // is not "clean" for mastery purposes either.
+                    _undoUsedThisAttempt = true;
+                    notifier.redo();
+                  }
+                : null,
             tooltip: 'Redo',
             visualDensity: VisualDensity.compact,
           ),
