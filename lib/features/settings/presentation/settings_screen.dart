@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -64,10 +66,13 @@ class SettingsScreen extends ConsumerWidget {
                       '(best ${stats.bestStreakDays})',
             ),
           ),
+          const _AchievementsTile(),
           ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),
             title: const Text('Reset progression'),
-            subtitle: const Text('Clears streak, XP, and level'),
+            subtitle: const Text(
+              'Clears streak, XP, level, mastery, and trophies',
+            ),
             onTap: () => _showResetProgressionDialog(context, ref),
           ),
           const Divider(indent: 16, endIndent: 16, height: 32),
@@ -255,6 +260,51 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Tile that links to the Trophy Cabinet, with a live "X / Y" badge so the
+/// settings screen reflects current progress at a glance.
+class _AchievementsTile extends ConsumerWidget {
+  const _AchievementsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final stats = ref.watch(userStatsProvider);
+    final total = achievementsCatalog.length;
+    final unlocked = achievementsCatalog
+        .where((a) => stats.unlockedAchievementIds.contains(a.id.key))
+        .length;
+
+    return ListTile(
+      leading: Icon(Icons.emoji_events_rounded, color: pt.goldPrimary),
+      title: const Text('Trophy Cabinet'),
+      subtitle: Text(
+        unlocked == 0
+            ? 'Earn your first trophy by playing a hand'
+            : '$unlocked / $total trophies earned',
+      ),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [pt.goldDark, pt.goldPrimary],
+          ),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          '$unlocked / $total',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+      ),
+      onTap: () => context.go('/settings/achievements'),
     );
   }
 }

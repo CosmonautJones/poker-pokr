@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'scenario_mastery.dart';
+
 /// Immutable snapshot of the player's progression stats.
 ///
 /// Persisted as a single JSON string under the [storageKey] SharedPreferences
@@ -22,19 +24,32 @@ class UserStats {
   /// Hands completed (any replay that reached isComplete).
   final int handsPlayed;
 
+  /// Subset of [handsPlayed] where the viewer's hero seat won at showdown.
+  final int handsWon;
+
   /// Lesson scenarios completed.
   final int lessonsCompleted;
 
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Per-scenario mastery records keyed by `lessonId/scenarioIndex`.
+  final Map<String, MasteryRecord> scenarioMastery;
+
+  /// Achievement IDs the player has unlocked. Stored as the enum [name] so
+  /// reordering is safe.
+  final Set<String> unlockedAchievementIds;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
     required this.totalXp,
     required this.handsPlayed,
+    this.handsWon = 0,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    this.scenarioMastery = const {},
+    this.unlockedAchievementIds = const {},
   });
 
   /// Fresh stats for a brand-new install.
@@ -43,8 +58,11 @@ class UserStats {
         lastPlayedDay = null,
         totalXp = 0,
         handsPlayed = 0,
+        handsWon = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        scenarioMastery = const {},
+        unlockedAchievementIds = const {};
 
   UserStats copyWith({
     int? streakDays,
@@ -52,8 +70,11 @@ class UserStats {
     bool clearLastPlayedDay = false,
     int? totalXp,
     int? handsPlayed,
+    int? handsWon,
     int? lessonsCompleted,
     int? bestStreakDays,
+    Map<String, MasteryRecord>? scenarioMastery,
+    Set<String>? unlockedAchievementIds,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -62,8 +83,12 @@ class UserStats {
           : (lastPlayedDay ?? this.lastPlayedDay),
       totalXp: totalXp ?? this.totalXp,
       handsPlayed: handsPlayed ?? this.handsPlayed,
+      handsWon: handsWon ?? this.handsWon,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      scenarioMastery: scenarioMastery ?? this.scenarioMastery,
+      unlockedAchievementIds:
+          unlockedAchievementIds ?? this.unlockedAchievementIds,
     );
   }
 
@@ -84,14 +109,22 @@ class UserStats {
     return (xpIntoLevel / span).clamp(0.0, 1.0);
   }
 
-  Map<String, dynamic> toJson() => {
-        'streakDays': streakDays,
-        'lastPlayedDay': lastPlayedDay?.toIso8601String(),
-        'totalXp': totalXp,
-        'handsPlayed': handsPlayed,
-        'lessonsCompleted': lessonsCompleted,
-        'bestStreakDays': bestStreakDays,
-      };
+  Map<String, dynamic> toJson() {
+    final masteryJson = <String, dynamic>{};
+    scenarioMastery.forEach((k, v) => masteryJson[k] = v.toJson());
+    return {
+      'streakDays': streakDays,
+      'lastPlayedDay': lastPlayedDay?.toIso8601String(),
+      'totalXp': totalXp,
+      'handsPlayed': handsPlayed,
+      'handsWon': handsWon,
+      'lessonsCompleted': lessonsCompleted,
+      'bestStreakDays': bestStreakDays,
+      if (masteryJson.isNotEmpty) 'mastery': masteryJson,
+      if (unlockedAchievementIds.isNotEmpty)
+        'unlocked': unlockedAchievementIds.toList(),
+    };
+  }
 
   String encode() => jsonEncode(toJson());
 
@@ -99,6 +132,23 @@ class UserStats {
     if (raw == null || raw.isEmpty) return null;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
+      // Mastery: tolerate missing/empty so legacy installs still load.
+      final mastery = <String, MasteryRecord>{};
+      final rawMastery = map['mastery'];
+      if (rawMastery is Map) {
+        rawMastery.forEach((k, v) {
+          if (k is String && v is Map) {
+            mastery[k] = MasteryRecord.fromJson(Map<String, dynamic>.from(v));
+          }
+        });
+      }
+      final unlocked = <String>{};
+      final rawUnlocked = map['unlocked'];
+      if (rawUnlocked is List) {
+        for (final v in rawUnlocked) {
+          if (v is String) unlocked.add(v);
+        }
+      }
       return UserStats(
         streakDays: (map['streakDays'] as num?)?.toInt() ?? 0,
         lastPlayedDay: map['lastPlayedDay'] is String
@@ -106,8 +156,11 @@ class UserStats {
             : null,
         totalXp: (map['totalXp'] as num?)?.toInt() ?? 0,
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        scenarioMastery: mastery,
+        unlockedAchievementIds: unlocked,
       );
     } catch (_) {
       return null;
@@ -131,6 +184,13 @@ abstract final class Progression {
 
   /// One-time daily bonus granted when the streak counter ticks up.
   static const xpDailyBonus = 10;
+
+  /// Bonus XP awarded the first time a player reaches a new star tier on
+  /// a scenario (fires once per tier per scenario).
+  static const xpPerStarTier = 25;
+
+  /// Bonus XP awarded the first time an achievement is unlocked.
+  static const xpPerAchievement = 50;
 
   /// Total XP required to reach [level] (level 0 = 0 XP, level 1 = 50 XP).
   ///
