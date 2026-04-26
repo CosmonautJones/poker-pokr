@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -99,6 +100,11 @@ class HomeScreen extends ConsumerWidget {
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
+
+              const _NextAchievementCard()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 175.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 175.ms),
 
               const SizedBox(height: 14),
 
@@ -860,6 +866,141 @@ class _ProgressionCard extends ConsumerWidget {
     final today = Progression.dayKey(DateTime.now());
     final last = Progression.dayKey(stats.lastPlayedDay!);
     return today.difference(last).inDays <= 1;
+  }
+}
+
+/// Shows the closest in-progress achievement to keep the loop hooked.
+///
+/// Hidden when the player is brand-new (no XP / no streak) so first-run is
+/// uncluttered, and hidden when every achievement is unlocked.
+class _NextAchievementCard extends ConsumerWidget {
+  const _NextAchievementCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(userStatsProvider);
+    final state = ref.watch(achievementStateProvider);
+
+    if (stats.totalXp == 0 && stats.streakDays == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final next = Achievement.pickNext(stats, state);
+    if (next == null) return const SizedBox.shrink();
+
+    final tierColor = tierColorOf(context, next.tier);
+    final progressValue = next.progressValue(stats);
+    final progressFraction = next.progressFraction(stats);
+
+    final card = Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: tierColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => context.go('/settings'),
+        splashColor: tierColor.withValues(alpha: 0.12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                tierColor.withValues(alpha: 0.10),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      tierColor.withValues(alpha: 0.55),
+                      tierColor.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: tierColor.withValues(alpha: 0.7),
+                    width: 1.5,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Icon(next.icon, size: 18, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Next: ${next.title}',
+                            style: textTheme.labelMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '$progressValue / ${next.target}',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: pt.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progressFraction,
+                        minHeight: 4,
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.08),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(tierColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 16,
+                color: pt.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Top padding lives inside the card so an empty SizedBox.shrink() doesn't
+    // leave a phantom gap when the card is hidden for first-run / fully-done.
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: card,
+    );
   }
 }
 

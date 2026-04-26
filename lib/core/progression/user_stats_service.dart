@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'achievement_state.dart';
 import 'user_stats.dart';
 
 /// Async SharedPreferences-backed store for [UserStats] and related prefs.
@@ -32,5 +33,14 @@ class UserStatsService {
 
   Future<void> saveHapticsEnabled(bool enabled) async {
     await _prefs.setBool(hapticsKey, enabled);
+  }
+
+  AchievementState loadAchievements() {
+    final raw = _prefs.getString(AchievementState.storageKey);
+    return AchievementState.tryDecode(raw) ?? const AchievementState.empty();
+  }
+
+  Future<void> saveAchievements(AchievementState state) async {
+    await _prefs.setString(AchievementState.storageKey, state.encode());
   }
 }

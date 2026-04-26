@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/features/settings/presentation/widgets/achievement_grid.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,6 +16,9 @@ class SettingsScreen extends ConsumerWidget {
     final pt = context.poker;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
     final stats = ref.watch(userStatsProvider);
+    final achievements = ref.watch(achievementStateProvider);
+    final unlockedCount = achievements.unlockedCount;
+    final totalCount = kAchievements.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,9 +72,23 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),
             title: const Text('Reset progression'),
-            subtitle: const Text('Clears streak, XP, and level'),
+            subtitle: const Text(
+              'Clears streak, XP, level, and achievement progress',
+            ),
             onTap: () => _showResetProgressionDialog(context, ref),
           ),
+          const Divider(indent: 16, endIndent: 16, height: 32),
+          // Achievements
+          _SectionHeader(title: 'Achievements'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: _AchievementSummary(
+              unlocked: unlockedCount,
+              total: totalCount,
+            ),
+          ),
+          const AchievementGrid(),
+          const SizedBox(height: 8),
           const Divider(indent: 16, endIndent: 16, height: 32),
           // About section
           _SectionHeader(title: 'General'),
@@ -182,8 +201,8 @@ class SettingsScreen extends ConsumerWidget {
         icon: Icon(Icons.warning_amber_rounded, color: pt.accent, size: 36),
         title: const Text('Reset progression?'),
         content: const Text(
-          'This clears your streak, XP, and level. Saved hands and '
-          'sessions are not affected.',
+          'This clears your streak, XP, level, and achievement progress. '
+          'Saved hands and sessions are not affected.',
         ),
         actions: [
           TextButton(
@@ -277,6 +296,61 @@ class _SectionHeader extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
       ),
+    );
+  }
+}
+
+class _AchievementSummary extends StatelessWidget {
+  final int unlocked;
+  final int total;
+
+  const _AchievementSummary({required this.unlocked, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final fraction = total == 0 ? 0.0 : (unlocked / total).clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.emoji_events_rounded,
+              size: 18,
+              color: pt.goldPrimary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$unlocked / $total unlocked',
+              style: textTheme.bodyMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${(fraction * 100).round()}%',
+              style: textTheme.labelMedium?.copyWith(
+                color: pt.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: fraction,
+            minHeight: 6,
+            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
+          ),
+        ),
+      ],
     );
   }
 }
