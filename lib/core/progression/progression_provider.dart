@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievement_state.dart';
+import 'achievements.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -22,6 +24,21 @@ final userStatsProvider =
 /// Haptics preference toggle. Writes through to SharedPreferences.
 final hapticsEnabledProvider =
     NotifierProvider<HapticsPrefNotifier, bool>(HapticsPrefNotifier.new);
+
+/// Persisted map of unlocked achievements (id → unlockedAt timestamp).
+final achievementStateProvider =
+    NotifierProvider<AchievementStateNotifier, AchievementState>(
+  AchievementStateNotifier.new,
+);
+
+/// Ephemeral queue of achievements unlocked during the current run.
+///
+/// Pushed to by [UserStatsNotifier] after a stat change and consumed by the
+/// celebration overlay; not persisted across launches.
+final recentlyUnlockedAchievementsProvider =
+    NotifierProvider<RecentUnlocksNotifier, List<Achievement>>(
+  RecentUnlocksNotifier.new,
+);
 
 class UserStatsNotifier extends Notifier<UserStats> {
   @override
@@ -66,10 +83,12 @@ class UserStatsNotifier extends Notifier<UserStats> {
     );
   }
 
-  /// Reset progression to a fresh install.
+  /// Reset progression to a fresh install. Also clears unlocked achievements.
   Future<void> resetAll() async {
     state = const UserStats.empty();
     await _service.saveStats(state);
+    await ref.read(achievementStateProvider.notifier).clear();
+    ref.read(recentlyUnlockedAchievementsProvider.notifier).clear();
   }
 
   Future<void> _apply({
@@ -93,6 +112,28 @@ class UserStatsNotifier extends Notifier<UserStats> {
     );
     state = updated;
     await _service.saveStats(updated);
+    await _detectNewUnlocks(updated);
+  }
+
+  Future<void> _detectNewUnlocks(UserStats updated) async {
+    final achievementsNotifier =
+        ref.read(achievementStateProvider.notifier);
+    final current = ref.read(achievementStateProvider);
+    final unlockedIds = Achievement.evaluateAll(updated);
+    final now = DateTime.now();
+    final newUnlocks = <String, DateTime>{};
+    for (final id in unlockedIds) {
+      if (!current.isUnlocked(id)) {
+        newUnlocks[id] = now;
+      }
+    }
+    if (newUnlocks.isEmpty) return;
+    await achievementsNotifier.addUnlocks(newUnlocks);
+    final recent = ref.read(recentlyUnlockedAchievementsProvider.notifier);
+    for (final id in newUnlocks.keys) {
+      final achievement = Achievement.byId(id);
+      if (achievement != null) recent.push(achievement);
+    }
   }
 }
 
@@ -103,5 +144,45 @@ class HapticsPrefNotifier extends Notifier<bool> {
   Future<void> set(bool enabled) async {
     state = enabled;
     await ref.read(userStatsServiceProvider).saveHapticsEnabled(enabled);
+  }
+}
+
+class AchievementStateNotifier extends Notifier<AchievementState> {
+  @override
+  AchievementState build() =>
+      ref.read(userStatsServiceProvider).loadAchievements();
+
+  UserStatsService get _service => ref.read(userStatsServiceProvider);
+
+  Future<void> addUnlocks(Map<String, DateTime> additions) async {
+    final next = state.copyWithNewUnlocks(additions);
+    if (identical(next, state)) return;
+    state = next;
+    await _service.saveAchievements(next);
+  }
+
+  Future<void> clear() async {
+    state = const AchievementState.empty();
+    await _service.saveAchievements(state);
+  }
+}
+
+class RecentUnlocksNotifier extends Notifier<List<Achievement>> {
+  @override
+  List<Achievement> build() => const [];
+
+  void push(Achievement a) {
+    if (state.any((e) => e.id == a.id)) return;
+    state = [...state, a];
+  }
+
+  void popFirst() {
+    if (state.isEmpty) return;
+    state = state.sublist(1);
+  }
+
+  void clear() {
+    if (state.isEmpty) return;
+    state = const [];
   }
 }
