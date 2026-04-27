@@ -11,6 +11,11 @@ import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
+import 'package:poker_trainer/features/learn/presentation/screens/learn_hub_screen.dart';
+import 'package:poker_trainer/features/learn/presentation/screens/glossary_screen.dart';
+import 'package:poker_trainer/features/learn/presentation/screens/hand_rankings_screen.dart';
+import 'package:poker_trainer/features/learn/presentation/screens/position_chart_screen.dart';
+import 'package:poker_trainer/features/learn/presentation/screens/pot_odds_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -91,6 +96,32 @@ final router = GoRouter(
                       ),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/learn',
+              builder: (context, state) => const LearnHubScreen(),
+              routes: [
+                GoRoute(
+                  path: 'glossary',
+                  builder: (context, state) => const GlossaryScreen(),
+                ),
+                GoRoute(
+                  path: 'hand-rankings',
+                  builder: (context, state) => const HandRankingsScreen(),
+                ),
+                GoRoute(
+                  path: 'positions',
+                  builder: (context, state) => const PositionChartScreen(),
+                ),
+                GoRoute(
+                  path: 'pot-odds',
+                  builder: (context, state) => const PotOddsScreen(),
                 ),
               ],
             ),
