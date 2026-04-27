@@ -17,10 +17,16 @@ class AppScaffold extends StatelessWidget {
           initialLocation: index == navigationShell.currentIndex,
         ),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.book), label: 'Bookkeeper'),
-          NavigationDestination(icon: Icon(Icons.school), label: 'Trainer'),
-          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
+          NavigationDestination(
+              icon: Icon(Icons.home_rounded), label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.book_rounded), label: 'Sessions'),
+          NavigationDestination(
+              icon: Icon(Icons.style_rounded), label: 'Trainer'),
+          NavigationDestination(
+              icon: Icon(Icons.school_rounded), label: 'Learn'),
+          NavigationDestination(
+              icon: Icon(Icons.settings_rounded), label: 'Settings'),
         ],
       ),
     );
