@@ -1,10 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation_keys.dart';
 import 'achievements.dart';
 import 'achievements_provider.dart';
+import 'daily_challenges.dart';
 import 'daily_challenges_provider.dart';
+import 'unlock_toast.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
+
+/// Spacing between consecutive toasts so multiple unlocks stack visibly
+/// instead of replacing each other instantly.
+const _toastStagger = Duration(milliseconds: 250);
 
 /// Singleton provider for the SharedPreferences-backed service.
 ///
@@ -102,7 +111,27 @@ class UserStatsNotifier extends Notifier<UserStats> {
     // that exercise the achievement path must provide the override.
     final notifier = _achievementsNotifierOrNull();
     if (notifier == null) return;
-    await notifier.evaluate(state, ctx: ctx, now: now);
+    final unlocked = await notifier.evaluate(state, ctx: ctx, now: now);
+    if (unlocked.isNotEmpty) {
+      // Fire-and-forget: notifiers don't have a BuildContext, so we route
+      // toasts through the root navigator key. Failure to surface is silent.
+      unawaited(_surfaceUnlockedAchievements(unlocked));
+    }
+  }
+
+  Future<void> _surfaceUnlockedAchievements(
+    List<Achievement> unlocked,
+  ) async {
+    for (var i = 0; i < unlocked.length; i++) {
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx == null) return; // App shutting down or not yet mounted.
+      final def = Achievements.byId(unlocked[i].definitionId);
+      if (def == null) continue;
+      showAchievementUnlocked(ctx, def);
+      if (i < unlocked.length - 1) {
+        await Future<void>.delayed(_toastStagger);
+      }
+    }
   }
 
   AchievementsNotifier? _achievementsNotifierOrNull() {
@@ -131,7 +160,13 @@ class UserStatsNotifier extends Notifier<UserStats> {
   Future<void> _nudgeChallenge(String id, int amount) async {
     final notifier = _challengesNotifierOrNull();
     if (notifier == null) return;
-    await notifier.incrementProgress(id, amount);
+    final justCompleted = await notifier.incrementProgress(id, amount);
+    if (justCompleted == null) return;
+    final def = DailyChallenges.byId(justCompleted.definitionId);
+    if (def == null) return;
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null) return;
+    showChallengeCompleted(ctx, def, def.xpReward);
   }
 
   DailyChallengesNotifier? _challengesNotifierOrNull() {

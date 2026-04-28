@@ -11,27 +11,22 @@ enum AchievementCategory { milestone, skill, streak, mastery }
 /// Compile-time definition of a single achievement.
 ///
 /// Definitions are static; only the per-user [Achievement] state (whether the
-/// player has unlocked it and when) is persisted.
+/// player has unlocked it and when) is persisted. Icons reference const
+/// [IconData] from [Icons] so Flutter's icon tree-shaker keeps working.
 class AchievementDefinition {
   final String id;
   final String title;
   final String description;
   final AchievementCategory category;
-
-  /// Material icon code point. Stored as `int` so the definition list could
-  /// be JSON-serialized for tooling without pulling in [IconData].
-  final int iconCodepoint;
+  final IconData icon;
 
   const AchievementDefinition({
     required this.id,
     required this.title,
     required this.description,
     required this.category,
-    required this.iconCodepoint,
+    required this.icon,
   });
-
-  IconData get icon =>
-      IconData(iconCodepoint, fontFamily: 'MaterialIcons');
 }
 
 /// Per-user achievement state — paired by [definitionId] with an
@@ -101,28 +96,28 @@ abstract final class Achievements {
       title: 'First Deal',
       description: 'Play your first hand.',
       category: AchievementCategory.milestone,
-      iconCodepoint: 0xe5d5, // Icons.casino_rounded
+      icon: Icons.casino_rounded,
     ),
     AchievementDefinition(
       id: 'ten_hands',
       title: 'Getting Warm',
       description: 'Play 10 hands.',
       category: AchievementCategory.milestone,
-      iconCodepoint: 0xef76, // Icons.local_fire_department_rounded
+      icon: Icons.local_fire_department_rounded,
     ),
     AchievementDefinition(
       id: 'hundred_hands',
       title: 'Grinder',
       description: 'Play 100 hands.',
       category: AchievementCategory.milestone,
-      iconCodepoint: 0xea65, // Icons.workspace_premium_rounded
+      icon: Icons.workspace_premium_rounded,
     ),
     AchievementDefinition(
       id: 'first_showdown_win',
       title: 'Down to the Felt',
       description: 'Win your first showdown.',
       category: AchievementCategory.skill,
-      iconCodepoint: 0xea1b, // Icons.emoji_events_rounded
+      icon: Icons.emoji_events_rounded,
     ),
     AchievementDefinition(
       id: 'underdog_win',
@@ -130,42 +125,42 @@ abstract final class Achievements {
       description:
           'Win a showdown as the equity underdog (less than 40% at the river).',
       category: AchievementCategory.skill,
-      iconCodepoint: 0xe838, // Icons.star_rounded
+      icon: Icons.star_rounded,
     ),
     AchievementDefinition(
       id: 'nutted',
       title: 'Stone Cold',
       description: 'Make the nuts (best possible hand) at showdown.',
       category: AchievementCategory.mastery,
-      iconCodepoint: 0xe87d, // Icons.favorite_rounded (placeholder gem-like)
+      icon: Icons.favorite_rounded,
     ),
     AchievementDefinition(
       id: 'first_lesson',
       title: 'Student of the Game',
       description: 'Complete your first lesson.',
       category: AchievementCategory.mastery,
-      iconCodepoint: 0xe80c, // Icons.school_rounded
+      icon: Icons.school_rounded,
     ),
     AchievementDefinition(
       id: 'three_lessons',
       title: 'Curious Mind',
       description: 'Complete 3 lessons.',
       category: AchievementCategory.mastery,
-      iconCodepoint: 0xe865, // Icons.menu_book_rounded
+      icon: Icons.menu_book_rounded,
     ),
     AchievementDefinition(
       id: 'streak_3',
       title: 'Hot Hand',
       description: 'Reach a 3-day streak.',
       category: AchievementCategory.streak,
-      iconCodepoint: 0xef76, // Icons.local_fire_department_rounded
+      icon: Icons.local_fire_department_rounded,
     ),
     AchievementDefinition(
       id: 'streak_7',
       title: 'On Fire',
       description: 'Reach a 7-day streak.',
       category: AchievementCategory.streak,
-      iconCodepoint: 0xe51c, // Icons.bolt_rounded
+      icon: Icons.bolt_rounded,
     ),
   ];
 

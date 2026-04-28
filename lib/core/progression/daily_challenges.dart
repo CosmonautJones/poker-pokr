@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import 'user_stats.dart';
+import 'user_stats.dart' show Progression;
 
 /// Compile-time definition of a single daily-challenge template.
+///
+/// Icons reference const [IconData] from [Icons] so the icon tree-shaker
+/// keeps working in release builds.
 class DailyChallengeDefinition {
   final String id;
   final String title;
   final String description;
   final int target;
-  final int iconCodepoint;
+  final IconData icon;
   final int xpReward;
 
   const DailyChallengeDefinition({
@@ -18,11 +21,9 @@ class DailyChallengeDefinition {
     required this.title,
     required this.description,
     required this.target,
-    required this.iconCodepoint,
+    required this.icon,
     required this.xpReward,
   });
-
-  IconData get icon => IconData(iconCodepoint, fontFamily: 'MaterialIcons');
 }
 
 /// Per-day challenge state. [date] uses [Progression.dayKey] in local time.
@@ -86,7 +87,7 @@ abstract final class DailyChallenges {
       title: 'Play 3 hands',
       description: 'Finish three hands today.',
       target: 3,
-      iconCodepoint: 0xe5d5, // Icons.casino
+      icon: Icons.casino_rounded,
       xpReward: 30,
     ),
     DailyChallengeDefinition(
@@ -94,7 +95,7 @@ abstract final class DailyChallenges {
       title: 'Play 5 hands',
       description: 'Finish five hands today.',
       target: 5,
-      iconCodepoint: 0xe5d5, // Icons.casino
+      icon: Icons.casino_rounded,
       xpReward: 50,
     ),
     DailyChallengeDefinition(
@@ -102,7 +103,7 @@ abstract final class DailyChallenges {
       title: 'Complete 1 lesson',
       description: 'Complete one lesson scenario.',
       target: 1,
-      iconCodepoint: 0xe80c, // Icons.school
+      icon: Icons.school_rounded,
       xpReward: 50,
     ),
     DailyChallengeDefinition(
@@ -110,7 +111,7 @@ abstract final class DailyChallenges {
       title: 'Reach 1 showdown',
       description: 'Take a hand to showdown.',
       target: 1,
-      iconCodepoint: 0xea1b, // Icons.emoji_events
+      icon: Icons.emoji_events_rounded,
       xpReward: 20,
     ),
     DailyChallengeDefinition(
@@ -118,7 +119,7 @@ abstract final class DailyChallenges {
       title: 'Win 1 hand at showdown',
       description: 'Take down a pot at showdown.',
       target: 1,
-      iconCodepoint: 0xea65, // Icons.workspace_premium
+      icon: Icons.workspace_premium_rounded,
       xpReward: 40,
     ),
     DailyChallengeDefinition(
@@ -126,7 +127,7 @@ abstract final class DailyChallenges {
       title: 'View outs panel 3 times',
       description: 'Tap into the outs trainer three times.',
       target: 3,
-      iconCodepoint: 0xe865, // Icons.menu_book
+      icon: Icons.menu_book_rounded,
       xpReward: 20,
     ),
     DailyChallengeDefinition(
@@ -134,7 +135,7 @@ abstract final class DailyChallenges {
       title: 'Log a session in Bookkeeper',
       description: 'Add one session to your bookkeeper.',
       target: 1,
-      iconCodepoint: 0xe06f, // Icons.note_add
+      icon: Icons.note_add_rounded,
       xpReward: 30,
     ),
     DailyChallengeDefinition(
@@ -142,7 +143,7 @@ abstract final class DailyChallenges {
       title: 'Replay a hand',
       description: 'Open a saved hand from the trainer.',
       target: 1,
-      iconCodepoint: 0xe042, // Icons.history
+      icon: Icons.history_rounded,
       xpReward: 20,
     ),
   ];
@@ -162,7 +163,9 @@ abstract final class DailyChallenges {
     final day = Progression.dayKey(today);
     final seed = day.day + day.month * 31 + day.year * 372;
     final indices = <int>[];
-    var cursor = seed;
+    // Defensive: a zero seed would make xorshift loop produce a constant; in
+    // practice seed is always > 0 for any sane DateTime, but guard anyway.
+    var cursor = seed == 0 ? 0x12345 : seed;
     while (indices.length < dailyCount && indices.length < all.length) {
       cursor = _xorshift(cursor);
       final pick = (cursor & 0x7fffffff) % all.length;

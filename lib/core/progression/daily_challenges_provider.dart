@@ -42,8 +42,10 @@ class DailyChallengesNotifier
     DateTime? now,
   }) async {
     if (amount <= 0) return null;
-    final current = state.valueOrNull;
-    if (current == null) return null;
+    // Wait for the initial load before applying. This guarantees a hand that
+    // finishes during cold launch still credits its challenge progress instead
+    // of silently dropping when state is still AsyncLoading.
+    final current = await future;
     final result = DailyChallenges.applyIncrement(current, challengeId, amount);
     if (identical(result.list, current)) return null;
     state = AsyncData(result.list);
@@ -66,8 +68,7 @@ class DailyChallengesNotifier
     String challengeId, {
     DateTime? now,
   }) async {
-    final current = state.valueOrNull;
-    if (current == null) return null;
+    final current = await future;
     final idx =
         current.indexWhere((c) => c.definitionId == challengeId);
     if (idx < 0) return null;

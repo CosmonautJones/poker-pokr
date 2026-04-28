@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +10,22 @@ import 'daily_challenges.dart';
 
 const _toastDuration = Duration(milliseconds: 3000);
 const _fadeDuration = Duration(milliseconds: 280);
+
+/// Tracks the most recent in-flight toast so a duplicate request can tear the
+/// previous one down early instead of stacking forever.
+_ToastHandle? _activeToast;
+
+class _ToastHandle {
+  final OverlayEntry entry;
+  Timer? timer;
+  _ToastHandle(this.entry);
+
+  void dismiss() {
+    timer?.cancel();
+    timer = null;
+    if (entry.mounted) entry.remove();
+  }
+}
 
 /// Shows a transient achievement-unlocked banner near the top of the screen.
 ///
@@ -51,6 +69,9 @@ void _showOverlay(BuildContext context, {required Widget child}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
 
+  // If another toast is in flight, tear it down so they don't stack visually.
+  _activeToast?.dismiss();
+
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (ctx) {
@@ -67,10 +88,21 @@ void _showOverlay(BuildContext context, {required Widget child}) {
     },
   );
 
+  final handle = _ToastHandle(entry);
+  _activeToast = handle;
+
   overlay.insert(entry);
-  Future.delayed(_toastDuration + _fadeDuration + const Duration(milliseconds: 50), () {
-    entry.remove();
-  });
+
+  handle.timer = Timer(
+    _toastDuration + _fadeDuration + const Duration(milliseconds: 50),
+    () {
+      // Guard against the route being popped before the timer fires —
+      // calling remove() on a detached entry throws.
+      handle.timer = null;
+      if (identical(_activeToast, handle)) _activeToast = null;
+      if (entry.mounted) entry.remove();
+    },
+  );
 }
 
 class _UnlockToast extends StatelessWidget {

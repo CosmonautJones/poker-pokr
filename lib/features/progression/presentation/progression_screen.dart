@@ -27,13 +27,16 @@ class ProgressionScreen extends ConsumerWidget {
         title: const Text('Progression'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go('/home'),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/home'),
         ),
       ),
       body: RefreshIndicator(
         color: pt.goldPrimary,
         onRefresh: () async {
           ref.read(hapticServiceProvider).light();
+          // Context-bearing achievements (underdog/nuts/showdown) unlock via
+          // runtime hooks, not refresh.
           await ref
               .read(achievementsProvider.notifier)
               .evaluate(stats);

@@ -773,69 +773,69 @@ class _ProgressionCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-              children: [
-                _StreakBadge(
-                  days: stats.streakDays,
-                  active: streakActive,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        streakActive
-                            ? '${stats.streakDays}-day streak'
-                            : 'Play today to restart streak',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        stats.bestStreakDays > stats.streakDays
-                            ? 'Best: ${stats.bestStreakDays} days'
-                            : '${stats.handsPlayed} hands \u2022 '
-                                '${stats.lessonsCompleted} lessons',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: pt.textMuted,
-                        ),
-                      ),
-                    ],
+                children: [
+                  _StreakBadge(
+                    days: stats.streakDays,
+                    active: streakActive,
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [pt.goldDark, pt.goldPrimary],
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'LVL $level',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          streakActive
+                              ? '${stats.streakDays}-day streak'
+                              : 'Play today to restart streak',
+                          style: textTheme.labelMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          stats.bestStreakDays > stats.streakDays
+                              ? 'Best: ${stats.bestStreakDays} days'
+                              : '${stats.handsPlayed} hands \u2022 '
+                                  '${stats.lessonsCompleted} lessons',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: pt.textMuted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: Colors.white.withValues(alpha: 0.08),
-                valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [pt.goldDark, pt.goldPrimary],
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'LVL $level',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
+                ),
+              ),
               const SizedBox(height: 6),
               Row(
                 children: [
