@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievements.dart';
+import 'achievements_provider.dart';
+import 'daily_challenges_provider.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -31,10 +34,15 @@ class UserStatsNotifier extends Notifier<UserStats> {
 
   /// Award XP for finishing a hand.
   ///
-  /// [playerWon] granted bonus XP when the viewer's player is among winners.
+  /// [playerWon] grants bonus XP when the viewer's player is among winners.
+  /// [achievementContext] is forwarded to the achievement engine so we can
+  /// score outcomes (showdown win, nuts, river equity) that aren't reflected
+  /// in [UserStats] alone. Also nudges any matching daily challenges.
   Future<void> recordHandPlayed({
     bool playerWon = false,
     DateTime? now,
+    AchievementContext? achievementContext,
+    bool reachedShowdown = false,
   }) async {
     final ts = now ?? DateTime.now();
     final prev = state;
@@ -49,10 +57,19 @@ class UserStatsNotifier extends Notifier<UserStats> {
       handsDelta: 1,
       lessonsDelta: 0,
     );
+    await _evaluateAchievements(achievementContext, now: ts);
+    await _bumpHandChallenges(
+      reachedShowdown: reachedShowdown,
+      wonShowdown: playerWon && reachedShowdown,
+      now: ts,
+    );
   }
 
   /// Award XP for completing a lesson scenario.
-  Future<void> recordLessonComplete({DateTime? now}) async {
+  Future<void> recordLessonComplete({
+    DateTime? now,
+    AchievementContext? achievementContext,
+  }) async {
     final ts = now ?? DateTime.now();
     final prev = state;
     final streak = Progression.applyActivity(prev, ts);
@@ -64,6 +81,65 @@ class UserStatsNotifier extends Notifier<UserStats> {
       handsDelta: 0,
       lessonsDelta: 1,
     );
+    await _evaluateAchievements(achievementContext, now: ts);
+    await _nudgeChallenge('lesson_1', 1);
+  }
+
+  /// XP-only award path used by daily-challenge completion (no streak bump,
+  /// no hand/lesson counter mutation). Persists immediately.
+  Future<void> awardChallengeXp(int xp, {DateTime? now}) async {
+    if (xp <= 0) return;
+    final updated = state.copyWith(totalXp: state.totalXp + xp);
+    state = updated;
+    await _service.saveStats(updated);
+  }
+
+  Future<void> _evaluateAchievements(
+    AchievementContext? ctx, {
+    required DateTime now,
+  }) async {
+    // Achievements provider is optional in tests that don't override it; tests
+    // that exercise the achievement path must provide the override.
+    final notifier = _achievementsNotifierOrNull();
+    if (notifier == null) return;
+    await notifier.evaluate(state, ctx: ctx, now: now);
+  }
+
+  AchievementsNotifier? _achievementsNotifierOrNull() {
+    try {
+      return ref.read(achievementsProvider.notifier);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _bumpHandChallenges({
+    required bool reachedShowdown,
+    required bool wonShowdown,
+    required DateTime now,
+  }) async {
+    await _nudgeChallenge('play_3', 1);
+    await _nudgeChallenge('play_5', 1);
+    if (reachedShowdown) {
+      await _nudgeChallenge('showdown_1', 1);
+    }
+    if (wonShowdown) {
+      await _nudgeChallenge('win_1', 1);
+    }
+  }
+
+  Future<void> _nudgeChallenge(String id, int amount) async {
+    final notifier = _challengesNotifierOrNull();
+    if (notifier == null) return;
+    await notifier.incrementProgress(id, amount);
+  }
+
+  DailyChallengesNotifier? _challengesNotifierOrNull() {
+    try {
+      return ref.read(dailyChallengesProvider.notifier);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Reset progression to a fresh install.

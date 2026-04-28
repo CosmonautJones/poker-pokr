@@ -721,8 +721,7 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Taps navigate to the dedicated progression screen.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -752,22 +751,28 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              pt.goldPrimary.withValues(alpha: 0.08),
-              Colors.transparent,
-            ],
+      child: InkWell(
+        onTap: () {
+          ref.read(hapticServiceProvider).light();
+          context.go('/home/progression');
+        },
+        splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
               children: [
                 _StreakBadge(
                   days: stats.streakDays,
@@ -831,25 +836,26 @@ class _ProgressionCard extends ConsumerWidget {
                 valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
               ),
             ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Text(
-                  '${stats.xpIntoLevel} / ${stats.xpNeededForNextLevel} XP',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: pt.textMuted,
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    '${stats.xpIntoLevel} / ${stats.xpNeededForNextLevel} XP',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.textMuted,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  '${stats.totalXp} XP total',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: pt.textMuted,
+                  const Spacer(),
+                  Text(
+                    '${stats.totalXp} XP total',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.textMuted,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

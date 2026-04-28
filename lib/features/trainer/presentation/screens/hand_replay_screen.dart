@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -18,6 +19,7 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/mid_hand_edi
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_banner.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/showdown_celebration.dart';
 import 'package:poker_trainer/features/trainer/providers/auto_play_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
@@ -42,6 +44,11 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   /// Tracks whether we've already awarded XP for the current completed hand,
   /// so rebuilds and undo/redo cycles don't double-credit.
   bool _awardedCompletionXp = false;
+
+  /// One-shot guard so the showdown celebration overlay doesn't re-fire on
+  /// every rebuild while the hand is in the complete state.
+  bool _celebrationShown = false;
+  OverlayEntry? _celebrationEntry;
 
   /// Viewer / hero seat for XP "won" detection. The free-play table puts the
   /// user at seat 0 (see `PokerTableWidget` bottom seat convention).
@@ -282,6 +289,43 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     ref.read(autoPlayProvider(setup).notifier).start();
   }
 
+  void _showCelebrationOverlay() {
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    _disposeCelebrationOverlay();
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: ShowdownCelebration(
+          onDone: () {
+            // Defer to the next frame so we never tear down an entry while
+            // the framework is still mid-build/animation tick.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_celebrationEntry == entry) {
+                _celebrationEntry = null;
+              }
+              if (entry.mounted) entry.remove();
+            });
+          },
+        ),
+      ),
+    );
+    _celebrationEntry = entry;
+    overlay.insert(entry);
+  }
+
+  void _disposeCelebrationOverlay() {
+    final entry = _celebrationEntry;
+    _celebrationEntry = null;
+    if (entry != null && entry.mounted) entry.remove();
+  }
+
+  @override
+  void dispose() {
+    _disposeCelebrationOverlay();
+    super.dispose();
+  }
+
   Future<void> _showEditSheet(HandSetup setup, {int? playerIndex}) async {
     // Pause auto-play if running.
     final autoNotifier = ref.read(autoPlayProvider(setup).notifier);
@@ -410,15 +454,32 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      final reachedShowdown = gs.street == Street.showdown &&
+          gs.activePlayers.length > 1;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref
-            .read(userStatsProvider.notifier)
-            .recordHandPlayed(playerWon: heroWon);
+        ref.read(userStatsProvider.notifier).recordHandPlayed(
+              playerWon: heroWon,
+              reachedShowdown: reachedShowdown,
+              achievementContext: AchievementContext(
+                wonShowdown: heroWon && reachedShowdown,
+              ),
+            );
         ref.read(hapticServiceProvider).success();
       });
+
+      // Showdown celebration overlay — only when the viewer's seat actually
+      // reached showdown and won. The flag prevents re-trigger on rebuild.
+      if (heroWon && reachedShowdown && !_celebrationShown) {
+        _celebrationShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _showCelebrationOverlay();
+        });
+      }
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
+      _celebrationShown = false;
     }
 
     return Scaffold(
