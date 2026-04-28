@@ -721,8 +721,7 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Taps navigate to the dedicated progression screen.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -752,104 +751,111 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              pt.goldPrimary.withValues(alpha: 0.08),
-              Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          ref.read(hapticServiceProvider).light();
+          context.go('/home/progression');
+        },
+        splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _StreakBadge(
+                    days: stats.streakDays,
+                    active: streakActive,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          streakActive
+                              ? '${stats.streakDays}-day streak'
+                              : 'Play today to restart streak',
+                          style: textTheme.labelMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          stats.bestStreakDays > stats.streakDays
+                              ? 'Best: ${stats.bestStreakDays} days'
+                              : '${stats.handsPlayed} hands \u2022 '
+                                  '${stats.lessonsCompleted} lessons',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: pt.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [pt.goldDark, pt.goldPrimary],
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'LVL $level',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    '${stats.xpIntoLevel} / ${stats.xpNeededForNextLevel} XP',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.textMuted,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${stats.totalXp} XP total',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.textMuted,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _StreakBadge(
-                  days: stats.streakDays,
-                  active: streakActive,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        streakActive
-                            ? '${stats.streakDays}-day streak'
-                            : 'Play today to restart streak',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        stats.bestStreakDays > stats.streakDays
-                            ? 'Best: ${stats.bestStreakDays} days'
-                            : '${stats.handsPlayed} hands \u2022 '
-                                '${stats.lessonsCompleted} lessons',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: pt.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [pt.goldDark, pt.goldPrimary],
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'LVL $level',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: Colors.white.withValues(alpha: 0.08),
-                valueColor: AlwaysStoppedAnimation<Color>(pt.goldPrimary),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Text(
-                  '${stats.xpIntoLevel} / ${stats.xpNeededForNextLevel} XP',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: pt.textMuted,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${stats.totalXp} XP total',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: pt.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );

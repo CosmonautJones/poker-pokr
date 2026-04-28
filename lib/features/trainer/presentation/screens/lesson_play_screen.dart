@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
@@ -104,7 +105,9 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
       _awardedCompletionXp = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(userStatsProvider.notifier).recordLessonComplete();
+        ref
+            .read(userStatsProvider.notifier)
+            .recordLessonComplete(achievementContext: const AchievementContext());
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/navigation_keys.dart';
 import 'package:poker_trainer/core/theme/app_theme.dart';
 import 'package:poker_trainer/shared/widgets/app_scaffold.dart';
 import 'package:poker_trainer/features/home/presentation/home_screen.dart';
+import 'package:poker_trainer/features/progression/presentation/progression_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/session_list_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/add_session_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/reports_screen.dart';
@@ -13,10 +15,8 @@ import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detai
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-
 final router = GoRouter(
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/home',
   routes: [
     StatefulShellRoute.indexedStack(
@@ -28,6 +28,12 @@ final router = GoRouter(
             GoRoute(
               path: '/home',
               builder: (context, state) => const HomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'progression',
+                  builder: (context, state) => const ProgressionScreen(),
+                ),
+              ],
             ),
           ],
         ),
