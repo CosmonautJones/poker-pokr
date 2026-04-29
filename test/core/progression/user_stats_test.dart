@@ -96,6 +96,7 @@ void main() {
         lastPlayedDay: DateTime(2026, 4, 19),
         totalXp: 325,
         handsPlayed: 18,
+        handsWon: 5,
         lessonsCompleted: 3,
         bestStreakDays: 7,
       );
@@ -104,8 +105,20 @@ void main() {
       expect(decoded.lastPlayedDay, DateTime(2026, 4, 19));
       expect(decoded.totalXp, 325);
       expect(decoded.handsPlayed, 18);
+      expect(decoded.handsWon, 5);
       expect(decoded.lessonsCompleted, 3);
       expect(decoded.bestStreakDays, 7);
+    });
+
+    test('tryDecode defaults missing handsWon to 0 (v1 fallback)', () {
+      final v1Json =
+          '{"streakDays":2,"lastPlayedDay":null,"totalXp":120,"handsPlayed":4,'
+          '"lessonsCompleted":1,"bestStreakDays":3}';
+      final decoded = UserStats.tryDecode(v1Json);
+      expect(decoded, isNotNull);
+      expect(decoded!.handsWon, 0);
+      expect(decoded.handsPlayed, 4);
+      expect(decoded.totalXp, 120);
     });
 
     test('tryDecode returns null for garbage and empty', () {

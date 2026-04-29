@@ -21,7 +21,12 @@ class UserStatsService {
 
   UserStats loadStats() {
     final raw = _prefs.getString(UserStats.storageKey);
-    return UserStats.tryDecode(raw) ?? const UserStats.empty();
+    final decoded = UserStats.tryDecode(raw);
+    if (decoded != null) return decoded;
+    // Fall back to the previous schema so users upgrading from v1 do not
+    // lose progress. The next save will write under the v2 key.
+    final legacy = _prefs.getString(UserStats.legacyStorageKey);
+    return UserStats.tryDecode(legacy) ?? const UserStats.empty();
   }
 
   Future<void> saveStats(UserStats stats) async {

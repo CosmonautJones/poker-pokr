@@ -6,8 +6,12 @@ import 'dart:math' as math;
 /// Persisted as a single JSON string under the [storageKey] SharedPreferences
 /// entry so the schema can evolve without migrations.
 class UserStats {
-  /// SharedPreferences key used by the service layer.
-  static const storageKey = 'user_stats_v1';
+  /// SharedPreferences key used by the service layer (current schema).
+  static const storageKey = 'user_stats_v2';
+
+  /// Legacy key from before [handsWon] was introduced; read-only fallback so
+  /// existing installs do not lose progress.
+  static const legacyStorageKey = 'user_stats_v1';
 
   /// Consecutive days the player has played at least one hand or lesson.
   final int streakDays;
@@ -22,6 +26,9 @@ class UserStats {
   /// Hands completed (any replay that reached isComplete).
   final int handsPlayed;
 
+  /// Hands the viewer's player won at showdown (subset of [handsPlayed]).
+  final int handsWon;
+
   /// Lesson scenarios completed.
   final int lessonsCompleted;
 
@@ -33,6 +40,7 @@ class UserStats {
     required this.lastPlayedDay,
     required this.totalXp,
     required this.handsPlayed,
+    required this.handsWon,
     required this.lessonsCompleted,
     required this.bestStreakDays,
   });
@@ -43,6 +51,7 @@ class UserStats {
         lastPlayedDay = null,
         totalXp = 0,
         handsPlayed = 0,
+        handsWon = 0,
         lessonsCompleted = 0,
         bestStreakDays = 0;
 
@@ -52,6 +61,7 @@ class UserStats {
     bool clearLastPlayedDay = false,
     int? totalXp,
     int? handsPlayed,
+    int? handsWon,
     int? lessonsCompleted,
     int? bestStreakDays,
   }) {
@@ -62,6 +72,7 @@ class UserStats {
           : (lastPlayedDay ?? this.lastPlayedDay),
       totalXp: totalXp ?? this.totalXp,
       handsPlayed: handsPlayed ?? this.handsPlayed,
+      handsWon: handsWon ?? this.handsWon,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
     );
@@ -89,6 +100,7 @@ class UserStats {
         'lastPlayedDay': lastPlayedDay?.toIso8601String(),
         'totalXp': totalXp,
         'handsPlayed': handsPlayed,
+        'handsWon': handsWon,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
       };
@@ -106,6 +118,7 @@ class UserStats {
             : null,
         totalXp: (map['totalXp'] as num?)?.toInt() ?? 0,
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
       );

@@ -11,7 +11,9 @@ import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
+import 'package:poker_trainer/features/settings/presentation/badges_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
+import 'package:poker_trainer/shared/widgets/achievement_unlock_banner.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -101,6 +103,12 @@ final router = GoRouter(
             GoRoute(
               path: '/settings',
               builder: (context, state) => const SettingsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'badges',
+                  builder: (context, state) => const BadgesScreen(),
+                ),
+              ],
             ),
           ],
         ),
@@ -119,6 +127,13 @@ class PokerTrainerApp extends StatelessWidget {
       theme: appTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        // Mounts the achievement-unlock celebration host above every route
+        // so banners can render no matter where the user is.
+        return AchievementToastHost(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

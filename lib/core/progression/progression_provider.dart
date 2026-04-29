@@ -31,7 +31,8 @@ class UserStatsNotifier extends Notifier<UserStats> {
 
   /// Award XP for finishing a hand.
   ///
-  /// [playerWon] granted bonus XP when the viewer's player is among winners.
+  /// [playerWon] granted bonus XP when the viewer's player is among winners
+  /// and increments the persistent [UserStats.handsWon] counter.
   Future<void> recordHandPlayed({
     bool playerWon = false,
     DateTime? now,
@@ -47,6 +48,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       streak: streak,
       xpDelta: baseXp,
       handsDelta: 1,
+      handsWonDelta: playerWon ? 1 : 0,
       lessonsDelta: 0,
     );
   }
@@ -62,6 +64,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       streak: streak,
       xpDelta: xp,
       handsDelta: 0,
+      handsWonDelta: 0,
       lessonsDelta: 1,
     );
   }
@@ -77,6 +80,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
     required StreakResult streak,
     required int xpDelta,
     required int handsDelta,
+    required int handsWonDelta,
     required int lessonsDelta,
   }) async {
     final nextBest = streak.newStreakDays > prev.bestStreakDays
@@ -88,6 +92,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       lastPlayedDay: streak.newLastPlayedDay,
       totalXp: prev.totalXp + xpDelta,
       handsPlayed: prev.handsPlayed + handsDelta,
+      handsWon: prev.handsWon + handsWonDelta,
       lessonsCompleted: prev.lessonsCompleted + lessonsDelta,
       bestStreakDays: nextBest,
     );
