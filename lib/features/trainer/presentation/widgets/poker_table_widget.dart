@@ -5,6 +5,7 @@ import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/motion.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/chip_flow_overlay.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/player_seat.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/community_cards.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/pot_display.dart';
@@ -152,6 +153,15 @@ class PokerTableWidget extends StatelessWidget {
                   ),
                 ),
               ),
+            // Chip-flow animation layer — sits above seats and below any
+            // overlays the parent might add.
+            Positioned.fill(
+              child: ChipFlowLayer(
+                gameState: gameState,
+                seatCenters: seats,
+                potCenter: Offset(centerX, centerY + 22 * scale),
+              ),
+            ),
           ],
         );
       },

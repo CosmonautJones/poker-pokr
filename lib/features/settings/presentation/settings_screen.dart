@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievement_catalog.dart';
+import 'package:poker_trainer/core/progression/achievement_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -14,6 +17,11 @@ class SettingsScreen extends ConsumerWidget {
     final pt = context.poker;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
     final stats = ref.watch(userStatsProvider);
+    final unlockedIds = ref.watch(
+      achievementsProvider.select((s) => s.unlockedIds),
+    );
+    final totalBadges = AchievementCatalog.all.length;
+    final unlockedBadges = unlockedIds.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -63,6 +71,13 @@ class SettingsScreen extends ConsumerWidget {
                   : '${stats.streakDays} days '
                       '(best ${stats.bestStreakDays})',
             ),
+          ),
+          ListTile(
+            leading: Icon(Icons.emoji_events_rounded, color: pt.goldPrimary),
+            title: const Text('Badges'),
+            subtitle: Text('$unlockedBadges / $totalBadges unlocked'),
+            trailing: Icon(Icons.chevron_right_rounded, color: pt.textMuted),
+            onTap: () => context.go('/settings/badges'),
           ),
           ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),

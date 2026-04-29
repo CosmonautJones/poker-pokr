@@ -56,6 +56,26 @@ void main() {
             Progression.xpPerHandWin +
             Progression.xpDailyBonus,
       );
+      expect(stats.handsWon, 1);
+    });
+
+    test('handsWon only increments when playerWon is true', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(now: DateTime(2026, 4, 19));
+      await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19),
+      );
+      await notifier.recordHandPlayed(now: DateTime(2026, 4, 19));
+      final stats = container.read(userStatsProvider);
+      expect(stats.handsPlayed, 3);
+      expect(stats.handsWon, 1);
     });
 
     test('same-day replay does not re-award daily bonus', () async {
@@ -154,6 +174,27 @@ void main() {
       expect(stats.streakDays, 0);
       expect(stats.handsPlayed, 0);
       expect(stats.lastPlayedDay, isNull);
+    });
+
+    test('falls back to v1 storage key when v2 absent', () async {
+      // Seed only the legacy key; the service should read it transparently.
+      SharedPreferences.setMockInitialValues({
+        UserStats.legacyStorageKey:
+            '{"streakDays":3,"lastPlayedDay":null,"totalXp":160,'
+                '"handsPlayed":7,"lessonsCompleted":2,"bestStreakDays":4}',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = UserStatsService(prefs);
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final stats = container.read(userStatsProvider);
+      expect(stats.handsPlayed, 7);
+      expect(stats.totalXp, 160);
+      expect(stats.handsWon, 0); // missing in v1
+      expect(stats.bestStreakDays, 4);
     });
 
     test('gap in days resets streak to 1', () async {
