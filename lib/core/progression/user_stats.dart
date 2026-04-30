@@ -152,6 +152,27 @@ abstract final class Progression {
   static DateTime dayKey(DateTime ts) =>
       DateTime(ts.year, ts.month, ts.day);
 
+  /// Whether [stats] would receive the daily bonus on a play at [now]
+  /// (i.e., this is the first activity of the local calendar day).
+  static bool wouldGrantDailyBonus(UserStats stats, DateTime now) {
+    final today = dayKey(now);
+    final last = stats.lastPlayedDay;
+    if (last == null) return true;
+    return today.difference(dayKey(last)).inDays >= 1;
+  }
+
+  /// Predict the XP that [UserStatsNotifier.recordHandPlayed] will award for a
+  /// hand completion. Mirrors the notifier's accounting so UIs (e.g. the
+  /// floating "+XP" pill) can display the gain without re-deriving the rules.
+  static int projectHandXp({
+    required UserStats stats,
+    required bool playerWon,
+    required DateTime now,
+  }) {
+    final daily = wouldGrantDailyBonus(stats, now) ? xpDailyBonus : 0;
+    return xpPerHand + (playerWon ? xpPerHandWin : 0) + daily;
+  }
+
   /// Apply a play event at [now] to [prev] and return the updated streak
   /// counter, the new last-played day, and any XP awarded for a daily bonus.
   ///

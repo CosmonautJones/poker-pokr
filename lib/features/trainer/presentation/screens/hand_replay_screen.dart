@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
+import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
@@ -18,6 +19,8 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/mid_hand_edi
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_glossary_sheet.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_banner.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/showdown_banner.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/xp_float.dart';
 import 'package:poker_trainer/features/trainer/providers/auto_play_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
@@ -42,6 +45,11 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   /// Tracks whether we've already awarded XP for the current completed hand,
   /// so rebuilds and undo/redo cycles don't double-credit.
   bool _awardedCompletionXp = false;
+
+  /// XP gained on the most recent completion, surfaced via the floating pill.
+  /// Reset on undo so a subsequent completion shows fresh feedback.
+  int? _lastXpAwarded;
+  bool _lastWinWasHero = false;
 
   /// Viewer / hero seat for XP "won" detection. The free-play table puts the
   /// user at seat 0 (see `PokerTableWidget` bottom seat convention).
@@ -410,6 +418,12 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      _lastWinWasHero = heroWon;
+      _lastXpAwarded = Progression.projectHandXp(
+        stats: ref.read(userStatsProvider),
+        playerWon: heroWon,
+        now: DateTime.now(),
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref
@@ -419,6 +433,7 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
+      _lastXpAwarded = null;
     }
 
     return Scaffold(
@@ -539,6 +554,44 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
                           _showEditSheet(setup, playerIndex: playerIndex)
                       : null,
                 ),
+                // Showdown reveal banner at top of table — only at true
+                // showdown (multi-way to river); fold-out wins skip it.
+                if (replayState.isComplete &&
+                    gs.street == Street.showdown &&
+                    gs.handDescriptions.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    left: 0,
+                    right: 0,
+                    child: ShowdownBanner(gameState: gs),
+                  ),
+                // XP gained pill floating above the hand-complete overlay.
+                // Positioned adaptively so it stays clear of the overlay on
+                // small screens (iPhone SE class) and respects safe area.
+                if (replayState.isComplete && _lastXpAwarded != null)
+                  Builder(
+                    builder: (innerCtx) {
+                      final viewport = MediaQuery.of(innerCtx).size.height;
+                      final bottomInset =
+                          MediaQuery.of(innerCtx).viewPadding.bottom;
+                      final pillBottom = (viewport * 0.18) + bottomInset;
+                      return Positioned(
+                        bottom: pillBottom,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: XpFloat(
+                            key: ValueKey(
+                              'xp-${replayState.actionHistory.length}-'
+                              '${_lastXpAwarded!}',
+                            ),
+                            xpDelta: _lastXpAwarded!,
+                            sublabel: _lastWinWasHero ? 'WIN' : null,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 // Hand complete overlay with animation
                 if (replayState.isComplete)
                   Positioned(
@@ -784,7 +837,11 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                       ),
                     ),
                     if (gs.winnerIndices != null &&
-                        gs.winnerIndices!.isNotEmpty) ...[
+                        gs.winnerIndices!.isNotEmpty &&
+                        // When the showdown banner is active, it already
+                        // names the winner + hand. Skip the duplicate line.
+                        !(gs.street == Street.showdown &&
+                            gs.handDescriptions.isNotEmpty)) ...[
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
@@ -797,23 +854,6 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                           ),
                         ),
                       ),
-                      if (gs.handDescriptions.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            gs.winnerIndices!
-                                .where((i) =>
-                                    gs.handDescriptions.containsKey(i))
-                                .map((i) => gs.handDescriptions[i]!)
-                                .toSet()
-                                .join(' / '),
-                            style: TextStyle(
-                              color: pt.goldLight,
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
                     ],
                     const SizedBox(height: 14),
                     Row(
