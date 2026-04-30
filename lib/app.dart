@@ -12,6 +12,8 @@ import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievement_unlock_overlay.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievements_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -20,8 +22,9 @@ final router = GoRouter(
   initialLocation: '/home',
   routes: [
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          AppScaffold(navigationShell: navigationShell),
+      builder: (context, state, navigationShell) => AchievementUnlockHost(
+        child: AppScaffold(navigationShell: navigationShell),
+      ),
       branches: [
         StatefulShellBranch(
           routes: [
@@ -101,6 +104,12 @@ final router = GoRouter(
             GoRoute(
               path: '/settings',
               builder: (context, state) => const SettingsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'achievements',
+                  builder: (context, state) => const AchievementsScreen(),
+                ),
+              ],
             ),
           ],
         ),
