@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/core/utils/responsive.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievement_icons.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/reports_provider.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -100,6 +103,11 @@ class HomeScreen extends ConsumerWidget {
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
 
+              const _AchievementsStrip()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 130.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 130.ms),
+
               const SizedBox(height: 14),
 
               // Last session card
@@ -147,7 +155,7 @@ class HomeScreen extends ConsumerWidget {
                       icon: Icons.school_rounded,
                       label: 'Lessons',
                       color: pt.seatActiveBorder,
-                      onTap: () => context.go('/trainer'),
+                      onTap: () => context.go('/trainer?tab=lessons'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -894,6 +902,114 @@ class _StreakBadge extends StatelessWidget {
         Icons.local_fire_department_rounded,
         size: 22,
         color: color,
+      ),
+    );
+  }
+}
+
+/// Compact achievements strip on the home screen. Shows the player's three
+/// most-recently-unlocked trophies and a "View all" affordance. Hides itself
+/// completely until at least one achievement is unlocked so first-run stays
+/// uncluttered.
+class _AchievementsStrip extends ConsumerWidget {
+  const _AchievementsStrip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final unlocked = ref.watch(unlockedAchievementsProvider);
+    if (unlocked.isEmpty) return const SizedBox.shrink();
+
+    // Preserve catalog order, then take the last few unlocked entries.
+    final inOrder = [
+      for (final a in kAchievements)
+        if (unlocked.contains(a.id)) a,
+    ];
+    final preview = inOrder.length <= 3
+        ? inOrder
+        : inOrder.sublist(inOrder.length - 3);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        elevation: 2,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: pt.goldPrimary.withValues(alpha: 0.25),
+          ),
+        ),
+        child: InkWell(
+          onTap: () {
+            ref.read(hapticServiceProvider).selection();
+            context.push('/achievements');
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.emoji_events_rounded,
+                  color: pt.goldPrimary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Achievements',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: pt.goldPrimary,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${unlocked.length} of ${kAchievements.length} unlocked',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                for (final ach in preview) ...[
+                  Container(
+                    width: 28,
+                    height: 28,
+                    margin: const EdgeInsets.only(left: 6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [pt.goldPrimary, pt.goldDark],
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      achievementIcon(ach.iconCodePoint),
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
+                  color: pt.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

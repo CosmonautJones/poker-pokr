@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/theme/app_theme.dart';
 import 'package:poker_trainer/shared/widgets/app_scaffold.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievements_screen.dart';
 import 'package:poker_trainer/features/home/presentation/home_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/session_list_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/add_session_screen.dart';
@@ -60,7 +61,17 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/trainer',
-              builder: (context, state) => const HandListScreen(),
+              builder: (context, state) {
+                // Allow `/trainer?tab=lessons` (or 0/1/2) to preselect a tab.
+                final raw = state.uri.queryParameters['tab'];
+                final tab = switch (raw) {
+                  'setups' || '0' => 0,
+                  'history' || '1' => 1,
+                  'lessons' || '2' => 2,
+                  _ => 0,
+                };
+                return HandListScreen(initialTab: tab);
+              },
               routes: [
                 GoRoute(
                   path: 'create',
@@ -105,6 +116,12 @@ final router = GoRouter(
           ],
         ),
       ],
+    ),
+    // Top-level routes that push above the tab shell.
+    GoRoute(
+      path: '/achievements',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AchievementsScreen(),
     ),
   ],
 );

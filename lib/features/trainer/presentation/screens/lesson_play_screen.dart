@@ -14,6 +14,7 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/coaching_ban
 import 'package:poker_trainer/features/trainer/presentation/widgets/equity_display.dart';
 import 'package:poker_trainer/features/trainer/presentation/widgets/poker_table_widget.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
+import 'package:poker_trainer/features/trainer/providers/lesson_progress_provider.dart';
 import 'package:poker_trainer/poker/models/street.dart';
 
 /// Interactive lesson play screen.
@@ -38,6 +39,7 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
   HandSetup? _setup;
   LessonScenario? _scenario;
   bool _awardedCompletionXp = false;
+  bool _wasFirstCompletion = false;
 
   @override
   void initState() {
@@ -99,16 +101,36 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
     final currentTip = _tipForStreet(gs.street);
     final hasNextScenario = _hasNextScenario();
 
-    // Award XP + success haptic exactly once per completed scenario.
+    // First-time scenario completion grants the full lesson XP bonus and
+    // persists progress. Replays no longer re-award the lesson bonus (so
+    // farming a single scenario can't ladder a player), but they still log a
+    // played hand so the streak ticks and the player gets baseline XP.
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        ref.read(userStatsProvider.notifier).recordLessonComplete();
-        ref.read(hapticServiceProvider).success();
+        final isFirstCompletion = await ref
+            .read(lessonProgressProvider.notifier)
+            .markScenarioComplete(
+              lessonId: widget.lessonId,
+              scenarioIndex: widget.scenarioIndex,
+            );
+        if (!mounted) return;
+        setState(() => _wasFirstCompletion = isFirstCompletion);
+        if (isFirstCompletion) {
+          await ref.read(userStatsProvider.notifier).recordLessonComplete();
+          await ref.read(hapticServiceProvider).success();
+        } else {
+          // Replay: count it as a regular played hand so the streak still
+          // ticks and the player gets baseline XP, without re-banking the
+          // lesson bonus.
+          await ref.read(userStatsProvider.notifier).recordHandPlayed();
+          ref.read(hapticServiceProvider).medium();
+        }
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
+      _wasFirstCompletion = false;
     }
 
     return Scaffold(
@@ -156,6 +178,7 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
                     bottom: 12,
                     child: Center(
                       child: _LessonCompleteOverlay(
+                        firstCompletion: _wasFirstCompletion,
                         onBack: () =>
                             context.go('/trainer/lesson/${widget.lessonId}'),
                         onNext: hasNextScenario ? _goToNextScenario : null,
@@ -198,10 +221,12 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
 
 /// Overlay shown when a lesson scenario is complete.
 class _LessonCompleteOverlay extends StatelessWidget {
+  final bool firstCompletion;
   final VoidCallback onBack;
   final VoidCallback? onNext;
 
   const _LessonCompleteOverlay({
+    required this.firstCompletion,
     required this.onBack,
     this.onNext,
   });
@@ -237,9 +262,9 @@ class _LessonCompleteOverlay extends StatelessWidget {
                 colors: [pt.goldLight, pt.goldPrimary, pt.goldLight],
               ).createShader(bounds);
             },
-            child: const Text(
-              'SCENARIO COMPLETE',
-              style: TextStyle(
+            child: Text(
+              firstCompletion ? 'SCENARIO COMPLETE' : 'NICE REPLAY',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -261,10 +286,16 @@ class _LessonCompleteOverlay extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded, size: 14, color: pt.goldPrimary),
+                Icon(
+                  firstCompletion
+                      ? Icons.star_rounded
+                      : Icons.replay_rounded,
+                  size: 14,
+                  color: pt.goldPrimary,
+                ),
                 const SizedBox(width: 4),
                 Text(
-                  '+50 XP',
+                  firstCompletion ? '+50 XP' : 'Reviewed',
                   style: TextStyle(
                     color: pt.goldLight,
                     fontSize: 12,

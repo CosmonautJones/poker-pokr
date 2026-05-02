@@ -12,7 +12,10 @@ import 'package:poker_trainer/features/trainer/providers/hands_provider.dart';
 import 'package:poker_trainer/poker/models/game_type.dart';
 
 class HandListScreen extends ConsumerStatefulWidget {
-  const HandListScreen({super.key});
+  /// Optional initial tab. 0=Setups, 1=History, 2=Lessons.
+  final int initialTab;
+
+  const HandListScreen({super.key, this.initialTab = 0});
 
   @override
   ConsumerState<HandListScreen> createState() => _HandListScreenState();
@@ -25,7 +28,11 @@ class _HandListScreenState extends ConsumerState<HandListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab.clamp(0, 2),
+    );
   }
 
   @override
