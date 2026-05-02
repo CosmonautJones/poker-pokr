@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/progression_provider.dart';
+import 'package:poker_trainer/core/progression/user_stats_service.dart';
 import 'package:poker_trainer/core/theme/app_theme.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/poker/models/game_type.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<UserStatsService> _stubService() async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+  return UserStatsService(prefs);
+}
 
 /// Wraps [LessonDetailScreen] in a [MaterialApp.router] with the minimum
 /// GoRouter setup so `context.go()` calls don't throw.
-Widget _buildTestWidget(String lessonId) {
+Future<Widget> _buildTestWidget(String lessonId) async {
+  final service = await _stubService();
   final router = GoRouter(
     initialLocation: '/lesson/$lessonId',
     routes: [
@@ -26,23 +37,28 @@ Widget _buildTestWidget(String lessonId) {
     ],
   );
 
-  return MaterialApp.router(
-    theme: appTheme,
-    routerConfig: router,
+  return ProviderScope(
+    overrides: [userStatsServiceProvider.overrideWithValue(service)],
+    child: MaterialApp.router(
+      theme: appTheme,
+      routerConfig: router,
+    ),
   );
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('LessonDetailScreen — invalid lesson', () {
     testWidgets('shows "Lesson not found" for unknown id', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('nonexistent_lesson'));
+      await tester.pumpWidget(await _buildTestWidget('nonexistent_lesson'));
       await tester.pumpAndSettle();
 
       expect(find.text('Lesson not found'), findsOneWidget);
     });
 
     testWidgets('AppBar title is "Lesson" for unknown id', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('nonexistent_lesson'));
+      await tester.pumpWidget(await _buildTestWidget('nonexistent_lesson'));
       await tester.pumpAndSettle();
 
       expect(find.text('Lesson'), findsOneWidget);
@@ -54,7 +70,7 @@ void main() {
         lessonsCatalog.firstWhere((l) => l.id == 'drawing_hands');
 
     testWidgets('AppBar shows lesson title', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(find.text(lesson.title), findsOneWidget);
@@ -62,28 +78,28 @@ void main() {
 
     testWidgets('displays "Overview" header in introduction card',
         (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(find.text('Overview'), findsOneWidget);
     });
 
     testWidgets('displays lesson introduction text', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(find.text(lesson.introduction), findsOneWidget);
     });
 
     testWidgets('displays "Scenarios" section header', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(find.text('Scenarios'), findsOneWidget);
     });
 
     testWidgets('renders a card for each scenario', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       for (final scenario in lesson.scenarios) {
@@ -92,7 +108,7 @@ void main() {
     });
 
     testWidgets('scenario cards show numbered badges', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       for (var i = 0; i < lesson.scenarios.length; i++) {
@@ -101,7 +117,7 @@ void main() {
     });
 
     testWidgets('scenario cards display game type labels', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       // drawing_hands has 3 Hold'em + 1 Omaha (PLO) scenario.
@@ -117,7 +133,7 @@ void main() {
     });
 
     testWidgets('each scenario card has a play arrow icon', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(
@@ -127,14 +143,14 @@ void main() {
     });
 
     testWidgets('renders lesson icon from icon map', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.trending_up), findsOneWidget);
     });
 
     testWidgets('back button navigates to /trainer', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       // Tap the back arrow.
@@ -151,7 +167,7 @@ void main() {
         lessonsCatalog.firstWhere((l) => l.id == 'hand_protection');
 
     testWidgets('renders correct number of scenarios', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('hand_protection'));
+      await tester.pumpWidget(await _buildTestWidget('hand_protection'));
       await tester.pumpAndSettle();
 
       for (final scenario in lesson.scenarios) {
@@ -162,7 +178,7 @@ void main() {
     });
 
     testWidgets('all scenarios are Hold\'em (no PLO)', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('hand_protection'));
+      await tester.pumpWidget(await _buildTestWidget('hand_protection'));
       await tester.pumpAndSettle();
 
       expect(find.text("Hold'em"), findsNWidgets(lesson.scenarios.length));
@@ -170,14 +186,14 @@ void main() {
     });
 
     testWidgets('renders shield icon from icon map', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('hand_protection'));
+      await tester.pumpWidget(await _buildTestWidget('hand_protection'));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.shield), findsOneWidget);
     });
 
     testWidgets('displays introduction text', (tester) async {
-      await tester.pumpWidget(_buildTestWidget('hand_protection'));
+      await tester.pumpWidget(await _buildTestWidget('hand_protection'));
       await tester.pumpAndSettle();
 
       expect(find.text(lesson.introduction), findsOneWidget);
@@ -187,7 +203,7 @@ void main() {
   group('LessonDetailScreen — scenario descriptions', () {
     testWidgets('each scenario description is visible for drawing_hands',
         (tester) async {
-      await tester.pumpWidget(_buildTestWidget('drawing_hands'));
+      await tester.pumpWidget(await _buildTestWidget('drawing_hands'));
       await tester.pumpAndSettle();
 
       final lesson =
