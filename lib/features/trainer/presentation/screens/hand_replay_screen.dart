@@ -6,6 +6,7 @@ import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/features/profile/presentation/widgets/achievement_unlock_toast.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
@@ -410,12 +411,14 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        ref
+        final unlocked = await ref
             .read(userStatsProvider.notifier)
             .recordHandPlayed(playerWon: heroWon);
         ref.read(hapticServiceProvider).success();
+        if (!mounted) return;
+        showUnlockToasts(context, unlocked);
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;

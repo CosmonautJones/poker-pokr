@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/features/profile/presentation/widgets/achievement_unlock_toast.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/domain/lesson.dart';
 import 'package:poker_trainer/features/trainer/domain/lessons_catalog.dart';
@@ -99,13 +100,24 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
     final currentTip = _tipForStreet(gs.street);
     final hasNextScenario = _hasNextScenario();
 
-    // Award XP + success haptic exactly once per completed scenario.
+    // Award XP + success haptic exactly once per completed scenario, then
+    // also tick the daily challenge if this lesson/scenario matches today's
+    // pick. Both calls feed the same unlock pipeline so the toast queue
+    // dedupes naturally.
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        ref.read(userStatsProvider.notifier).recordLessonComplete();
+        final notifier = ref.read(userStatsProvider.notifier);
+        final lessonUnlocks = await notifier.recordLessonComplete();
+        if (!mounted) return;
+        final dailyUnlocks = await notifier.recordDailyChallengeIfMatch(
+          lessonId: widget.lessonId,
+          scenarioIndex: widget.scenarioIndex,
+        );
         ref.read(hapticServiceProvider).success();
+        if (!mounted) return;
+        showUnlockToasts(context, [...lessonUnlocks, ...dailyUnlocks]);
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
