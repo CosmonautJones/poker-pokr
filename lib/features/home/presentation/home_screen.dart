@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/daily_challenge.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -94,11 +95,19 @@ class HomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 14),
 
-              // Progression card: streak + XP + level
+              // Progression card: streak + XP + level (taps into Profile)
               const _ProgressionCard()
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
+
+              const SizedBox(height: 14),
+
+              // Daily Challenge — deterministic per-day, ticks streak
+              const _DailyChallengeCard()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 130.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 130.ms),
 
               const SizedBox(height: 14),
 
@@ -752,7 +761,10 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
+      child: InkWell(
+        onTap: () => context.go('/home/profile'),
+        splashColor: pt.goldPrimary.withValues(alpha: 0.10),
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -852,6 +864,7 @@ class _ProgressionCard extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -894,6 +907,140 @@ class _StreakBadge extends StatelessWidget {
         Icons.local_fire_department_rounded,
         size: 22,
         color: color,
+      ),
+    );
+  }
+}
+
+/// Surfaces today's deterministic lesson scenario as a quick "play once today
+/// to keep your streak" card. Tapping routes into the lesson_play screen so
+/// completion goes through the standard progression and unlock pipeline.
+class _DailyChallengeCard extends ConsumerWidget {
+  const _DailyChallengeCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final stats = ref.watch(userStatsProvider);
+    final now = DateTime.now();
+    final ref0 = challengeFor(now);
+    if (ref0 == null) return const SizedBox.shrink();
+    final done = stats.dailyChallengeDoneOn(now);
+
+    final accent = done ? pt.profit : pt.goldPrimary;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: accent.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          ref.read(hapticServiceProvider).light();
+          context.go(
+            '/trainer/lesson/${ref0.lessonId}/play/${ref0.scenarioIndex}',
+          );
+        },
+        splashColor: accent.withValues(alpha: 0.10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                accent.withValues(alpha: 0.12),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: done
+                        ? [pt.profit, pt.profit.withValues(alpha: 0.6)]
+                        : [pt.goldDark, pt.goldPrimary],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  done
+                      ? Icons.check_rounded
+                      : Icons.calendar_today_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Daily Challenge',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (done)
+                          Text(
+                            'DONE',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: pt.profit,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      ref0.scenarioTitle,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      ref0.lessonTitle,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: pt.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                done
+                    ? Icons.replay_rounded
+                    : Icons.arrow_forward_rounded,
+                size: 18,
+                color: pt.textMuted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

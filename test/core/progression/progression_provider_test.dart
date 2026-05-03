@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:poker_trainer/core/progression/daily_challenge.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/progression/user_stats_service.dart';
@@ -154,6 +155,104 @@ void main() {
       expect(stats.streakDays, 0);
       expect(stats.handsPlayed, 0);
       expect(stats.lastPlayedDay, isNull);
+    });
+
+    test('recordHandPlayed returns newly-unlocked achievement ids', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      final unlocks = await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19),
+      );
+      // First-hand + first-win unlock together on the very first call.
+      expect(unlocks, containsAll(<String>['first_hand', 'first_win']));
+      final stats = container.read(userStatsProvider);
+      expect(stats.unlockedAchievements, containsAll(<String>[
+        'first_hand',
+        'first_win',
+      ]));
+      expect(stats.lifetimeWins, 1);
+    });
+
+    test('second hand returns no duplicate unlocks', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(now: DateTime(2026, 4, 19));
+      final second = await notifier.recordHandPlayed(
+        now: DateTime(2026, 4, 19, 11),
+      );
+      expect(second, isNot(contains('first_hand')));
+    });
+
+    test('recordDailyChallengeIfMatch only ticks for today\'s pick',
+        () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+      final notifier = container.read(userStatsProvider.notifier);
+      final now = DateTime(2026, 5, 3, 10);
+      final today = challengeFor(now)!;
+
+      // Wrong scenario id → no-op.
+      await notifier.recordDailyChallengeIfMatch(
+        lessonId: 'definitely_not_a_lesson',
+        scenarioIndex: 0,
+        now: now,
+      );
+      expect(container.read(userStatsProvider).dailyChallengesCompleted, 0);
+
+      // Matching id → tick.
+      await notifier.recordDailyChallengeIfMatch(
+        lessonId: today.lessonId,
+        scenarioIndex: today.scenarioIndex,
+        now: now,
+      );
+      var stats = container.read(userStatsProvider);
+      expect(stats.dailyChallengesCompleted, 1);
+      expect(stats.dailyChallengeDoneOn(now), isTrue);
+
+      // Second call same day → idempotent no-op.
+      await notifier.recordDailyChallengeIfMatch(
+        lessonId: today.lessonId,
+        scenarioIndex: today.scenarioIndex,
+        now: now.add(const Duration(hours: 5)),
+      );
+      stats = container.read(userStatsProvider);
+      expect(stats.dailyChallengesCompleted, 1);
+    });
+
+    test('pendingUnlocksProvider receives ids and pops empty after drain',
+        () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(
+        playerWon: true,
+        now: DateTime(2026, 4, 19),
+      );
+      final pending = container.read(pendingUnlocksProvider);
+      expect(pending, containsAll(<String>['first_hand', 'first_win']));
+
+      final drained = container
+          .read(pendingUnlocksProvider.notifier)
+          .popAll();
+      expect(drained, isNotEmpty);
+      expect(container.read(pendingUnlocksProvider), isEmpty);
     });
 
     test('gap in days resets streak to 1', () async {

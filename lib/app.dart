@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/theme/app_theme.dart';
 import 'package:poker_trainer/shared/widgets/app_scaffold.dart';
 import 'package:poker_trainer/features/home/presentation/home_screen.dart';
+import 'package:poker_trainer/features/profile/presentation/profile_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/session_list_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/add_session_screen.dart';
 import 'package:poker_trainer/features/bookkeeper/presentation/screens/reports_screen.dart';
@@ -28,6 +29,12 @@ final router = GoRouter(
             GoRoute(
               path: '/home',
               builder: (context, state) => const HomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'profile',
+                  builder: (context, state) => const ProfileScreen(),
+                ),
+              ],
             ),
           ],
         ),

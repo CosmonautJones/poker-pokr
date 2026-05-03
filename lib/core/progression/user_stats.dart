@@ -4,7 +4,8 @@ import 'dart:math' as math;
 /// Immutable snapshot of the player's progression stats.
 ///
 /// Persisted as a single JSON string under the [storageKey] SharedPreferences
-/// entry so the schema can evolve without migrations.
+/// entry so the schema can evolve without migrations. Newly added fields use
+/// safe defaults inside [tryDecode] so older payloads decode cleanly.
 class UserStats {
   /// SharedPreferences key used by the service layer.
   static const storageKey = 'user_stats_v1';
@@ -28,6 +29,21 @@ class UserStats {
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Lifetime showdown wins by the viewer's hero seat.
+  final int lifetimeWins;
+
+  /// Set of achievement ids the player has unlocked. Order preserved on
+  /// disk for stable display in the profile grid (most-recently unlocked
+  /// last so we can render newest-first when desired).
+  final List<String> unlockedAchievements;
+
+  /// Most recent calendar day the player completed the daily challenge.
+  /// Null until the first daily challenge is finished.
+  final DateTime? dailyChallengeLastCompletedDay;
+
+  /// Lifetime count of daily challenges completed.
+  final int dailyChallengesCompleted;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
@@ -35,6 +51,10 @@ class UserStats {
     required this.handsPlayed,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    this.lifetimeWins = 0,
+    this.unlockedAchievements = const <String>[],
+    this.dailyChallengeLastCompletedDay,
+    this.dailyChallengesCompleted = 0,
   });
 
   /// Fresh stats for a brand-new install.
@@ -44,7 +64,11 @@ class UserStats {
         totalXp = 0,
         handsPlayed = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        lifetimeWins = 0,
+        unlockedAchievements = const <String>[],
+        dailyChallengeLastCompletedDay = null,
+        dailyChallengesCompleted = 0;
 
   UserStats copyWith({
     int? streakDays,
@@ -54,6 +78,11 @@ class UserStats {
     int? handsPlayed,
     int? lessonsCompleted,
     int? bestStreakDays,
+    int? lifetimeWins,
+    List<String>? unlockedAchievements,
+    DateTime? dailyChallengeLastCompletedDay,
+    bool clearDailyChallengeLastCompletedDay = false,
+    int? dailyChallengesCompleted,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -64,6 +93,15 @@ class UserStats {
       handsPlayed: handsPlayed ?? this.handsPlayed,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      lifetimeWins: lifetimeWins ?? this.lifetimeWins,
+      unlockedAchievements:
+          unlockedAchievements ?? this.unlockedAchievements,
+      dailyChallengeLastCompletedDay: clearDailyChallengeLastCompletedDay
+          ? null
+          : (dailyChallengeLastCompletedDay ??
+              this.dailyChallengeLastCompletedDay),
+      dailyChallengesCompleted:
+          dailyChallengesCompleted ?? this.dailyChallengesCompleted,
     );
   }
 
@@ -84,6 +122,13 @@ class UserStats {
     return (xpIntoLevel / span).clamp(0.0, 1.0);
   }
 
+  /// True if the daily challenge for [now] has already been completed.
+  bool dailyChallengeDoneOn(DateTime now) {
+    final last = dailyChallengeLastCompletedDay;
+    if (last == null) return false;
+    return Progression.dayKey(last) == Progression.dayKey(now);
+  }
+
   Map<String, dynamic> toJson() => {
         'streakDays': streakDays,
         'lastPlayedDay': lastPlayedDay?.toIso8601String(),
@@ -91,6 +136,11 @@ class UserStats {
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        'lifetimeWins': lifetimeWins,
+        'unlockedAchievements': unlockedAchievements,
+        'dailyChallengeLastCompletedDay':
+            dailyChallengeLastCompletedDay?.toIso8601String(),
+        'dailyChallengesCompleted': dailyChallengesCompleted,
       };
 
   String encode() => jsonEncode(toJson());
@@ -108,6 +158,18 @@ class UserStats {
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        lifetimeWins: (map['lifetimeWins'] as num?)?.toInt() ?? 0,
+        unlockedAchievements: (map['unlockedAchievements'] as List?)
+                ?.whereType<String>()
+                .toList(growable: false) ??
+            const <String>[],
+        dailyChallengeLastCompletedDay:
+            map['dailyChallengeLastCompletedDay'] is String
+                ? DateTime.tryParse(
+                    map['dailyChallengeLastCompletedDay'] as String)
+                : null,
+        dailyChallengesCompleted:
+            (map['dailyChallengesCompleted'] as num?)?.toInt() ?? 0,
       );
     } catch (_) {
       return null;
@@ -131,6 +193,9 @@ abstract final class Progression {
 
   /// One-time daily bonus granted when the streak counter ticks up.
   static const xpDailyBonus = 10;
+
+  /// Bonus XP awarded the first time the daily challenge is completed each day.
+  static const xpDailyChallengeBonus = 30;
 
   /// Total XP required to reach [level] (level 0 = 0 XP, level 1 = 50 XP).
   ///

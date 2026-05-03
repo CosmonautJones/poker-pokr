@@ -98,6 +98,10 @@ void main() {
         handsPlayed: 18,
         lessonsCompleted: 3,
         bestStreakDays: 7,
+        lifetimeWins: 9,
+        unlockedAchievements: const ['first_hand', 'streak_3'],
+        dailyChallengeLastCompletedDay: DateTime(2026, 4, 19),
+        dailyChallengesCompleted: 2,
       );
       final decoded = UserStats.tryDecode(stats.encode())!;
       expect(decoded.streakDays, 4);
@@ -106,6 +110,37 @@ void main() {
       expect(decoded.handsPlayed, 18);
       expect(decoded.lessonsCompleted, 3);
       expect(decoded.bestStreakDays, 7);
+      expect(decoded.lifetimeWins, 9);
+      expect(decoded.unlockedAchievements, ['first_hand', 'streak_3']);
+      expect(decoded.dailyChallengeLastCompletedDay, DateTime(2026, 4, 19));
+      expect(decoded.dailyChallengesCompleted, 2);
+    });
+
+    test('decode tolerates legacy payloads missing new fields', () {
+      // Mirror what an older v1 install would have written before the
+      // achievements/daily-challenge fields existed.
+      const legacy = '{'
+          '"streakDays":2,'
+          '"lastPlayedDay":"2026-04-19T00:00:00.000",'
+          '"totalXp":120,'
+          '"handsPlayed":4,'
+          '"lessonsCompleted":1,'
+          '"bestStreakDays":3'
+          '}';
+      final decoded = UserStats.tryDecode(legacy)!;
+      expect(decoded.streakDays, 2);
+      expect(decoded.lifetimeWins, 0);
+      expect(decoded.unlockedAchievements, isEmpty);
+      expect(decoded.dailyChallengeLastCompletedDay, isNull);
+      expect(decoded.dailyChallengesCompleted, 0);
+    });
+
+    test('dailyChallengeDoneOn matches local calendar day', () {
+      final stats = const UserStats.empty().copyWith(
+        dailyChallengeLastCompletedDay: DateTime(2026, 5, 3, 12, 0),
+      );
+      expect(stats.dailyChallengeDoneOn(DateTime(2026, 5, 3, 23)), isTrue);
+      expect(stats.dailyChallengeDoneOn(DateTime(2026, 5, 4, 0, 1)), isFalse);
     });
 
     test('tryDecode returns null for garbage and empty', () {
