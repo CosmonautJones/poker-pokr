@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements_catalog.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -721,8 +723,8 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Tapping the card pushes `/profile` for the full
+/// achievements + lifetime-stats hub.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -731,6 +733,8 @@ class _ProgressionCard extends ConsumerWidget {
     final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
     final stats = ref.watch(userStatsProvider);
+    final unlockedCount = ref.watch(achievementsProvider).length;
+    final totalAchievements = achievementsCatalog.length;
 
     // First-run: keep the UI clean until the player has earned anything.
     if (stats.totalXp == 0 && stats.streakDays == 0) {
@@ -739,7 +743,7 @@ class _ProgressionCard extends ConsumerWidget {
 
     final level = stats.level;
     final progress = stats.levelProgress;
-    final streakActive = _isStreakActive(stats);
+    final streakActive = Progression.isStreakActive(stats);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -752,19 +756,22 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              pt.goldPrimary.withValues(alpha: 0.08),
-              Colors.transparent,
-            ],
+      child: InkWell(
+        onTap: () => context.push('/profile'),
+        splashColor: pt.goldPrimary.withValues(alpha: 0.08),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pt.goldPrimary.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+            ),
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -790,10 +797,8 @@ class _ProgressionCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        stats.bestStreakDays > stats.streakDays
-                            ? 'Best: ${stats.bestStreakDays} days'
-                            : '${stats.handsPlayed} hands \u2022 '
-                                '${stats.lessonsCompleted} lessons',
+                        '$unlockedCount / $totalAchievements achievements '
+                        '\u2022 ${stats.handsPlayed} hands',
                         style: textTheme.bodySmall?.copyWith(
                           color: pt.textMuted,
                         ),
@@ -851,16 +856,11 @@ class _ProgressionCard extends ConsumerWidget {
             ),
           ],
         ),
+        ),
       ),
     );
   }
 
-  static bool _isStreakActive(UserStats stats) {
-    if (stats.lastPlayedDay == null) return false;
-    final today = Progression.dayKey(DateTime.now());
-    final last = Progression.dayKey(stats.lastPlayedDay!);
-    return today.difference(last).inDays <= 1;
-  }
 }
 
 class _StreakBadge extends StatelessWidget {

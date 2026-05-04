@@ -28,6 +28,11 @@ class UserStats {
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Hands the viewer's controlled player won at showdown / by fold-out.
+  /// Subset of [handsPlayed]. Added in v2-shape; missing on old payloads
+  /// decodes to 0 for backward compatibility.
+  final int handsWon;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
@@ -35,6 +40,7 @@ class UserStats {
     required this.handsPlayed,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    required this.handsWon,
   });
 
   /// Fresh stats for a brand-new install.
@@ -44,7 +50,8 @@ class UserStats {
         totalXp = 0,
         handsPlayed = 0,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        handsWon = 0;
 
   UserStats copyWith({
     int? streakDays,
@@ -54,6 +61,7 @@ class UserStats {
     int? handsPlayed,
     int? lessonsCompleted,
     int? bestStreakDays,
+    int? handsWon,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -64,6 +72,7 @@ class UserStats {
       handsPlayed: handsPlayed ?? this.handsPlayed,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      handsWon: handsWon ?? this.handsWon,
     );
   }
 
@@ -91,6 +100,7 @@ class UserStats {
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        'handsWon': handsWon,
       };
 
   String encode() => jsonEncode(toJson());
@@ -108,6 +118,7 @@ class UserStats {
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
       );
     } catch (_) {
       return null;
@@ -151,6 +162,16 @@ abstract final class Progression {
   /// Used so "streak" rollover matches the user's perceived day boundary.
   static DateTime dayKey(DateTime ts) =>
       DateTime(ts.year, ts.month, ts.day);
+
+  /// True if [stats]' streak is still alive at [now] — i.e. the player
+  /// played today or yesterday. Used by UI badges to choose between an
+  /// active fire color and a muted "play to restart" state.
+  static bool isStreakActive(UserStats stats, [DateTime? now]) {
+    final last = stats.lastPlayedDay;
+    if (last == null) return false;
+    final today = dayKey(now ?? DateTime.now());
+    return today.difference(dayKey(last)).inDays <= 1;
+  }
 
   /// Apply a play event at [now] to [prev] and return the updated streak
   /// counter, the new last-played day, and any XP awarded for a daily bonus.

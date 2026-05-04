@@ -89,6 +89,39 @@ void main() {
     });
   });
 
+  group('Progression.isStreakActive', () {
+    test('null lastPlayedDay → inactive', () {
+      expect(Progression.isStreakActive(const UserStats.empty()), isFalse);
+    });
+
+    test('played today → active', () {
+      final stats = const UserStats.empty()
+          .copyWith(lastPlayedDay: DateTime(2026, 4, 19, 10));
+      expect(
+        Progression.isStreakActive(stats, DateTime(2026, 4, 19, 22)),
+        isTrue,
+      );
+    });
+
+    test('played yesterday → still active (same-day grace)', () {
+      final stats = const UserStats.empty()
+          .copyWith(lastPlayedDay: DateTime(2026, 4, 19));
+      expect(
+        Progression.isStreakActive(stats, DateTime(2026, 4, 20)),
+        isTrue,
+      );
+    });
+
+    test('2-day gap → inactive', () {
+      final stats = const UserStats.empty()
+          .copyWith(lastPlayedDay: DateTime(2026, 4, 19));
+      expect(
+        Progression.isStreakActive(stats, DateTime(2026, 4, 21)),
+        isFalse,
+      );
+    });
+  });
+
   group('UserStats serialization', () {
     test('encode / decode roundtrip preserves fields', () {
       final stats = UserStats(
@@ -98,6 +131,7 @@ void main() {
         handsPlayed: 18,
         lessonsCompleted: 3,
         bestStreakDays: 7,
+        handsWon: 6,
       );
       final decoded = UserStats.tryDecode(stats.encode())!;
       expect(decoded.streakDays, 4);
@@ -106,6 +140,7 @@ void main() {
       expect(decoded.handsPlayed, 18);
       expect(decoded.lessonsCompleted, 3);
       expect(decoded.bestStreakDays, 7);
+      expect(decoded.handsWon, 6);
     });
 
     test('tryDecode returns null for garbage and empty', () {
