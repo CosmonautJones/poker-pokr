@@ -14,11 +14,6 @@ class UserStatsService {
 
   UserStatsService(this._prefs);
 
-  static Future<UserStatsService> create() async {
-    final prefs = await SharedPreferences.getInstance();
-    return UserStatsService(prefs);
-  }
-
   UserStats loadStats() {
     final raw = _prefs.getString(UserStats.storageKey);
     return UserStats.tryDecode(raw) ?? const UserStats.empty();

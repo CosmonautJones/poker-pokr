@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievement.dart';
+import 'achievements_catalog.dart';
+import 'achievements_provider.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -31,7 +34,9 @@ class UserStatsNotifier extends Notifier<UserStats> {
 
   /// Award XP for finishing a hand.
   ///
-  /// [playerWon] granted bonus XP when the viewer's player is among winners.
+  /// [playerWon] granted bonus XP when the viewer's player is among winners,
+  /// and increments the persisted `handsWon` counter (which feeds the
+  /// showdown achievements).
   Future<void> recordHandPlayed({
     bool playerWon = false,
     DateTime? now,
@@ -48,6 +53,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       xpDelta: baseXp,
       handsDelta: 1,
       lessonsDelta: 0,
+      handsWonDelta: playerWon ? 1 : 0,
     );
   }
 
@@ -63,13 +69,17 @@ class UserStatsNotifier extends Notifier<UserStats> {
       xpDelta: xp,
       handsDelta: 0,
       lessonsDelta: 1,
+      handsWonDelta: 0,
     );
   }
 
-  /// Reset progression to a fresh install.
+  /// Reset progression to a fresh install. Also clears the achievements
+  /// unlock set so the player can re-experience the celebrations.
   Future<void> resetAll() async {
     state = const UserStats.empty();
     await _service.saveStats(state);
+    await ref.read(achievementsProvider.notifier).reset();
+    ref.read(newlyUnlockedProvider.notifier).state = const [];
   }
 
   Future<void> _apply({
@@ -78,6 +88,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
     required int xpDelta,
     required int handsDelta,
     required int lessonsDelta,
+    required int handsWonDelta,
   }) async {
     final nextBest = streak.newStreakDays > prev.bestStreakDays
         ? streak.newStreakDays
@@ -90,9 +101,24 @@ class UserStatsNotifier extends Notifier<UserStats> {
       handsPlayed: prev.handsPlayed + handsDelta,
       lessonsCompleted: prev.lessonsCompleted + lessonsDelta,
       bestStreakDays: nextBest,
+      handsWon: prev.handsWon + handsWonDelta,
     );
     state = updated;
     await _service.saveStats(updated);
+    await _evaluateAchievements(updated);
+  }
+
+  /// Evaluate the achievement catalog against the post-mutation [stats] and
+  /// queue any newly-earned IDs onto [newlyUnlockedProvider] so the UI
+  /// overlay can play a celebration. Existing unlocks are skipped.
+  Future<void> _evaluateAchievements(UserStats stats) async {
+    final earnedNow = currentlyEarned(stats);
+    if (earnedNow.isEmpty) return;
+    final fresh =
+        await ref.read(achievementsProvider.notifier).markEarned(earnedNow);
+    if (fresh.isEmpty) return;
+    final queue = ref.read(newlyUnlockedProvider.notifier);
+    queue.state = [...queue.state, ...fresh];
   }
 }
 
