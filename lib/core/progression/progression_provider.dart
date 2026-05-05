@@ -84,9 +84,12 @@ class UserStatsNotifier extends Notifier<UserStats> {
 
   /// Reset progression to a fresh install.
   Future<void> resetAll() async {
-    state = const UserStats.empty();
+    // Persist first so a save failure doesn't leave the UI showing
+    // a fresh profile while disk still holds the prior stats.
+    const fresh = UserStats.empty();
+    await _service.saveStats(fresh);
+    state = fresh;
     ref.read(pendingAchievementUnlocksProvider.notifier).clear();
-    await _service.saveStats(state);
   }
 
   Future<void> _apply({
