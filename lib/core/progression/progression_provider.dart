@@ -134,8 +134,11 @@ class UserStatsNotifier extends Notifier<UserStats> {
           newlyUnlocked.length * Progression.xpPerAchievement,
     );
 
-    state = updated;
+    // Persist first so a write failure doesn't desync in-memory state from
+    // disk. If saveStats throws, callers see the prior state unchanged
+    // and no toast is queued for the never-persisted unlocks.
     await _service.saveStats(updated);
+    state = updated;
 
     if (newlyUnlocked.isNotEmpty) {
       ref

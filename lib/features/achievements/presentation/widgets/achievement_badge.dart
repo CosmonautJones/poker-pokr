@@ -16,23 +16,18 @@ class AchievementBadge extends StatelessWidget {
   final Achievement achievement;
   final bool unlocked;
 
-  /// Compact variant trims padding/text so the badge can be embedded inside
-  /// toasts or the level-up flow without overflowing tight rows.
-  final bool compact;
-
   const AchievementBadge({
     super.key,
     required this.achievement,
     required this.unlocked,
-    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
-    final iconSize = compact ? 26.0 : 32.0;
-    final iconBoxSize = compact ? 48.0 : 60.0;
+    const iconSize = 32.0;
+    const iconBoxSize = 60.0;
 
     final iconBox = Container(
       width: iconBoxSize,
@@ -92,10 +87,7 @@ class AchievementBadge extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 6 : 10,
-            vertical: compact ? 8 : 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             color: pt.surfaceDim.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(14),
@@ -110,7 +102,7 @@ class AchievementBadge extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               iconBox,
-              SizedBox(height: compact ? 6 : 10),
+              const SizedBox(height: 10),
               title,
             ],
           ),

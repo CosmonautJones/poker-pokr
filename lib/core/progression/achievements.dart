@@ -50,7 +50,7 @@ class Achievement {
 /// category). Adding a new achievement is a one-line append; ids must be
 /// stable forever once shipped because they're persisted in user storage.
 abstract final class AchievementsCatalog {
-  static final List<Achievement> all = [
+  static final List<Achievement> all = List<Achievement>.unmodifiable([
     // ---- Volume ----
     Achievement(
       id: 'first_hand',
@@ -207,7 +207,7 @@ abstract final class AchievementsCatalog {
       category: AchievementCategory.bigHand,
       predicate: (s) => s.bestHandRankIndex >= 8,
     ),
-  ];
+  ]);
 
   /// O(1) lookup by id. Returns null for ids that no longer exist (defensive).
   static Achievement? byId(String id) {

@@ -410,7 +410,9 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     // transitions to complete. Re-enables if the user undoes out of
     // completion so a subsequent finish still registers.
     if (replayState.isComplete && !_awardedCompletionXp) {
-      _awardedCompletionXp = true;
+      // Snapshot the hand outcome before the post-frame callback runs so
+      // an undo between scheduling and firing can't credit a state we've
+      // already left behind.
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
       // Only credit a hand-rank achievement when the hero made it to
       // showdown — folded players don't expose their hand class.
@@ -418,6 +420,13 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
       final heroRankIndex = heroHand?.rank.index;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        // Re-check completion at fire time: an undo between schedule and
+        // callback should abort, leaving the flag false so a later
+        // re-completion still credits.
+        final liveState = ref.read(handReplayProvider(setup));
+        if (!liveState.isComplete) return;
+        if (_awardedCompletionXp) return;
+        _awardedCompletionXp = true;
         ref.read(userStatsProvider.notifier).recordHandPlayed(
               playerWon: heroWon,
               heroHandRankIndex: heroRankIndex,
@@ -915,15 +924,15 @@ class _HandClassBanner extends StatelessWidget {
     final r = rank!;
     final isBig = r.index >= HandRank.flush.index;
     final fontSize = switch (r) {
-      HandRank.straightFlush => 30.0,
-      HandRank.fourOfAKind => 28.0,
-      HandRank.fullHouse => 26.0,
-      HandRank.flush => 24.0,
-      HandRank.straight => 22.0,
-      HandRank.threeOfAKind => 20.0,
-      HandRank.twoPair => 18.0,
-      HandRank.pair => 16.0,
-      HandRank.highCard => 14.0,
+      HandRank.straightFlush => 34.0,
+      HandRank.fourOfAKind => 30.0,
+      HandRank.fullHouse => 28.0,
+      HandRank.flush => 26.0,
+      HandRank.straight => 23.0,
+      HandRank.threeOfAKind => 21.0,
+      HandRank.twoPair => 19.0,
+      HandRank.pair => 18.0,
+      HandRank.highCard => 18.0,
     };
     final label = r.displayName.toUpperCase();
 

@@ -43,7 +43,16 @@ class _AchievementUnlockHostState
     ref.listen<List<Achievement>>(
       pendingAchievementUnlocksProvider,
       (_, next) {
-        if (_current == null && next.isNotEmpty) _showNext();
+        if (_current != null || next.isEmpty) return;
+        // Defer: callback fires during a build pass, and `_showNext`
+        // calls `setState` + mutates the queue provider. Posting to the
+        // next frame keeps build-time side effects out of the build
+        // pipeline and avoids a re-entrant listener fire mid-build.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (_current != null) return;
+          _showNext();
+        });
       },
     );
 
