@@ -721,8 +721,7 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Tapping the card opens the Achievements trophy case.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -752,7 +751,10 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
+      child: InkWell(
+        onTap: () => context.go('/settings/achievements'),
+        splashColor: pt.goldPrimary.withValues(alpha: 0.12),
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -850,6 +852,7 @@ class _ProgressionCard extends ConsumerWidget {
               ],
             ),
           ],
+          ),
         ),
       ),
     );

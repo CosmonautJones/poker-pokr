@@ -21,6 +21,8 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_bann
 import 'package:poker_trainer/features/trainer/providers/auto_play_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
+import 'package:poker_trainer/poker/engine/hand_evaluator.dart';
+import 'package:poker_trainer/poker/engine/showdown_helper.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
@@ -410,11 +412,16 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      // Only credit a hand-rank achievement when the hero made it to
+      // showdown — folded players don't expose their hand class.
+      final heroHand = evaluateSeatHand(gs, _heroSeat);
+      final heroRankIndex = heroHand?.rank.index;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref
-            .read(userStatsProvider.notifier)
-            .recordHandPlayed(playerWon: heroWon);
+        ref.read(userStatsProvider.notifier).recordHandPlayed(
+              playerWon: heroWon,
+              heroHandRankIndex: heroRankIndex,
+            );
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
@@ -638,6 +645,19 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
       widget.gameState.street == Street.showdown &&
       widget.gameState.activePlayers.length > 1;
 
+  /// Pick the hand rank to feature in the big banner.
+  /// Prefers the hero's hand when they made it to showdown so the user
+  /// always sees their own hand class; otherwise falls back to the first
+  /// winner's hand (which equals the winning hand class for any tie).
+  HandRank? _resolveShowdownRank(GameState gs) {
+    const heroSeat = 0;
+    final hero = evaluateSeatHand(gs, heroSeat);
+    if (hero != null) return hero.rank;
+    final winners = gs.winnerIndices;
+    if (winners == null || winners.isEmpty) return null;
+    return evaluateSeatHand(gs, winners.first)?.rank;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -762,6 +782,16 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Big hand-class reveal (showdown only). Hero seat
+                    // first if it made it to showdown, else first winner.
+                    if (_isShowdown)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: _HandClassBanner(
+                          rank: _resolveShowdownRank(gs),
+                          pulseListenable: _spotlightController,
+                        ),
+                      ),
                     // Gold gradient "Hand Complete" title
                     ShaderMask(
                       shaderCallback: (bounds) {
@@ -864,6 +894,79 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
         ),
       ),
     );
+  }
+}
+
+/// Big "FLUSH!" / "FULL HOUSE!" reveal sitting above the hand-complete card.
+///
+/// Scales font size by hand strength so high-rank hands feel monumental
+/// while small hands stay informational. Falls back to a static label
+/// when no [pulseListenable] is provided (no animation controller).
+class _HandClassBanner extends StatelessWidget {
+  final HandRank? rank;
+  final Listenable? pulseListenable;
+
+  const _HandClassBanner({required this.rank, this.pulseListenable});
+
+  @override
+  Widget build(BuildContext context) {
+    if (rank == null) return const SizedBox.shrink();
+    final pt = context.poker;
+    final r = rank!;
+    final isBig = r.index >= HandRank.flush.index;
+    final fontSize = switch (r) {
+      HandRank.straightFlush => 30.0,
+      HandRank.fourOfAKind => 28.0,
+      HandRank.fullHouse => 26.0,
+      HandRank.flush => 24.0,
+      HandRank.straight => 22.0,
+      HandRank.threeOfAKind => 20.0,
+      HandRank.twoPair => 18.0,
+      HandRank.pair => 16.0,
+      HandRank.highCard => 14.0,
+    };
+    final label = r.displayName.toUpperCase();
+
+    Widget text = ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: isBig
+            ? [pt.goldLight, pt.goldPrimary, pt.goldLight]
+            : [Colors.white, pt.textMuted, Colors.white],
+      ).createShader(bounds),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          letterSpacing: isBig ? 2.6 : 1.6,
+          shadows: isBig
+              ? [
+                  Shadow(
+                    color: pt.goldPrimary.withValues(alpha: 0.5),
+                    blurRadius: 14,
+                  ),
+                ]
+              : const [],
+        ),
+      ),
+    );
+
+    if (isBig && pulseListenable != null) {
+      text = AnimatedBuilder(
+        animation: pulseListenable!,
+        builder: (_, child) {
+          final t = (pulseListenable! is Animation<double>)
+              ? (pulseListenable! as Animation<double>).value
+              : 0.5;
+          final scale = 1.0 + 0.04 * t;
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: text,
+      );
+    }
+
+    return text;
   }
 }
 
