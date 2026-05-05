@@ -91,7 +91,7 @@ void main() {
 
   group('UserStats serialization', () {
     test('encode / decode roundtrip preserves fields', () {
-      final stats = UserStats(
+      final stats = const UserStats.empty().copyWith(
         streakDays: 4,
         lastPlayedDay: DateTime(2026, 4, 19),
         totalXp: 325,
