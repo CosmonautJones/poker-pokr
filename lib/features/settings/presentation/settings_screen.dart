@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements/achievements_catalog.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -14,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
     final pt = context.poker;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
     final stats = ref.watch(userStatsProvider);
+    final achievements = ref.watch(achievementsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,9 +69,21 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           ListTile(
+            leading: Icon(Icons.emoji_events_rounded, color: pt.goldPrimary),
+            title: const Text('Achievements'),
+            subtitle: Text(
+              '${achievements.unlockedCount} of '
+              '${achievementsCatalog.length} unlocked',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.go('/home/achievements'),
+          ),
+          ListTile(
             leading: Icon(Icons.restart_alt_rounded, color: pt.textMuted),
             title: const Text('Reset progression'),
-            subtitle: const Text('Clears streak, XP, and level'),
+            subtitle: const Text(
+              'Clears streak, XP, level, achievements, and daily challenge',
+            ),
             onTap: () => _showResetProgressionDialog(context, ref),
           ),
           const Divider(indent: 16, endIndent: 16, height: 32),
@@ -182,8 +198,8 @@ class SettingsScreen extends ConsumerWidget {
         icon: Icon(Icons.warning_amber_rounded, color: pt.accent, size: 36),
         title: const Text('Reset progression?'),
         content: const Text(
-          'This clears your streak, XP, and level. Saved hands and '
-          'sessions are not affected.',
+          'This clears your streak, XP, level, achievements, and today\'s '
+          'daily challenge. Saved hands and sessions are not affected.',
         ),
         actions: [
           TextButton(
