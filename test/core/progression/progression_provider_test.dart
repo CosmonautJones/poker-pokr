@@ -1,9 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:poker_trainer/core/progression/achievements/achievements_catalog.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/progression/user_stats_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Achievement XP rewards picked up by recordHandPlayed/recordLessonComplete
+// when their unlock thresholds are crossed by the test scenario.
+final int _firstHandReward =
+    achievementById('play_first_hand')!.xpReward;
+final int _firstWinReward = achievementById('first_win')!.xpReward;
+final int _lessonFirstReward = achievementById('lesson_first')!.xpReward;
 
 Future<UserStatsService> _freshService() async {
   SharedPreferences.setMockInitialValues({});
@@ -33,7 +41,9 @@ void main() {
       expect(stats.handsPlayed, 1);
       expect(
         stats.totalXp,
-        Progression.xpPerHand + Progression.xpDailyBonus,
+        Progression.xpPerHand +
+            Progression.xpDailyBonus +
+            _firstHandReward,
       );
       expect(stats.bestStreakDays, 1);
     });
@@ -54,7 +64,9 @@ void main() {
         stats.totalXp,
         Progression.xpPerHand +
             Progression.xpPerHandWin +
-            Progression.xpDailyBonus,
+            Progression.xpDailyBonus +
+            _firstHandReward +
+            _firstWinReward,
       );
     });
 
@@ -69,10 +81,13 @@ void main() {
       await notifier.recordHandPlayed(now: DateTime(2026, 4, 19, 10));
       await notifier.recordHandPlayed(now: DateTime(2026, 4, 19, 20));
       final stats = container.read(userStatsProvider);
-      // First: hand XP + daily bonus. Second: hand XP only.
+      // First: hand XP + daily bonus + play_first_hand reward.
+      // Second: hand XP only (no new unlock; same-day no daily bonus).
       expect(
         stats.totalXp,
-        Progression.xpPerHand * 2 + Progression.xpDailyBonus,
+        Progression.xpPerHand * 2 +
+            Progression.xpDailyBonus +
+            _firstHandReward,
       );
       expect(stats.streakDays, 1);
       expect(stats.handsPlayed, 2);
@@ -92,9 +107,13 @@ void main() {
       final stats = container.read(userStatsProvider);
       expect(stats.streakDays, 2);
       expect(stats.bestStreakDays, 2);
+      // Two hands × hand XP + two daily bonuses + first-hand achievement
+      // (unlocks once on day one).
       expect(
         stats.totalXp,
-        Progression.xpPerHand * 2 + Progression.xpDailyBonus * 2,
+        Progression.xpPerHand * 2 +
+            Progression.xpDailyBonus * 2 +
+            _firstHandReward,
       );
     });
 
@@ -112,7 +131,9 @@ void main() {
       expect(stats.lessonsCompleted, 1);
       expect(
         stats.totalXp,
-        Progression.xpPerLesson + Progression.xpDailyBonus,
+        Progression.xpPerLesson +
+            Progression.xpDailyBonus +
+            _lessonFirstReward,
       );
     });
 
@@ -135,7 +156,9 @@ void main() {
       expect(stats.lessonsCompleted, 1);
       expect(
         stats.totalXp,
-        Progression.xpPerLesson + Progression.xpDailyBonus,
+        Progression.xpPerLesson +
+            Progression.xpDailyBonus +
+            _lessonFirstReward,
       );
     });
 

@@ -21,6 +21,8 @@ import 'package:poker_trainer/features/trainer/presentation/widgets/pro_tip_bann
 import 'package:poker_trainer/features/trainer/providers/auto_play_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_replay_provider.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
+import 'package:poker_trainer/core/progression/achievements/achievement_event.dart';
+import 'package:poker_trainer/poker/engine/hand_evaluator.dart';
 import 'package:poker_trainer/poker/models/action.dart';
 import 'package:poker_trainer/poker/models/game_state.dart';
 import 'package:poker_trainer/poker/models/street.dart';
@@ -282,6 +284,45 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     ref.read(autoPlayProvider(setup).notifier).start();
   }
 
+  /// Build the rich achievement event for a completed hand. Returns a typed
+  /// HandCompletedEvent that includes the hero's hand class (when known) and
+  /// whether the hero ended the hand all-in — both used by the catalog to
+  /// award mastery / variety achievements.
+  HandCompletedEvent _buildCompletionEvent(GameState gs, bool heroWon) {
+    HandRank? heroRank;
+    final hero = gs.players[_heroSeat];
+    final reachedShowdown = gs.handDescriptions.isNotEmpty;
+    if (reachedShowdown &&
+        !hero.isFolded &&
+        hero.holeCards.length == gs.gameType.holeCardCount &&
+        gs.communityCards.length >= 3) {
+      try {
+        heroRank = HandEvaluator.evaluateBest(
+          hero.holeCards,
+          gs.communityCards,
+          gs.gameType,
+        ).rank;
+      } catch (_) {
+        // Defensive: any unexpected evaluator failure shouldn't block XP.
+        heroRank = null;
+      }
+    }
+    // Hero is "all-in for this hand" if they ended the hand all-in, ended
+    // with a zero stack (forced commitment), or shoved at any point during
+    // the hand — covers the case where the hero shoved, doubled up, and now
+    // has a non-zero stack with isAllIn=false.
+    final heroShoved = gs.actionHistory.any(
+      (a) => a.playerIndex == _heroSeat && a.type == ActionType.allIn,
+    );
+    final heroAllIn = hero.isAllIn || hero.stack == 0 || heroShoved;
+    return HandCompletedEvent(
+      heroWon: heroWon,
+      heroHandRank: heroRank,
+      gameType: gs.gameType,
+      heroWasAllIn: heroAllIn,
+    );
+  }
+
   Future<void> _showEditSheet(HandSetup setup, {int? playerIndex}) async {
     // Pause auto-play if running.
     final autoNotifier = ref.read(autoPlayProvider(setup).notifier);
@@ -410,11 +451,13 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      final completionEvent = _buildCompletionEvent(gs, heroWon);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref
-            .read(userStatsProvider.notifier)
-            .recordHandPlayed(playerWon: heroWon);
+        ref.read(userStatsProvider.notifier).recordHandPlayed(
+              playerWon: heroWon,
+              event: completionEvent,
+            );
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
