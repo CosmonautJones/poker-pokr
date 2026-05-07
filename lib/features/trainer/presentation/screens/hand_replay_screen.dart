@@ -447,6 +447,12 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
+      // Undo back into a live hand should clear any in-flight celebration.
+      if (_showCelebration) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _dismissShowdownCelebration();
+        });
+      }
     }
 
     return Scaffold(
