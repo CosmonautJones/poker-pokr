@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poker_trainer/core/database/app_database.dart';
+import 'package:poker_trainer/core/progression/daily_challenge.dart';
+import 'package:poker_trainer/core/progression/daily_challenge_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
+import 'package:poker_trainer/features/trainer/presentation/widgets/showdown_celebration_overlay.dart';
 import 'package:poker_trainer/features/trainer/data/mappers/hand_mapper.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/domain/pro_tips.dart';
@@ -42,6 +47,11 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   /// Tracks whether we've already awarded XP for the current completed hand,
   /// so rebuilds and undo/redo cycles don't double-credit.
   bool _awardedCompletionXp = false;
+
+  /// Showdown celebration overlay visibility. True for ~1.5s after the hero
+  /// wins at showdown.
+  bool _showCelebration = false;
+  Timer? _celebrationTimer;
 
   /// Viewer / hero seat for XP "won" detection. The free-play table puts the
   /// user at seat 0 (see `PokerTableWidget` bottom seat convention).
@@ -363,6 +373,12 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
   }
 
   @override
+  void dispose() {
+    _celebrationTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pt = context.poker;
 
@@ -410,15 +426,33 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
     if (replayState.isComplete && !_awardedCompletionXp) {
       _awardedCompletionXp = true;
       final heroWon = gs.winnerIndices?.contains(_heroSeat) ?? false;
+      // Showdown reached only when the river was contested to the end.
+      final wonAtShowdown = heroWon && gs.street == Street.showdown;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref
             .read(userStatsProvider.notifier)
             .recordHandPlayed(playerWon: heroWon);
+        // Daily challenge: every completed hand counts; only showdown wins
+        // tick the handsWon kind.
+        final challenge = ref.read(dailyChallengeProvider.notifier);
+        challenge.recordEvent(ChallengeKind.handsPlayed);
+        if (wonAtShowdown) {
+          challenge.recordEvent(ChallengeKind.handsWon);
+        }
         ref.read(hapticServiceProvider).success();
+        if (wonAtShowdown) {
+          _triggerShowdownCelebration();
+        }
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
       _awardedCompletionXp = false;
+      // Undo back into a live hand should clear any in-flight celebration.
+      if (_showCelebration) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _dismissShowdownCelebration();
+        });
+      }
     }
 
     return Scaffold(
@@ -525,84 +559,113 @@ class _HandReplayScreenState extends ConsumerState<HandReplayScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Table area
-          Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                PokerTableWidget(
-                  gameState: gs,
-                  onPlayerLongPress: !replayState.isComplete
-                      ? (playerIndex) =>
-                          _showEditSheet(setup, playerIndex: playerIndex)
-                      : null,
-                ),
-                // Hand complete overlay with animation
-                if (replayState.isComplete)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 12,
-                    child: Center(
-                      child: _HandCompleteOverlay(
-                        gameState: gs,
-                        onBack: () => context.go('/trainer'),
-                        onSave: _saveHand,
-                        onDealAgain: _isNewHand
-                            ? () => notifier.dealAgain()
-                            : null,
-                      ),
+          Column(
+            children: [
+              // Table area
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    PokerTableWidget(
+                      gameState: gs,
+                      onPlayerLongPress: !replayState.isComplete
+                          ? (playerIndex) => _showEditSheet(setup,
+                              playerIndex: playerIndex)
+                          : null,
                     ),
-                  ),
-              ],
-            ),
+                    // Hand complete overlay with animation
+                    if (replayState.isComplete)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 12,
+                        child: Center(
+                          child: _HandCompleteOverlay(
+                            gameState: gs,
+                            onBack: () => context.go('/trainer'),
+                            onSave: _saveHand,
+                            onDealAgain: _isNewHand
+                                ? () => notifier.dealAgain()
+                                : null,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Equity display (hidden during auto-play and when complete)
+              if (!replayState.isComplete && !isAutoPlaying)
+                EquityDisplay(gameState: gs),
+              // Outs training (hidden during auto-play, flop/turn only)
+              if (!replayState.isComplete && !isAutoPlaying)
+                OutsDisplay(gameState: gs),
+              // Educational context strip (hidden during auto-play)
+              if (!replayState.isComplete && !isAutoPlaying)
+                ContextStrip(context_: replayState.educationalContext),
+              // Pro tip banner (hidden during auto-play)
+              if (!replayState.isComplete && !isAutoPlaying)
+                ProTipBanner(
+                  tip: ProTipEngine.compute(replayState.educationalContext),
+                ),
+              // Auto-play controls (shown during auto-play)
+              if (isAutoPlaying)
+                AutoPlayControls(
+                  autoPlayState: autoPlay,
+                  onPauseResume: () {
+                    final ap = ref.read(autoPlayProvider(setup).notifier);
+                    if (autoPlay.isPaused) {
+                      ap.resume();
+                    } else {
+                      ap.pause();
+                    }
+                  },
+                  onStop: () =>
+                      ref.read(autoPlayProvider(setup).notifier).stop(),
+                  onSpeedChanged: (speed) => ref
+                      .read(autoPlayProvider(setup).notifier)
+                      .setSpeed(speed),
+                ),
+              // Action bar (only when hand is not complete and not auto-playing)
+              if (!replayState.isComplete && !isAutoPlaying)
+                ActionBar(
+                  currentPlayerIndex: gs.currentPlayerIndex,
+                  legalActions: replayState.legalActions,
+                  currentPot: gs.pot,
+                  onAction: (action) => notifier.applyAction(action),
+                  gameType: gs.gameType,
+                  onAutoPlay: () => _startAutoPlay(setup),
+                ),
+            ],
           ),
-          // Equity display (hidden during auto-play and when hand is complete)
-          if (!replayState.isComplete && !isAutoPlaying)
-            EquityDisplay(gameState: gs),
-          // Outs training (hidden during auto-play, shown on flop/turn)
-          if (!replayState.isComplete && !isAutoPlaying)
-            OutsDisplay(gameState: gs),
-          // Educational context strip (hidden during auto-play)
-          if (!replayState.isComplete && !isAutoPlaying)
-            ContextStrip(context_: replayState.educationalContext),
-          // Pro tip banner (hidden during auto-play)
-          if (!replayState.isComplete && !isAutoPlaying)
-            ProTipBanner(
-              tip: ProTipEngine.compute(replayState.educationalContext),
-            ),
-          // Auto-play controls (shown during auto-play)
-          if (isAutoPlaying)
-            AutoPlayControls(
-              autoPlayState: autoPlay,
-              onPauseResume: () {
-                final ap = ref.read(autoPlayProvider(setup).notifier);
-                if (autoPlay.isPaused) {
-                  ap.resume();
-                } else {
-                  ap.pause();
-                }
-              },
-              onStop: () =>
-                  ref.read(autoPlayProvider(setup).notifier).stop(),
-              onSpeedChanged: (speed) =>
-                  ref.read(autoPlayProvider(setup).notifier).setSpeed(speed),
-            ),
-          // Action bar (only when hand is not complete and not auto-playing)
-          if (!replayState.isComplete && !isAutoPlaying)
-            ActionBar(
-              currentPlayerIndex: gs.currentPlayerIndex,
-              legalActions: replayState.legalActions,
-              currentPot: gs.pot,
-              onAction: (action) => notifier.applyAction(action),
-              gameType: gs.gameType,
-              onAutoPlay: () => _startAutoPlay(setup),
+          if (_showCelebration)
+            Positioned.fill(
+              child: ShowdownCelebrationOverlay(
+                onDismiss: _dismissShowdownCelebration,
+              ),
             ),
         ],
       ),
     );
+  }
+
+  void _triggerShowdownCelebration() {
+    if (!mounted) return;
+    setState(() => _showCelebration = true);
+    _celebrationTimer?.cancel();
+    _celebrationTimer = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted && _showCelebration) {
+        setState(() => _showCelebration = false);
+      }
+    });
+  }
+
+  void _dismissShowdownCelebration() {
+    _celebrationTimer?.cancel();
+    if (mounted && _showCelebration) {
+      setState(() => _showCelebration = false);
+    }
   }
 }
 

@@ -25,6 +25,9 @@ class UserStats {
   /// Lesson scenarios completed.
   final int lessonsCompleted;
 
+  /// Hands the viewer's player has won at showdown.
+  final int handsWon;
+
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
@@ -34,6 +37,7 @@ class UserStats {
     required this.totalXp,
     required this.handsPlayed,
     required this.lessonsCompleted,
+    required this.handsWon,
     required this.bestStreakDays,
   });
 
@@ -44,6 +48,7 @@ class UserStats {
         totalXp = 0,
         handsPlayed = 0,
         lessonsCompleted = 0,
+        handsWon = 0,
         bestStreakDays = 0;
 
   UserStats copyWith({
@@ -53,6 +58,7 @@ class UserStats {
     int? totalXp,
     int? handsPlayed,
     int? lessonsCompleted,
+    int? handsWon,
     int? bestStreakDays,
   }) {
     return UserStats(
@@ -63,6 +69,7 @@ class UserStats {
       totalXp: totalXp ?? this.totalXp,
       handsPlayed: handsPlayed ?? this.handsPlayed,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
+      handsWon: handsWon ?? this.handsWon,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
     );
   }
@@ -90,6 +97,7 @@ class UserStats {
         'totalXp': totalXp,
         'handsPlayed': handsPlayed,
         'lessonsCompleted': lessonsCompleted,
+        'handsWon': handsWon,
         'bestStreakDays': bestStreakDays,
       };
 
@@ -107,6 +115,7 @@ class UserStats {
         totalXp: (map['totalXp'] as num?)?.toInt() ?? 0,
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
       );
     } catch (_) {

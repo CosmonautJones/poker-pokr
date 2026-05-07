@@ -11,6 +11,7 @@ import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
+import 'package:poker_trainer/features/achievements/presentation/achievements_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -19,6 +20,11 @@ final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
   routes: [
+    GoRoute(
+      path: '/achievements',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AchievementsScreen(),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           AppScaffold(navigationShell: navigationShell),
