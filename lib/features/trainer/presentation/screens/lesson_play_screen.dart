@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/daily_challenge.dart';
+import 'package:poker_trainer/core/progression/daily_challenge_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
@@ -105,6 +107,9 @@ class _LessonPlayScreenState extends ConsumerState<LessonPlayScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref.read(userStatsProvider.notifier).recordLessonComplete();
+        ref
+            .read(dailyChallengeProvider.notifier)
+            .recordEvent(ChallengeKind.lessonsCompleted);
         ref.read(hapticServiceProvider).success();
       });
     } else if (!replayState.isComplete && _awardedCompletionXp) {
