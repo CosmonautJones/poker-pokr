@@ -39,8 +39,14 @@ class StreetProgression {
       return true;
     }
 
-    // All active non-all-in players must have acted this street.
-    if (state.playersActedThisStreet < activeNonAllIn.length) {
+    // Count seats, not actions: folds and all-in calls shrink the active
+    // player list but must not consume another player's turn (e.g. the big
+    // blind's option). Matched bets below still require responses to raises.
+    final actedPlayers = state.actionHistory
+        .skip(state.streetStartActionIndex)
+        .map((action) => action.playerIndex)
+        .toSet();
+    if (activeNonAllIn.any((player) => !actedPlayers.contains(player.index))) {
       return false;
     }
 
