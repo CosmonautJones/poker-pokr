@@ -816,8 +816,10 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                         ),
                     ],
                     const SizedBox(height: 14),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         OutlinedButton(
                           onPressed: widget.onBack,
@@ -828,8 +830,7 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                           ),
                           child: const Text('Back'),
                         ),
-                        if (widget.onDealAgain != null) ...[
-                          const SizedBox(width: 8),
+                        if (widget.onDealAgain != null)
                           FilledButton.icon(
                             onPressed: widget.onDealAgain!,
                             icon: const Icon(Icons.refresh_rounded,
@@ -841,8 +842,6 @@ class _HandCompleteOverlayState extends State<_HandCompleteOverlay>
                               ),
                             ),
                           ),
-                        ],
-                        const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: widget.onSave,
                           icon:

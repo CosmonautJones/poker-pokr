@@ -36,6 +36,86 @@ void main() {
   }
 
   group('StreetProgression.isBettingRoundComplete', () {
+    test('a folded player does not consume the big blind option', () {
+      var state = GameEngine.createInitialState(
+        playerCount: 3,
+        smallBlind: 1,
+        bigBlind: 2,
+        dealerIndex: 0,
+        deckSeed: 42,
+      );
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 0, type: ActionType.fold),
+      );
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 1, type: ActionType.call),
+      );
+
+      expect(state.street, Street.preflop);
+      expect(state.communityCards, isEmpty);
+      expect(state.currentPlayerIndex, 2);
+      expect(StreetProgression.isBettingRoundComplete(state), false);
+
+      // The big blind's check closes preflop; the small blind opens the flop.
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 2, type: ActionType.check),
+      );
+      expect(state.street, Street.flop);
+      expect(state.currentPlayerIndex, 1);
+      expect(state.pot, 4);
+
+      // Matching the flop bet must not use actions from the previous street.
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 1, type: ActionType.bet, amount: 4),
+      );
+      expect(state.street, Street.flop);
+      expect(state.currentPlayerIndex, 2);
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 2, type: ActionType.call),
+      );
+      expect(state.street, Street.turn);
+      expect(state.pot, 12);
+    });
+
+    test('an all-in caller does not consume the big blind option', () {
+      var state = GameEngine.createInitialState(
+        playerCount: 3,
+        smallBlind: 1,
+        bigBlind: 2,
+        dealerIndex: 0,
+        stacks: [200, 2, 200],
+        deckSeed: 42,
+      );
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 0, type: ActionType.call),
+      );
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 1, type: ActionType.allIn),
+      );
+
+      expect(state.players[1].isAllIn, true);
+      expect(state.street, Street.preflop);
+      expect(state.currentPlayerIndex, 2);
+      expect(StreetProgression.isBettingRoundComplete(state), false);
+
+      state = GameEngine.applyAction(
+        state,
+        PokerAction(playerIndex: 2, type: ActionType.check),
+      );
+      expect(state.street, Street.flop);
+      expect(state.communityCards.length, 3);
+      expect(state.currentPlayerIndex, 2);
+      expect(StreetProgression.isBettingRoundComplete(state), false,
+          reason: 'Preflop actions cannot satisfy the new street');
+    });
+
     test('not complete before all players have acted', () {
       final state = GameEngine.createInitialState(
         playerCount: 3,
