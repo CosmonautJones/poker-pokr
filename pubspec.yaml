@@ -1,7 +1,7 @@
 name: poker_trainer
 description: "TableSense - Session tracking and hand replay"
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.1.0+2
 
 environment:
   sdk: ^3.11.0
