@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -13,6 +15,7 @@ import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/core/utils/responsive.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/reports_provider.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
+import 'package:poker_trainer/features/home/presentation/widgets/daily_challenge_card.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
 import 'package:poker_trainer/features/trainer/providers/hand_setup_provider.dart';
 
@@ -93,6 +96,20 @@ class HomeScreen extends ConsumerWidget {
                   .slideY(begin: 0.04, duration: 300.ms, delay: 50.ms),
 
               const SizedBox(height: 14),
+
+              // Daily challenge: rotates each calendar day, hidden first-run.
+              const DailyChallengeCard()
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 75.ms)
+                  .slideY(begin: 0.04, duration: 300.ms, delay: 75.ms),
+
+              // Spacing only when the challenge card is actually visible.
+              Consumer(builder: (context, ref, _) {
+                final stats = ref.watch(userStatsProvider);
+                final visible =
+                    stats.handsPlayed > 0 || stats.lessonsCompleted > 0;
+                return SizedBox(height: visible ? 14 : 0);
+              }),
 
               // Progression card: streak + XP + level
               const _ProgressionCard()
@@ -849,6 +866,8 @@ class _ProgressionCard extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            const _BadgesFooterLink(),
           ],
         ),
       ),
@@ -894,6 +913,63 @@ class _StreakBadge extends StatelessWidget {
         Icons.local_fire_department_rounded,
         size: 22,
         color: color,
+      ),
+    );
+  }
+}
+
+/// Inline link inside the progression card that opens the badges gallery.
+/// Shows unlocked / total counts and uses a subtle row tap target.
+class _BadgesFooterLink extends ConsumerWidget {
+  const _BadgesFooterLink();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pt = context.poker;
+    final textTheme = Theme.of(context).textTheme;
+    final unlocked = ref.watch(achievementsProvider);
+    final total = kAchievements.length;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        ref.read(hapticServiceProvider).selection();
+        context.push('/achievements');
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Row(
+          children: [
+            Icon(
+              Icons.workspace_premium_rounded,
+              size: 16,
+              color: pt.goldPrimary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Badges',
+              style: textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '${unlocked.length} / $total',
+              style: textTheme.labelSmall?.copyWith(
+                color: pt.textMuted,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.arrow_forward_rounded,
+              size: 14,
+              color: pt.goldPrimary,
+            ),
+          ],
+        ),
       ),
     );
   }

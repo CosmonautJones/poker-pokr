@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'achievements_provider.dart';
+import 'daily_challenge_provider.dart';
 import 'user_stats.dart';
 import 'user_stats_service.dart';
 
@@ -31,7 +33,8 @@ class UserStatsNotifier extends Notifier<UserStats> {
 
   /// Award XP for finishing a hand.
   ///
-  /// [playerWon] granted bonus XP when the viewer's player is among winners.
+  /// [playerWon] granted bonus XP when the viewer's player is among winners,
+  /// and increments [UserStats.handsWon] (used by achievements / challenges).
   Future<void> recordHandPlayed({
     bool playerWon = false,
     DateTime? now,
@@ -48,6 +51,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       xpDelta: baseXp,
       handsDelta: 1,
       lessonsDelta: 0,
+      handsWonDelta: playerWon ? 1 : 0,
     );
   }
 
@@ -63,13 +67,27 @@ class UserStatsNotifier extends Notifier<UserStats> {
       xpDelta: xp,
       handsDelta: 0,
       lessonsDelta: 1,
+      handsWonDelta: 0,
     );
   }
 
-  /// Reset progression to a fresh install.
+  /// Add XP without ticking any other counter (challenge rewards).
+  /// Does NOT touch the streak — the underlying hand/lesson event already did.
+  Future<void> awardBonusXp(int amount) async {
+    if (amount <= 0) return;
+    final updated = state.copyWith(totalXp: state.totalXp + amount);
+    state = updated;
+    await _service.saveStats(updated);
+  }
+
+  /// Reset progression to a fresh install. Cascades to the daily challenge
+  /// and achievements so the player ends up in a truly clean state.
   Future<void> resetAll() async {
     state = const UserStats.empty();
     await _service.saveStats(state);
+    // Cascade. Each call awaits its own SharedPreferences write.
+    await ref.read(dailyChallengeProvider.notifier).resetAll();
+    await ref.read(achievementsProvider.notifier).resetAll();
   }
 
   Future<void> _apply({
@@ -78,6 +96,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
     required int xpDelta,
     required int handsDelta,
     required int lessonsDelta,
+    required int handsWonDelta,
   }) async {
     final nextBest = streak.newStreakDays > prev.bestStreakDays
         ? streak.newStreakDays
@@ -89,6 +108,7 @@ class UserStatsNotifier extends Notifier<UserStats> {
       totalXp: prev.totalXp + xpDelta,
       handsPlayed: prev.handsPlayed + handsDelta,
       lessonsCompleted: prev.lessonsCompleted + lessonsDelta,
+      handsWon: prev.handsWon + handsWonDelta,
       bestStreakDays: nextBest,
     );
     state = updated;

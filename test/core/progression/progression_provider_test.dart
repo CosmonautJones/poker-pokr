@@ -156,6 +156,55 @@ void main() {
       expect(stats.lastPlayedDay, isNull);
     });
 
+    test('handsWon increments only when playerWon=true', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(
+          playerWon: false, now: DateTime(2026, 4, 19));
+      expect(container.read(userStatsProvider).handsWon, 0);
+      await notifier.recordHandPlayed(
+          playerWon: true, now: DateTime(2026, 4, 19));
+      expect(container.read(userStatsProvider).handsWon, 1);
+      await notifier.recordHandPlayed(
+          playerWon: true, now: DateTime(2026, 4, 19));
+      expect(container.read(userStatsProvider).handsWon, 2);
+    });
+
+    test('awardBonusXp adds XP without ticking streak or hands', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.recordHandPlayed(now: DateTime(2026, 4, 19));
+      final before = container.read(userStatsProvider);
+      await notifier.awardBonusXp(40);
+      final after = container.read(userStatsProvider);
+      expect(after.totalXp, before.totalXp + 40);
+      expect(after.handsPlayed, before.handsPlayed);
+      expect(after.streakDays, before.streakDays);
+    });
+
+    test('awardBonusXp ignores non-positive amounts', () async {
+      final service = await _freshService();
+      final container = ProviderContainer(overrides: [
+        userStatsServiceProvider.overrideWithValue(service),
+      ]);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(userStatsProvider.notifier);
+      await notifier.awardBonusXp(0);
+      await notifier.awardBonusXp(-5);
+      expect(container.read(userStatsProvider).totalXp, 0);
+    });
+
     test('gap in days resets streak to 1', () async {
       final service = await _freshService();
       final container = ProviderContainer(overrides: [

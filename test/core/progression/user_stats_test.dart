@@ -97,6 +97,7 @@ void main() {
         totalXp: 325,
         handsPlayed: 18,
         lessonsCompleted: 3,
+        handsWon: 6,
         bestStreakDays: 7,
       );
       final decoded = UserStats.tryDecode(stats.encode())!;
@@ -105,6 +106,7 @@ void main() {
       expect(decoded.totalXp, 325);
       expect(decoded.handsPlayed, 18);
       expect(decoded.lessonsCompleted, 3);
+      expect(decoded.handsWon, 6);
       expect(decoded.bestStreakDays, 7);
     });
 
@@ -120,6 +122,8 @@ void main() {
       expect(decoded!.streakDays, 0);
       expect(decoded.totalXp, 0);
       expect(decoded.lastPlayedDay, isNull);
+      // handsWon was added later; legacy stored payloads must default to 0.
+      expect(decoded.handsWon, 0);
     });
   });
 
