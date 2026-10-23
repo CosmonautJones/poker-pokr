@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements_catalog.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -14,6 +17,8 @@ class SettingsScreen extends ConsumerWidget {
     final pt = context.poker;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
     final stats = ref.watch(userStatsProvider);
+    final unlockedCount = ref.watch(achievementsProvider).length;
+    final totalAchievements = achievementsCatalog.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -42,6 +47,19 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(indent: 16, endIndent: 16, height: 32),
           // Progression
           _SectionHeader(title: 'Progression'),
+          ListTile(
+            leading: Icon(Icons.person_rounded, color: pt.goldPrimary),
+            title: const Text('Profile'),
+            subtitle: Text(
+              'Level ${stats.level} \u2022 '
+              '$unlockedCount / $totalAchievements achievements',
+            ),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: pt.textMuted,
+            ),
+            onTap: () => context.push('/profile'),
+          ),
           ListTile(
             leading: Icon(Icons.star_rounded, color: pt.goldPrimary),
             title: const Text('Lifetime XP'),

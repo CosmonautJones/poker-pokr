@@ -11,6 +11,7 @@ import 'package:poker_trainer/features/trainer/presentation/screens/create_hand_
 import 'package:poker_trainer/features/trainer/presentation/screens/hand_replay_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_detail_screen.dart';
 import 'package:poker_trainer/features/trainer/presentation/screens/lesson_play_screen.dart';
+import 'package:poker_trainer/features/profile/presentation/profile_screen.dart';
 import 'package:poker_trainer/features/settings/presentation/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -105,6 +106,11 @@ final router = GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: '/profile',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
