@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poker_trainer/features/achievements/presentation/widgets/achievement_unlock_toast.dart';
+
 class AppScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -9,7 +11,10 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      // Achievement-unlock toasts ride above any branch's content so a
+      // hand finishing on /trainer surfaces the toast even after the user
+      // navigates away.
+      body: AchievementUnlockHost(child: navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(

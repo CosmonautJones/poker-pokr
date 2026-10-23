@@ -9,6 +9,10 @@ class UserStats {
   /// SharedPreferences key used by the service layer.
   static const storageKey = 'user_stats_v1';
 
+  /// Sentinel for "no big hand seen yet". Stored alongside HandRank indices
+  /// (0..8) so any non-negative value compares meaningfully.
+  static const int noBestHand = -1;
+
   /// Consecutive days the player has played at least one hand or lesson.
   final int streakDays;
 
@@ -22,19 +26,33 @@ class UserStats {
   /// Hands completed (any replay that reached isComplete).
   final int handsPlayed;
 
+  /// Hands the viewer's controlled player has won.
+  final int handsWon;
+
+  /// Highest poker.engine.HandRank index the viewer has held at showdown.
+  /// `-1` means no showdown has happened yet (or never reached one).
+  final int bestHandRankIndex;
+
   /// Lesson scenarios completed.
   final int lessonsCompleted;
 
   /// Highest streak the player has ever reached.
   final int bestStreakDays;
 
+  /// Stable ids of achievements that have been unlocked.
+  /// Stored as a sorted list for deterministic JSON.
+  final Set<String> unlockedAchievementIds;
+
   const UserStats({
     required this.streakDays,
     required this.lastPlayedDay,
     required this.totalXp,
     required this.handsPlayed,
+    required this.handsWon,
+    required this.bestHandRankIndex,
     required this.lessonsCompleted,
     required this.bestStreakDays,
+    required this.unlockedAchievementIds,
   });
 
   /// Fresh stats for a brand-new install.
@@ -43,8 +61,11 @@ class UserStats {
         lastPlayedDay = null,
         totalXp = 0,
         handsPlayed = 0,
+        handsWon = 0,
+        bestHandRankIndex = noBestHand,
         lessonsCompleted = 0,
-        bestStreakDays = 0;
+        bestStreakDays = 0,
+        unlockedAchievementIds = const <String>{};
 
   UserStats copyWith({
     int? streakDays,
@@ -52,8 +73,11 @@ class UserStats {
     bool clearLastPlayedDay = false,
     int? totalXp,
     int? handsPlayed,
+    int? handsWon,
+    int? bestHandRankIndex,
     int? lessonsCompleted,
     int? bestStreakDays,
+    Set<String>? unlockedAchievementIds,
   }) {
     return UserStats(
       streakDays: streakDays ?? this.streakDays,
@@ -62,8 +86,12 @@ class UserStats {
           : (lastPlayedDay ?? this.lastPlayedDay),
       totalXp: totalXp ?? this.totalXp,
       handsPlayed: handsPlayed ?? this.handsPlayed,
+      handsWon: handsWon ?? this.handsWon,
+      bestHandRankIndex: bestHandRankIndex ?? this.bestHandRankIndex,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
       bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      unlockedAchievementIds:
+          unlockedAchievementIds ?? this.unlockedAchievementIds,
     );
   }
 
@@ -89,8 +117,11 @@ class UserStats {
         'lastPlayedDay': lastPlayedDay?.toIso8601String(),
         'totalXp': totalXp,
         'handsPlayed': handsPlayed,
+        'handsWon': handsWon,
+        'bestHandRankIndex': bestHandRankIndex,
         'lessonsCompleted': lessonsCompleted,
         'bestStreakDays': bestStreakDays,
+        'unlockedAchievementIds': (unlockedAchievementIds.toList()..sort()),
       };
 
   String encode() => jsonEncode(toJson());
@@ -99,6 +130,12 @@ class UserStats {
     if (raw == null || raw.isEmpty) return null;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
+      final ids = map['unlockedAchievementIds'];
+      final unlocked = <String>{
+        if (ids is List)
+          for (final v in ids)
+            if (v is String) v,
+      };
       return UserStats(
         streakDays: (map['streakDays'] as num?)?.toInt() ?? 0,
         lastPlayedDay: map['lastPlayedDay'] is String
@@ -106,8 +143,12 @@ class UserStats {
             : null,
         totalXp: (map['totalXp'] as num?)?.toInt() ?? 0,
         handsPlayed: (map['handsPlayed'] as num?)?.toInt() ?? 0,
+        handsWon: (map['handsWon'] as num?)?.toInt() ?? 0,
+        bestHandRankIndex:
+            (map['bestHandRankIndex'] as num?)?.toInt() ?? noBestHand,
         lessonsCompleted: (map['lessonsCompleted'] as num?)?.toInt() ?? 0,
         bestStreakDays: (map['bestStreakDays'] as num?)?.toInt() ?? 0,
+        unlockedAchievementIds: unlocked,
       );
     } catch (_) {
       return null;
@@ -131,6 +172,9 @@ abstract final class Progression {
 
   /// One-time daily bonus granted when the streak counter ticks up.
   static const xpDailyBonus = 10;
+
+  /// XP awarded the first time an achievement unlocks.
+  static const xpPerAchievement = 25;
 
   /// Total XP required to reach [level] (level 0 = 0 XP, level 1 = 50 XP).
   ///
