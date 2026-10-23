@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/progression/achievements/achievements_catalog.dart';
+import 'package:poker_trainer/core/progression/achievements_provider.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
 import 'package:poker_trainer/core/theme/poker_theme.dart';
 import 'package:poker_trainer/core/utils/date_formatter.dart';
 import 'package:poker_trainer/core/utils/responsive.dart';
+import 'package:poker_trainer/features/achievements/presentation/widgets/daily_challenge_card.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/reports_provider.dart';
 import 'package:poker_trainer/features/bookkeeper/providers/sessions_provider.dart';
 import 'package:poker_trainer/features/trainer/domain/hand_setup.dart';
@@ -34,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: Responsive.hPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,13 +97,33 @@ class HomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 14),
 
-              // Progression card: streak + XP + level
+              // Progression card: streak + XP + level (taps into achievements)
               const _ProgressionCard()
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 100.ms)
                   .slideY(begin: 0.04, duration: 300.ms, delay: 100.ms),
 
               const SizedBox(height: 14),
+
+              // Daily challenge — auto-hides once claimed. Wrapped in a
+              // Consumer so the spacer also collapses when there's no card
+              // to render, keeping the home column visually tight.
+              Consumer(
+                builder: (context, ref, _) {
+                  final claimed = ref.watch(
+                    dailyChallengeProvider.select((d) => d.claimed),
+                  );
+                  if (claimed) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: const DailyChallengeCard(hideWhenClaimed: true)
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: 130.ms)
+                        .slideY(
+                            begin: 0.04, duration: 300.ms, delay: 130.ms),
+                  );
+                },
+              ),
 
               // Last session card
               sessionsAsync.when(
@@ -194,7 +217,7 @@ class HomeScreen extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -721,8 +744,7 @@ class _TipOfTheDay extends StatelessWidget {
 /// Home-screen card summarizing progression: daily streak, level, XP bar.
 ///
 /// Hides itself until the player has taken at least one action so first-run
-/// isn't cluttered. Tapping the card has no destination yet — reserved for a
-/// future dedicated progression screen.
+/// isn't cluttered. Tapping the card opens the achievements wall.
 class _ProgressionCard extends ConsumerWidget {
   const _ProgressionCard();
 
@@ -731,6 +753,7 @@ class _ProgressionCard extends ConsumerWidget {
     final pt = context.poker;
     final textTheme = Theme.of(context).textTheme;
     final stats = ref.watch(userStatsProvider);
+    final ach = ref.watch(achievementsProvider);
 
     // First-run: keep the UI clean until the player has earned anything.
     if (stats.totalXp == 0 && stats.streakDays == 0) {
@@ -740,6 +763,8 @@ class _ProgressionCard extends ConsumerWidget {
     final level = stats.level;
     final progress = stats.levelProgress;
     final streakActive = _isStreakActive(stats);
+    final unlocked = ach.unlockedCount;
+    final total = achievementsCatalog.length;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -752,7 +777,9 @@ class _ProgressionCard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Container(
+      child: InkWell(
+        onTap: () => context.go('/home/achievements'),
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -841,15 +868,23 @@ class _ProgressionCard extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
+                Icon(Icons.emoji_events_rounded,
+                    size: 12, color: pt.goldPrimary),
+                const SizedBox(width: 4),
                 Text(
-                  '${stats.totalXp} XP total',
+                  '$unlocked / $total',
                   style: textTheme.labelSmall?.copyWith(
-                    color: pt.textMuted,
+                    color: pt.goldPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded,
+                    size: 14, color: pt.textMuted),
               ],
             ),
           ],
+        ),
         ),
       ),
     );

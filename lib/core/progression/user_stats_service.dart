@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'achievements/achievement_progress.dart';
+import 'achievements/daily_challenge.dart';
 import 'user_stats.dart';
 
 /// Async SharedPreferences-backed store for [UserStats] and related prefs.
@@ -32,5 +34,37 @@ class UserStatsService {
 
   Future<void> saveHapticsEnabled(bool enabled) async {
     await _prefs.setBool(hapticsKey, enabled);
+  }
+
+  // -------------------- Achievements --------------------
+
+  AchievementsState loadAchievements() {
+    final raw = _prefs.getString(AchievementsState.storageKey);
+    return AchievementsState.tryDecode(raw) ??
+        const AchievementsState.empty();
+  }
+
+  Future<void> saveAchievements(AchievementsState state) async {
+    await _prefs.setString(
+        AchievementsState.storageKey, state.encode());
+  }
+
+  Future<void> clearAchievements() async {
+    await _prefs.remove(AchievementsState.storageKey);
+  }
+
+  // -------------------- Daily challenge --------------------
+
+  DailyChallenge? loadDailyChallenge() {
+    final raw = _prefs.getString(DailyChallenge.storageKey);
+    return DailyChallenge.tryDecode(raw);
+  }
+
+  Future<void> saveDailyChallenge(DailyChallenge challenge) async {
+    await _prefs.setString(DailyChallenge.storageKey, challenge.encode());
+  }
+
+  Future<void> clearDailyChallenge() async {
+    await _prefs.remove(DailyChallenge.storageKey);
   }
 }
