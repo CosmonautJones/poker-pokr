@@ -6,6 +6,17 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-13
+
+### Added
+- The app version shows in the top-right corner of Home, so you can tell
+  which build is live.
+
+### Fixed
+- Settings showed "1.0.0" instead of the real version. Settings and Home now
+  read it from `lib/core/app_version.dart`, and a test fails if that file
+  and `pubspec.yaml` disagree.
+
 ## [0.1.0] - 2026-10-21
 
 First versioned release of the app running as the
@@ -72,5 +83,6 @@ First versioned release of the app running as the
   relied on the skipped big-blind option can stop at the mismatched action
   ([#51](https://github.com/CosmonautJones/poker-pokr/pull/51)).
 
-[Unreleased]: https://github.com/CosmonautJones/poker-pokr/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/CosmonautJones/poker-pokr/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/CosmonautJones/poker-pokr/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/CosmonautJones/poker-pokr/releases/tag/v0.1.0

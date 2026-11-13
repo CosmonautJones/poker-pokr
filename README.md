@@ -61,3 +61,5 @@ These short checks cover turn order, street transitions, representative full han
 ## Web publication
 
 [deploy-web.yml](.github/workflows/deploy-web.yml) builds and publishes GitHub Pages on a push to `main` or a manual workflow dispatch. It compiles the database worker, downloads SQLite Wasm, and builds with `--base-href "/poker-pokr/"`. Feature-branch pushes and draft PRs do not trigger this workflow.
+
+To check which build is live, look at the version in the top-right corner of Home (also in Settings). It comes from `lib/core/app_version.dart`, which must match `version:` in `pubspec.yaml`; `test/core/app_version_test.dart` checks this.
