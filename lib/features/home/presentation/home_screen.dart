@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poker_trainer/core/app_version.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/progression/user_stats.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -78,6 +79,14 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const Spacer(),
+                  // Muted build label so the live version is easy to check.
+                  Text(
+                    appVersionLabel,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: pt.textMuted,
                     ),
                   ),
                 ],

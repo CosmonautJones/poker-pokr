@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poker_trainer/core/app_version.dart';
 import 'package:poker_trainer/core/progression/progression_provider.dart';
 import 'package:poker_trainer/core/providers/database_provider.dart';
 import 'package:poker_trainer/core/services/haptic_service.dart';
@@ -76,12 +77,12 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.info_rounded, color: pt.goldPrimary),
             title: const Text('About'),
-            subtitle: const Text('TableSense v1.0.0'),
+            subtitle: const Text('TableSense $appVersionLabel'),
             onTap: () {
               showAboutDialog(
                 context: context,
                 applicationName: 'TableSense',
-                applicationVersion: '1.0.0',
+                applicationVersion: '$appVersion (build $appBuild)',
                 applicationIcon: Icon(
                   Icons.insights_rounded,
                   size: 48,
@@ -160,7 +161,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version 1.0.0',
+                    'Version $appVersion ($appBuild)',
                     style: textTheme.bodySmall?.copyWith(
                       color: pt.textMuted.withValues(alpha: 0.6),
                     ),
